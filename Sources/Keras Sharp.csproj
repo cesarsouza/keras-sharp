@@ -1,0 +1,168 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{1478E4E5-F4D5-4066-886B-544D1E172374}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>KerasSharp</RootNamespace>
+    <AssemblyName>KerasSharp</AssemblyName>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Accord, Version=3.6.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.3.6.0\lib\net462\Accord.dll</HintPath>
+    </Reference>
+    <Reference Include="Accord.Math, Version=3.6.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.Math.3.6.0\lib\net462\Accord.Math.dll</HintPath>
+    </Reference>
+    <Reference Include="Accord.Math.Core, Version=3.6.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.Math.3.6.0\lib\net462\Accord.Math.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Runtime.Serialization.Primitives, Version=4.1.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.Serialization.Primitives.4.3.0\lib\net46\System.Runtime.Serialization.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="TensorFlowSharp, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\TensorFlowSharp.1.2.2\lib\net461\TensorFlowSharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Activations\Base\ActivationFunctionBase.cs" />
+    <Compile Include="Activations\Base\IActivationFunction.cs" />
+    <Compile Include="Activations\ELU.cs" />
+    <Compile Include="Activations\HardSigmoid.cs" />
+    <Compile Include="Activations\ReLU.cs" />
+    <Compile Include="Activations\SeLU.cs" />
+    <Compile Include="Activations\Sigmoid.cs" />
+    <Compile Include="Activations\Softmax.cs" />
+    <Compile Include="Activations\SoftPlus.cs" />
+    <Compile Include="Activations\SoftSign.cs" />
+    <Compile Include="Activations\TanH.cs" />
+    <Compile Include="Backends\Base\IBackend.cs" />
+    <Compile Include="Backends\Current.cs" />
+    <Compile Include="Backends\TensorFlowBackend.cs" />
+    <Compile Include="Callbacks\Base\Callback.cs" />
+    <Compile Include="Callbacks\Base\CallbackList.cs" />
+    <Compile Include="Callbacks\History.cs" />
+    <Compile Include="Constraints\Base\IWeightConstraint.cs" />
+    <Compile Include="Constraints\MaxNorm.cs" />
+    <Compile Include="Constraints\MinMaxNorm.cs" />
+    <Compile Include="Constraints\NonNeg.cs" />
+    <Compile Include="Constraints\UnitNorm.cs" />
+    <Compile Include="Engine\Topology\Container.cs" />
+    <Compile Include="Engine\Topology\Input.cs" />
+    <Compile Include="Engine\Topology\InputLayer.cs" />
+    <Compile Include="Engine\Topology\InputSpec.cs" />
+    <Compile Include="Engine\Topology\Layer.cs" />
+    <Compile Include="Engine\Topology\Node.cs" />
+    <Compile Include="Engine\Topology\Tensor.cs" />
+    <Compile Include="Engine\Training\BaseLogger.cs" />
+    <Compile Include="Engine\Training\Enqueuer.cs" />
+    <Compile Include="Engine\Training\GeneratorEnqueuer.cs" />
+    <Compile Include="Engine\Training\Model.cs" />
+    <Compile Include="Engine\Training\OrderedEnqueuer.cs" />
+    <Compile Include="Engine\Training\Progbar.cs" />
+    <Compile Include="Engine\Training\ProgbarLogger.cs" />
+    <Compile Include="Engine\Training\Sequence.cs" />
+    <Compile Include="Initializers\Base\IWeightInitializer.cs" />
+    <Compile Include="Initializers\Constant.cs" />
+    <Compile Include="Initializers\GlorotUniform.cs" />
+    <Compile Include="Initializers\HeUniform.cs" />
+    <Compile Include="Initializers\Ones.cs" />
+    <Compile Include="Initializers\VarianceScaling.cs" />
+    <Compile Include="Initializers\Zeros.cs" />
+    <Compile Include="Layers\Activation.cs" />
+    <Compile Include="Layers\Dense.cs" />
+    <Compile Include="Layers\Dropout.cs" />
+    <Compile Include="Losses\Base\ILoss.cs" />
+    <Compile Include="Losses\BinaryCrossEntropy.cs" />
+    <Compile Include="Losses\CategoricalCrossEntropy.cs" />
+    <Compile Include="Losses\CategoricalHinge.cs" />
+    <Compile Include="Losses\CosineProximity.cs" />
+    <Compile Include="Losses\Hinge.cs" />
+    <Compile Include="Losses\KullbackLeiberDivergence.cs" />
+    <Compile Include="Losses\LogCosh.cs" />
+    <Compile Include="Losses\MeanAbsoluteError.cs" />
+    <Compile Include="Losses\MeanAbsolutePercentageError.cs" />
+    <Compile Include="Losses\MeanSquaredError.cs" />
+    <Compile Include="Losses\MeanSquaredLogarithmicError.cs" />
+    <Compile Include="Losses\Poisson.cs" />
+    <Compile Include="Losses\SparseCategoricalCrossEntropy.cs" />
+    <Compile Include="Losses\SquaredHinge.cs" />
+    <Compile Include="Metrics\Base\IMetric.cs" />
+    <Compile Include="Metrics\BinaryAccuracy.cs" />
+    <Compile Include="Metrics\CategoricalAccuracy.cs" />
+    <Compile Include="Metrics\SparseCategoricalAccuracy.cs" />
+    <Compile Include="Metrics\SparseTopKCategoricalAccuracy.cs" />
+    <Compile Include="Metrics\TopKCategoricalAccuracy.cs" />
+    <Compile Include="Models\SampleWeightMode.cs" />
+    <Compile Include="Models\Sequential.cs" />
+    <Compile Include="Optimizers\Adadelta.cs" />
+    <Compile Include="Optimizers\Adagrad.cs" />
+    <Compile Include="Optimizers\Adam.cs" />
+    <Compile Include="Optimizers\Adamax.cs" />
+    <Compile Include="Optimizers\Base\IOptimizer.cs" />
+    <Compile Include="Optimizers\Base\Optimizer.cs" />
+    <Compile Include="Optimizers\Nadam.cs" />
+    <Compile Include="Optimizers\RootMeanSquareProp.cs" />
+    <Compile Include="Optimizers\StochasticGradientDescent.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Regularizers\Base\IWeightRegularizer.cs" />
+    <Compile Include="Regularizers\L1L2Regularizer.cs" />
+    <Compile Include="Tools.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="KerasSharp.licenseheader" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="README.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\TensorFlowSharp.1.2.2\build\TensorFlowSharp.targets" Condition="Exists('..\packages\TensorFlowSharp.1.2.2\build\TensorFlowSharp.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\TensorFlowSharp.1.2.2\build\TensorFlowSharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\TensorFlowSharp.1.2.2\build\TensorFlowSharp.targets'))" />
+    <Error Condition="!Exists('..\packages\Accord.3.6.0\build\Accord.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.3.6.0\build\Accord.targets'))" />
+  </Target>
+  <Import Project="..\packages\Accord.3.6.0\build\Accord.targets" Condition="Exists('..\packages\Accord.3.6.0\build\Accord.targets')" />
+</Project>
