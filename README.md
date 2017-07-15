@@ -1,2 +1,2 @@
 # keras-sharp
-A port of the Keras deep learning library to C#
+An ongoing effort to port most of the Keras deep learning library to C#
