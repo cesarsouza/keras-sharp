@@ -179,10 +179,26 @@ namespace KerasSharp.Engine.Topology
                 this._initial_weights = non_trainable_weights;
         }
 
-        private string _to_snake_case(string prefix)
-        {
-            throw new NotImplementedException();
-        }
+		private static string _to_snake_case(string s)
+		{
+			var re = "(.)([A-Z][a-z0-9]+)";
+			var intermediate = System.Text.RegularExpressions.Regex.Replace(s, re, "$1_$2");
+
+			var insecurePattern = "([a-z])([A-Z])";
+			var insecure = System.Text.RegularExpressions.Regex.Replace(intermediate, insecurePattern, "$1_$2").ToLower();
+			/*
+			 In Python, a class starting with "_" is insecure for creating scopes. 
+			 While this is not a concern in C#, it's implemented here for compatibility with Keras naming.
+			*/
+			if (insecure.StartsWith("_", StringComparison.InvariantCulture))
+			{
+				return "private" + insecure;
+			}
+			else
+			{
+				return insecure;
+			}
+		}
 
         public virtual List<List<List<Tensor>>> losses
         {
