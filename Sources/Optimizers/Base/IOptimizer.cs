@@ -29,9 +29,10 @@ namespace KerasSharp.Models
     using System.Collections.Generic;
     using KerasSharp.Constraints;
     using KerasSharp.Engine.Topology;
+    using KerasSharp.Losses;
 
     public interface IOptimizer
     {
-        List<List<Tensor>> get_updates(List<Tensor> collected_trainable_weights, Dictionary<Tensor, IWeightConstraint> constraints, object total_loss);
+        List<List<Tensor>> get_updates(List<Tensor> collected_trainable_weights, Dictionary<Tensor, IWeightConstraint> constraints, Tensor total_loss);
     }
 }

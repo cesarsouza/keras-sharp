@@ -33,7 +33,7 @@ namespace KerasSharp
     using System.Threading.Tasks;
     using TensorFlow;
 
-    public static class Tools
+    public static class Utils
     {
         public const TFDataType DEFAULT_DTYPE = TFDataType.Float;
 

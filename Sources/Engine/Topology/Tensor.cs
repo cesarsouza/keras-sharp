@@ -39,14 +39,32 @@ namespace KerasSharp.Engine.Topology
     [DataContract]
     public class Tensor
     {
+        public TFGraph graph;
+        public TFSession session;
         public TFTensor tensor;
+        public TFOutput output;
         public int?[] _keras_shape;
         public bool _uses_learning_phase;
         public int?[] int_shape;
         public (Layer layer, int node_index, int tensor_index)? _keras_history;
         public string name;
         public int?[] shape;
-        public TFDataType dtype { get; set; }
+
+        public TFDataType dtype
+        {
+            get
+            {
+                if (tensor != null)
+                    return tensor.TensorType;
+                return output.OutputType;
+            }
+        }
+
+        public Tensor(TFGraph g, TFSession s)
+        {
+            this.graph = g;
+            this.session = s;
+        }
 
         public static IEnumerable<Tensor> Zero { get; internal set; }
         public static Tensor One { get; internal set; }
@@ -55,6 +73,23 @@ namespace KerasSharp.Engine.Topology
         {
             throw new NotImplementedException();
         }
+
+        public int?[] get_shape()
+        {
+            if (_keras_shape != null)
+                return _keras_shape;
+            return shape;
+        }
+
+        public object eval()
+        {
+            TFTensor[] result = session.Run(new TFOutput[] { }, new TFTensor[] { }, new[] { output });
+
+            if (result.Length == 1)
+                return result[0].GetValue();
+
+            return result.Apply(x => x.GetValue());
+        }
     }
-     
+
 }

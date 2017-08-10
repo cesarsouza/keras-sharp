@@ -96,7 +96,7 @@ namespace KerasSharp.Models
         private Dictionary<string, string> sample_weight_mode;
         private Dictionary<string, ILoss> loss;
         private Dictionary<string, double> loss_weights;
-        private object total_loss;
+        private Tensor total_loss;
         private List<Tensor> sample_weights;
         private List<ILoss> loss_functions;
         private List<Tensor> _feed_outputs;
@@ -129,6 +129,30 @@ namespace KerasSharp.Models
         }
 
 
+        /// <summary>
+        ///   Configures the model for training.
+        /// </summary>
+        /// 
+        /// <param name="optimizer">The optimization algorithm.</param>
+        /// <param name="loss">The objective function (to be minimized). model has multiple outputs, you can use a different loss
+        ///   on each output by passing a dictionary or a list of losses. The loss value that will be minimized by the model 
+        ///   will then be the sum of all individual losses.</param>
+        /// <param name="metrics">The list of metrics to be evaluated by the model during training and testing. Typically you 
+        ///   will use `metrics =['accuracy']`. To specify different metrics for different outputs of a multi - output model, 
+        ///   you could also pass a dictionary, such as `metrics ={ 'output_a': 'accuracy'}`.</param>
+        /// <param name="loss_weights">The optional list or dictionary specifying scalar coefficients (Python floats) to weight 
+        ///   the loss contributions of different model outputs. The loss value that will be minimized by the model will then be 
+        ///     the *weighted sum* of all individual losses, weighted by the `loss_weights` coefficients. If a list, it is expected 
+        ///     to have a 1:1 mapping to the model's outputs. If a tensor, it is expected to map output names(strings) to scalar 
+        ///     coefficients.</param>
+        /// <param name="sample_weight_mode">If you need to do timestep - wise sample weighting(2D weights), set this to `"temporal"`. 
+        ///   `null` defaults to sample - wise weights(1D). If the model has multiple outputs, you can use a different `sample_weight_mode` 
+        ///     on each output by passing a dictionary or a list of modes.</param>
+        /// 
+        public void Compile(IOptimizer optimizer, ILoss loss, IMetric metrics = null)
+        {
+            Compile(optimizer, new Dictionary<string, ILoss>() { { "output", loss } }, metrics);
+        }
 
         /// <summary>
         ///   Configures the model for training.
@@ -471,7 +495,7 @@ namespace KerasSharp.Models
                 var updates = Enumerable.Concat(this.updates, training_updates).ToList();
 
                 // Gets loss and metrics. Updates weights at each call.	
-                this.train_function = K.function(inputs, new[] { this.total_loss }.Concat(this.metrics_tensors).ToList(),
+                this.train_function = K.function(inputs, ((new[] { this.total_loss }).Concat(this.metrics_tensors)).ToList(),
                     updates: updates, name: "train_function"); //, **this._function_kwargs)
             }
         }
@@ -769,7 +793,7 @@ namespace KerasSharp.Models
                     foreach (var batch_out in batch_outs)
                     {
                         var shape = new int?[] { samples }.Concatenate(batch_out.shape.Get(1, 0));
-                        outs.Add(Tensor.Zeros(shape, dtype: KerasSharp.Tools.ToNetType(batch_out.dtype)));
+                        outs.Add(Tensor.Zeros(shape, dtype: KerasSharp.Utils.ToNetType(batch_out.dtype)));
                     }
                 }
 

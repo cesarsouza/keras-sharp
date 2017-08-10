@@ -98,6 +98,8 @@ namespace KerasSharp
             int? input_dim = null, int?[] input_shape = null, int?[] batch_input_shape = null)
             : base(input_dim: input_dim, input_shape: input_shape, batch_input_shape: batch_input_shape)
         {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/layers/core.py#L791
+
             //if 'input_shape' not in kwargs and 'input_dim' in kwargs:
             //    kwargs['input_shape'] = (kwargs.pop('input_dim'),)
 
@@ -117,12 +119,15 @@ namespace KerasSharp
             this.kernel_constraint = kernel_constraint;
             this.bias_constraint = bias_constraint;
 
+            this.input_spec = new List<InputSpec>();
             this.input_spec.Add(new InputSpec(min_ndim: 2));
             this.supports_masking = true;
         }
 
         protected override void build(List<int?[]> input_shape)
         {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/layers/core.py#L818
+
             if (input_shape[0].Length < 2)
                 throw new ArgumentException("input_shape");
 

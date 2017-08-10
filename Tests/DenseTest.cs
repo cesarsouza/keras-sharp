@@ -1,11 +1,14 @@
 ﻿using KerasSharp;
+using KerasSharp.Losses;
 using KerasSharp.Models;
+using KerasSharp.Optimizers;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TensorFlow;
 
 namespace Tests
 {
@@ -29,7 +32,28 @@ namespace Tests
             model.Add(new Dense(32));
             #endregion
 
-            Assert.Fail("This is just an example - the test has still to be written");
+            Assert.AreEqual(2, model.layers.Count);
+            Assert.AreEqual(0, model.layers[0].name);
+            Assert.AreEqual(0, model.layers[0].input_shape);
+            Assert.AreEqual(0, model.layers[1].name);
+            Assert.AreEqual(0, model.layers[1].input_shape);
         }
+
+        [Test]
+        public void compile_test()
+        {
+            #region doc_dense_example_1
+            // as first layer in a sequential model:
+            var model = new Sequential();
+            model.Add(new Dense(32, input_shape: new int?[] { 16 }));
+            model.Add(new Dense(32));
+
+            model.Compile(new StochasticGradientDescent(), new BinaryCrossEntropy());
+
+            #endregion
+
+            Assert.AreEqual(0, model.trainable_weights);
+        }
+     
     }
 }

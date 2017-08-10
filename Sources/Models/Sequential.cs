@@ -59,7 +59,7 @@ namespace KerasSharp.Models
     public class Sequential : Model, IEnumerable<Layer>
     {
 
-        private List<Layer> layers;
+        public List<Layer> layers;
         public bool _trainable;
         public object _initial_weights;
 

@@ -116,6 +116,8 @@ namespace KerasSharp.Engine.Topology
             Dictionary<Tensor, IWeightConstraint> constraints = null, int?[] batch_input_shape = null,
             int? batch_size = null, int? input_dim = null)
         {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/topology.py#L247
+
             this.input_spec = null;
             this.supports_masking = false;
 
@@ -163,8 +165,8 @@ namespace KerasSharp.Engine.Topology
             {
                 // In this case we will later create an input layer
                 // to insert before the current layer
-                if (batch_size != null && input_shape != null)
-                    batch_input_shape = new[] { batch_size }.Concatenate(input_shape);
+                if (input_shape != null)
+                    batch_input_shape = new[] { batch_size } .Concatenate(input_shape);
                 this.batch_input_shape = batch_input_shape;
             }
 
@@ -264,14 +266,14 @@ namespace KerasSharp.Engine.Topology
         /// 
         /// <return>The created weight variable.</return>
         /// 
-        public Tensor add_weight(string name, int?[] shape, TFDataType? dtype = null,
+        public Tensor add_weight(string name, int?[] shape, TFDataType dtype = Utils.DEFAULT_DTYPE,
             IWeightInitializer initializer = null, IWeightRegularizer regularizer = null,
                    bool trainable = true, IWeightConstraint constraint = null)
         {
             if (dtype == null)
                 dtype = K.floatx();
 
-            Tensor weight = K.variable(initializer.Call(shape), dtype: dtype, name: name);
+            Tensor weight = K.variable(tensor: initializer.Call(shape), dtype: dtype, name: name);
 
             if (regularizer != null)
                 this.add_loss(new List<List<Tensor>>() { regularizer.Call(weight) });
@@ -300,6 +302,8 @@ namespace KerasSharp.Engine.Topology
         /// 
         public void assert_input_compatibility(List<Tensor> inputs)
         {
+            // https://github.com/fchollet/keras/blob/2382f788b4f14646fa8b6b2d8d65f1fc138b35c4/keras/engine/topology.py#L393
+
             if (this.input_spec == null)
                 return;
 
@@ -341,6 +345,7 @@ namespace KerasSharp.Engine.Topology
                 }
 
                 // Check specific shape axes.
+                // https://github.com/fchollet/keras/blob/2382f788b4f14646fa8b6b2d8d65f1fc138b35c4/keras/engine/topology.py#L467
                 if (spec.axes != null)
                 {
                     int?[] x_shape = K.int_shape(x);
@@ -354,7 +359,8 @@ namespace KerasSharp.Engine.Topology
 
                             if (value != null && x_shape[axis] != null)
                             {
-                                throw new NotImplementedException();
+                                throw new Exception($"Input {input_index} is incompatible with layer {this.name}: expected " +
+                                    $"axis {axis} of input shape to have value {value} but got shape {x_shape}.");
                             }
                         }
                     }

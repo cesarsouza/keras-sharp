@@ -72,6 +72,8 @@ namespace KerasSharp.Layers
             TFDataType? dtype = null, bool sparse = false, Tensor input_tensor = null)
             : base(dtype: GetType(dtype, input_tensor), name: GetName(name))
         {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/topology.py#L1291
+
             this.batch_input_shape = batch_input_shape;
             this.name = name;
             this.sparse = sparse;

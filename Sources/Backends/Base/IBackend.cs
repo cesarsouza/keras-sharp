@@ -36,7 +36,7 @@ namespace KerasSharp.Backends
     using TensorFlow;
     using KerasSharp.Models;
 
-    public interface IBackend
+    public interface IBackend : IDisposable
     {
         // TODO: Rename all methods to PascalCase
 
@@ -65,7 +65,7 @@ namespace KerasSharp.Backends
 
         Tensor max(Tensor x, int v, object p);
 
-        int ndim(Tensor x);
+        int? ndim(Tensor x);
 
         Tensor max(Tensor x, int axis, bool keepdims);
 
@@ -93,6 +93,7 @@ namespace KerasSharp.Backends
 
         Tensor div(Tensor desired, object v);
 
+        object eval(Tensor tensor);
 
         Tensor add(Tensor desired, Tensor v);
 
@@ -102,9 +103,7 @@ namespace KerasSharp.Backends
 
         Tensor add(double v, Tensor tensor);
 
-        Tensor constant(int v, TFShape shape, TFDataType dtype);
-
-        Tensor random_uniform(TFShape shape, double v, double limit, TFDataType dtype, int? seed);
+        Tensor random_uniform(int?[] shape, double minvalue = 0.0, double maxvalue = 1.0, TFDataType dtype = Utils.DEFAULT_DTYPE, int? seed = null, string name = null);
 
         Tensor truncated_normal(TFShape shape, double v, double stddev, TFDataType dtype, int? seed);
 
@@ -132,27 +131,26 @@ namespace KerasSharp.Backends
 
         double subtract(double v, Tensor expected);
 
-        Tensor constant(int v, int?[] shape, TFDataType dtype);
-
         Tensor add(object v1, double v2);
 
-        Tensor variable(double v, string name);
+        Tensor variable(Array array, string name = null);
+
+        Tensor variable<T>(T value, string name = null) where T : struct;
+
+        Tensor variable(Tensor tensor, TFDataType dtype = Utils.DEFAULT_DTYPE, string name = null);
 
         Tensor in_train_phase(Func<Tensor> dropped_inputs, Tensor inputs, bool? training);
 
         TFDataType? dtype(Tensor input_tensor);
 
-        Tensor constant(int v, int[] shape, TFDataType dtype);
+        Tensor constant<T>(T value, int?[] shape, TFDataType dtype = Utils.DEFAULT_DTYPE, string name = null);
 
-        Tensor placeholder(int[] shape, TFDataType? dtype, bool sparse, string name);
+        int get_uid(string prefix);
 
-        string get_uid(string prefix);
-
-        List<Tensor> gradients(ILoss loss, object param);
+        List<Tensor> gradients(Tensor loss, object param);
 
         int?[] int_shape(Tensor input_tensor);
 
-        Tensor variable(Tensor Tensor, TFDataType? dtype, string name);
 
         object sum(object[] v);
 
@@ -168,7 +166,7 @@ namespace KerasSharp.Backends
 
         void batch_set_value(List<Tuple<Tensor, Array>> weight_value_tuples);
 
-        Tensor placeholder(int?[] shape, TFDataType? dtype, bool sparse, string name);
+        Tensor placeholder(int?[] shape, TFDataType? dtype = Utils.DEFAULT_DTYPE, bool sparse = false, string name = null);
 
         int?[] int_shape(TFTensor input_tensor);
 
@@ -204,7 +202,9 @@ namespace KerasSharp.Backends
 
         object learning_phase();
 
-        Function function(object inputs, List<Tensor> list, Func<List<object>> updates, string name);
+        Function function(object inputs, List<Tensor> list, Func<List<List<Tensor>>> updates, string name);
+
+        Function function(object inputs, List<Tensor> list, List<List<Tensor>> updates, string name);
 
         Tensor mul(Tensor momentum, object v);
 
@@ -222,10 +222,7 @@ namespace KerasSharp.Backends
 
         Tensor truncated_normal(int[] shape, double v, double stddev, TFDataType dtype, int? seed);
 
-        Tensor random_uniform(int[] shape, double v, double limit, TFDataType dtype, int? seed);
-
         Tensor truncated_normal(int?[] shape, double v, double stddev, TFDataType dtype, int? seed);
 
-        Tensor random_uniform(int?[] shape, double v, double limit, TFDataType dtype, int? seed);
     }
 }

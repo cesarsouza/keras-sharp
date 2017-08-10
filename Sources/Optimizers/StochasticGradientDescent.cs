@@ -50,7 +50,7 @@ namespace KerasSharp.Optimizers
     /// <seealso cref="KerasSharp.Models.IOptimizer" />
     /// 
     [DataContract]
-    public class StochasticGradientDescent : OptimizerBase
+    public class StochasticGradientDescent : OptimizerBase, IOptimizer
     {
         private Tensor iterations;
         private Tensor lr;
@@ -59,7 +59,7 @@ namespace KerasSharp.Optimizers
         private double initial_decay;
         private bool nesterov;
 
-        List<Tensor> updates;
+        List<List<Tensor>> updates;
         List<Tensor> weights;
 
         /// <summary>
@@ -82,16 +82,16 @@ namespace KerasSharp.Optimizers
             this.nesterov = nesterov;
         }
 
-        public List<Tensor> get_updates(List<Tensor> param, Dictionary<Tensor, IWeightConstraint> constraints, ILoss loss)
+        public List<List<Tensor>> get_updates(List<Tensor> param, Dictionary<Tensor, IWeightConstraint> constraints, Tensor loss)
         {
             var grads = this.get_gradients(loss, param);
-            this.updates = new List<Tensor>();
+            this.updates = new List<List<Tensor>>();
 
             var lr = this.lr;
             if (this.initial_decay > 0)
             {
                 lr = K.mul(lr, K.div(1.0, K.sum(1.0, K.mul(this.decay, this.iterations))));
-                this.updates.Add(K.update_add(this.iterations, 1));
+                this.updates.Add(new List<Tensor>() { K.update_add(this.iterations, 1) });
             }
 
             // momentum
@@ -107,7 +107,7 @@ namespace KerasSharp.Optimizers
                 Tensor m = moments[i];
                 Tensor v = K.subtract(K.mul(this.momentum, m), K.mul(lr, g));  // velocity
 
-                this.updates.Add(K.update(m, v));
+                this.updates.Add(new List<Tensor>() { K.update(m, v) });
 
                 Tensor new_p;
                 if (this.nesterov)
@@ -124,7 +124,7 @@ namespace KerasSharp.Optimizers
                 }
 
 
-                updates.Add(K.update(p, new_p));
+                updates.Add(new List<Tensor>() { K.update(p, new_p) });
             }
 
             return this.updates;

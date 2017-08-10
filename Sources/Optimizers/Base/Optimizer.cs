@@ -73,7 +73,7 @@ namespace KerasSharp.Optimizers
             throw new NotImplementedException();
         }
 
-        public List<Tensor> get_gradients(ILoss loss, object param)
+        public List<Tensor> get_gradients(Tensor loss, object param)
         {
             List<Tensor> grads = K.gradients(loss, param);
             if (this.clipnorm > 0 && this.clipnorm > 0)

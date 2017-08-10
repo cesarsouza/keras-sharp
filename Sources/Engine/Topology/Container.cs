@@ -619,14 +619,14 @@ namespace KerasSharp.Engine.Topology
         /// 
         /// <returns>A list of update ops.</returns>
         /// 
-        public List<object> state_updates()
+        public List<List<Tensor>> state_updates()
         {
-            var state_updates = new List<object>(); ;
+            var state_updates = new List<List<Tensor>>(); ;
             foreach (Layer layer in this.layers)
             {
                 if (layer.stateful == false)
                     if (layer.updates != null)
-                        state_updates.Add(layer.updates);
+                        state_updates.AddRange(layer.updates);
             }
             return state_updates;
         }

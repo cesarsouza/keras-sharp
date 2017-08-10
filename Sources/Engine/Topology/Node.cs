@@ -135,8 +135,8 @@ namespace KerasSharp.Engine.Topology
             {
                 if (layer != null)
                     layer.outbound_nodes.Add(this);
-                outbound_layer.inbound_nodes.Add(this);
             }
+            outbound_layer.inbound_nodes.Add(this);
         }
 
         //def get_config(self):
