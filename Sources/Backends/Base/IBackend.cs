@@ -127,7 +127,7 @@ namespace KerasSharp.Backends
 
         Tensor minus(Tensor tensor);
 
-        Tensor mean(Tensor tensor, int axis);
+        Tensor mean(Tensor tensor, int axis = -1);
 
         Tensor abs(Tensor input);
 

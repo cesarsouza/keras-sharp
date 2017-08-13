@@ -50,7 +50,7 @@ namespace KerasSharp.Optimizers
     /// <seealso cref="KerasSharp.Models.IOptimizer" />
     /// 
     [DataContract]
-    public class StochasticGradientDescent : OptimizerBase, IOptimizer
+    public class SGD : OptimizerBase, IOptimizer
     {
         private Tensor iterations;
         private Tensor lr;
@@ -63,7 +63,7 @@ namespace KerasSharp.Optimizers
         List<Tensor> weights;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="StochasticGradientDescent" /> class.
+        /// Initializes a new instance of the <see cref="SGD" /> class.
         /// </summary>
         /// 
         /// <param name="lr">float >= 0. Learning rate.</param>
@@ -71,7 +71,7 @@ namespace KerasSharp.Optimizers
         /// <param name="decay">float >= 0. Learning rate decay over each update.</param>
         /// <param name="nesterov">Whether to apply Nesterov momentum.</param>
         /// 
-        public StochasticGradientDescent(double lr = 0.01, double momentum = 0.0, double decay = 0.0, bool nesterov = false)
+        public SGD(double lr = 0.01, double momentum = 0.0, double decay = 0.0, bool nesterov = false)
             : base()
         {
             this.iterations = K.variable(0.0, name: "iterations");

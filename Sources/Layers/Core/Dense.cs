@@ -124,6 +124,11 @@ namespace KerasSharp
             this.supports_masking = true;
         }
 
+        public Dense(int units, string activation, int? input_dim = null)
+        {
+            throw new NotImplementedException();
+        }
+
         protected override void build(List<int?[]> input_shape)
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/layers/core.py#L818

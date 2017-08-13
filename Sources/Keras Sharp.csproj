@@ -111,9 +111,15 @@
     <Compile Include="Initializers\Ones.cs" />
     <Compile Include="Initializers\VarianceScaling.cs" />
     <Compile Include="Initializers\Zeros.cs" />
-    <Compile Include="Layers\Activation.cs" />
-    <Compile Include="Layers\Dense.cs" />
-    <Compile Include="Layers\Dropout.cs" />
+    <Compile Include="Layers\Core\Activation.cs" />
+    <Compile Include="Layers\Embeddings\Embedding.cs" />
+    <Compile Include="Layers\MaxPooling2D.cs" />
+    <Compile Include="Layers\Core\Flatten.cs" />
+    <Compile Include="Layers\Convolutional\Conv2D.cs" />
+    <Compile Include="Layers\Core\Dense.cs" />
+    <Compile Include="Layers\Core\Dropout.cs" />
+    <Compile Include="Layers\Recurrent\GRU.cs" />
+    <Compile Include="Layers\Recurrent\LSTM.cs" />
     <Compile Include="Losses\Base\ILoss.cs" />
     <Compile Include="Losses\BinaryCrossEntropy.cs" />
     <Compile Include="Losses\CategoricalCrossEntropy.cs" />
@@ -146,7 +152,7 @@
     <Compile Include="Optimizers\Base\Optimizer.cs" />
     <Compile Include="Optimizers\Nadam.cs" />
     <Compile Include="Optimizers\RootMeanSquareProp.cs" />
-    <Compile Include="Optimizers\StochasticGradientDescent.cs" />
+    <Compile Include="Optimizers\SGD.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Regularizers\Base\IWeightRegularizer.cs" />
     <Compile Include="Regularizers\L1L2Regularizer.cs" />

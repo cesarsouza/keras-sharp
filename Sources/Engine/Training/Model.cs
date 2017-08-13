@@ -154,6 +154,24 @@ namespace KerasSharp.Models
             Compile(optimizer, new Dictionary<string, ILoss>() { { "output", loss } }, metrics);
         }
 
+        public void Compile(string optimizer, string loss, string[] metrics = null)
+        {
+            // TODO: Translate strings into actual classes and instantiate them
+            throw new NotImplementedException();
+        }
+
+        public void Compile(IOptimizer optimizer, string loss, string[] metrics = null)
+        {
+            // TODO: Translate strings into actual classes and instantiate them
+            throw new NotImplementedException();
+        }
+
+        public void Compile(string optimizer, string loss, object[] metrics)
+        {
+            // TODO: Translate strings into actual classes and instantiate them
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         ///   Configures the model for training.
         /// </summary>
@@ -1010,6 +1028,24 @@ namespace KerasSharp.Models
             return deduped_out_labels;
         }
 
+        public History fit(Array x = null,
+                       Array y = null,
+                       int batch_size = 32,
+                       int epochs = 1,
+                       int verbose = 1,
+                       CallbackList callbacks = null,
+                       double validation_split = 0.0,
+                       object[] validation_data = null,
+                       bool shuffle = true,
+                       Dictionary<int, double> class_weight = null,
+                       List<double> sample_weight = null,
+                       int initial_epoch = 0,
+                       object kwargs = null)
+        {
+            // TODO: Adapt arguments to the fit method below
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         ///   Trains the model for a fixed number of epochs (iterations on a dataset).
         /// </summary>
@@ -1042,18 +1078,18 @@ namespace KerasSharp.Models
         /// </returns>
         /// 
         public History fit(Array[] x = null,
-                        Array[] y = null,
-                        int batch_size = 32,
-                        int epochs = 1,
-                        int verbose = 1,
-                        CallbackList callbacks = null,
-                        double validation_split = 0.0,
-                        List<object> validation_data = null,
-                        string shuffle = "true",
-                        Dictionary<int, double> class_weight = null,
-                        List<double> sample_weight = null,
-                        int initial_epoch = 0,
-                        object kwargs = null)
+                    Array[] y = null,
+                    int batch_size = 32,
+                    int epochs = 1,
+                    int verbose = 1,
+                    CallbackList callbacks = null,
+                    double validation_split = 0.0,
+                    List<object> validation_data = null,
+                    string shuffle = "true",
+                    Dictionary<int, double> class_weight = null,
+                    List<double> sample_weight = null,
+                    int initial_epoch = 0,
+                    object kwargs = null)
         {
             // Validate user data.
             var (xx, yy, sample_weightsx) = this._standardize_user_data(
@@ -1192,6 +1228,32 @@ namespace KerasSharp.Models
         private ValueTuple<List<Tensor>, List<Tensor>, List<Tensor>> _standardize_user_data(List<Array> val_x, List<Array> val_y, List<double> sample_weight, bool check_batch_axis, int batch_size)
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        ///   Returns the loss value & metrics values for the model in test mode.
+        /// </summary>
+        /// <remarks>
+        ///   Computation is done in batches.
+        /// </remarks>
+        /// <param name="x">The Numpy array of test data, or list of Numpy arrays if the model has multiple inputs.
+        ///   If all inputs in the model are named, you can also pass a dictionary mapping input names to Numpy arrays.</param>
+        /// <param name="y">The Numpy array of target data, or list of Numpy arrays if the model has multiple outputs. 
+        ///   If all outputs in the model are named, you can also pass a dictionary mapping output names to Numpy arrays.</param>
+        /// <param name="batch_size">The number of samples per gradient update.</param>
+        /// <param name="verbose">The verbosity mode, 0 or 1.</param>
+        /// <param name="sample_weights">The array of weights to weight the contribution of different samples to 
+        ///   the loss and metrics.</param>
+        ///   
+        /// <returns>
+        ///   Scalar test loss (if the model has a single output and no metrics) or list of scalars (if the model has 
+        ///   multiple outputs and/or metrics). The attribute `model.metrics_names` will give you the display labels for 
+        ///   the scalar outputs.
+        /// </returns>
+        /// 
+        public Tensor evaluate(Array x, Array y, int batch_size = 32, int verbose = 1, List<double> sample_weight = null)
+        {
+            return evaluate(new[] { x }, new[] { y }, batch_size, verbose, sample_weight)[0];
         }
 
         /// <summary>

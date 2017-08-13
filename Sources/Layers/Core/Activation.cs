@@ -48,6 +48,7 @@ namespace KerasSharp
     public class Activation : Layer
     {
         private IActivationFunction activation;
+        private string v;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Activation"/> class.
@@ -59,6 +60,11 @@ namespace KerasSharp
         {
             this.supports_masking = true;
             this.activation = activation;
+        }
+
+        public Activation(string v)
+        {
+            this.v = v;
         }
 
         protected override List<Tensor> InnerCall(List<Tensor> inputs, List<Tensor> mask = null, bool? training = null)
