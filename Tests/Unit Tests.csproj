@@ -59,6 +59,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SequentialTest.cs" />
     <Compile Include="TensorFlowBackendTest.cs" />
     <Compile Include="DenseTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

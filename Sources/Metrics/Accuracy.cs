@@ -24,24 +24,17 @@
 //    SOFTWARE.
 //
 
-namespace KerasSharp.Optimizers
+namespace KerasSharp.Metrics
 {
-    using KerasSharp.Constraints;
-    using KerasSharp.Models;
-    using System;
+    using KerasSharp.Engine.Topology;
     using System.Collections.Generic;
-    using System.Runtime.Serialization;
     using TensorFlow;
 
-    using static KerasSharp.Backends.Current;
-    using KerasSharp.Engine.Topology;
-
-    [DataContract]
-    public class RootMeanSquareProp : OptimizerBase, IOptimizer
+    public class Accuracy : IMetric
     {
-        public List<List<Tensor>> get_updates(List<Tensor> collected_trainable_weights, Dictionary<Tensor, IWeightConstraint> constraints, Tensor total_loss)
+        public List<Tensor> Call(Tensor expected, Tensor actual, Tensor mask = null)
         {
-            throw new NotImplementedException();
+            throw new System.NotImplementedException();
         }
     }
 }

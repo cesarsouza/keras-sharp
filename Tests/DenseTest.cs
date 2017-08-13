@@ -12,14 +12,16 @@ using TensorFlow;
 
 namespace Tests
 {
+    /// <summary>
+    ///   Test for examples in https://keras.io/layers/core/#dense
+    /// </summary>
+    /// 
     [TestFixture]
     public class DenseTest
     {
         [Test]
         public void dense_example_1()
         {
-            // First example from https://keras.io/layers/core/#dense
-
             #region doc_dense_example_1
             // as first layer in a sequential model:
             var model = new Sequential();
@@ -37,27 +39,6 @@ namespace Tests
             Assert.AreEqual(new int?[] { null, 16 }, model.layers[0].input_shape[0]);
             Assert.AreEqual("dense_2", model.layers[1].name);
             Assert.AreEqual(new int?[] { null, 32 }, model.layers[1].input_shape[0]);
-        }
-
-        [Test]
-        public void compile_test()
-        {
-            #region doc_dense_example_1
-            // as first layer in a sequential model:
-            var model = new Sequential();
-            model.Add(new Dense(32, input_shape: new int?[] { 16 }));
-            model.Add(new Dense(32));
-
-            model.Compile(new StochasticGradientDescent(), new BinaryCrossEntropy());
-
-            #endregion
-
-            Assert.AreEqual(0, model.trainable_weights);
-        }
-
-        [SetUp]
-        protected void SetUp()
-        {
         }
 
         [TearDown]
