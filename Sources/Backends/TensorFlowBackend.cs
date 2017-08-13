@@ -42,35 +42,102 @@ namespace KerasSharp.Backends
     public class TensorFlowBackend : IBackend
     {
         TFGraph tf;
-        TFSession s;
 
-        private Dictionary<string, int> _UID_PREFIXES = new Dictionary<string, int>();
+
+        // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L25
+
+        // This is the default internal TF session used by Keras.
+        // It can be set manually via `set_session(sess)`.
+        private TFSession _SESSION;
+
+        // This dictionary holds a mapping {graph: learning_phase}.
+        // A learning phase is a bool tensor used to run Keras models in
+        // either train mode (learning_phase == 1) or test mode (learning_phase == 0).
+        private Dictionary<TFGraph, TFOutput> _GRAPH_LEARNING_PHASES = new Dictionary<TFGraph, TFOutput>();
+
+        // This dictionary holds a mapping {graph: UID_DICT}.
+        // each UID_DICT is a dictionary mapping name prefixes to a current index,
+        // used for generatic graph-specific string UIDs
+        // for various names (e.g. layer names).
+        private Dictionary<TFGraph, Dictionary<string, int>> _GRAPH_UID_DICTS = new Dictionary<TFGraph, Dictionary<string, int>>();
+
+        // This boolean flag can be set to True to leave variable initialization
+        // up to the user.
+        // Change its value via `manual_variable_initialization(value)`.
+        bool _MANUAL_VAR_INIT = false;
+
 
         public TensorFlowBackend()
         {
             this.tf = new TFGraph();
-            this.s = new TFSession(tf);
+            this._SESSION = new TFSession(tf);
         }
+
+        /// <summary>
+        ///   Get the uid for the default graph.
+        /// </summary>
+        /// 
+        /// <param name="prefix">An optional prefix of the graph.</param>
+        /// 
+        /// <returns>A unique identifier for the graph.</returns>
+        /// 
+        public int get_uid(string prefix)
+        {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L58
+            var graph = tf;
+            if (!_GRAPH_UID_DICTS.ContainsKey(graph))
+                _GRAPH_UID_DICTS[graph] = new Dictionary<string, int>();
+            if (!_GRAPH_UID_DICTS[graph].ContainsKey(prefix))
+                _GRAPH_UID_DICTS[graph][prefix] = 0;
+            _GRAPH_UID_DICTS[graph][prefix] += 1;
+            return _GRAPH_UID_DICTS[graph][prefix];
+        }
+
+        /// <summary>
+        ///   Reset graph identifiers.
+        /// </summary>
+        /// 
+        public void reset_uids()
+        {
+            _GRAPH_UID_DICTS = new Dictionary<TFGraph, Dictionary<string, int>>();
+        }
+
+        /// <summary>
+        ///   Destroys the current TF graph and creates a new one.
+        ///   Useful to avoid clutter from old models / layers.
+        /// </summary>
+        /// 
+        public void clear_session()
+        {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L71
+            // tf.reset_default_graph();
+            tf = new TFGraph();
+            _SESSION = new TFSession(tf);
+            //
+            reset_uids();
+            TFOutput phase = tf.Placeholder(dtype: TFDataType.Bool, operName: "keras_learning_phase");
+            _GRAPH_LEARNING_PHASES = new Dictionary<TFGraph, TFOutput>();
+            _GRAPH_LEARNING_PHASES[tf] = phase;
+        }
+
+
+
+
+
+
+
+
+
 
         public Tensor abs(Tensor input)
         {
             throw new NotImplementedException();
         }
 
-        public Tensor add(Tensor desired, Tensor v)
-        {
-            throw new NotImplementedException();
-        }
 
-        public Tensor add(double v, Tensor tensor)
-        {
-            throw new NotImplementedException();
-        }
 
-        public Tensor add(object v1, double v2)
-        {
-            throw new NotImplementedException();
-        }
+
+
 
         public Tensor add(Tensor tensor)
         {
@@ -132,23 +199,17 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor constant<T>(T value, int?[] shape, TFDataType dtype = Utils.DEFAULT_DTYPE, string name = null)
+        public Tensor constant<T>(T value, int?[] shape = null, TFDataType? dtype = null, string name = null)
         {
-            return new Tensor(tf, s)
-            {
-                output = tf.Const(new TFTensor((dynamic)value), dtype: dtype, operName: name)
-            };
+            TFTensor t = new TFTensor((dynamic)value);
+
+            TFOutput o = dtype == null ?
+                tf.Const(t, operName: name) :
+                tf.Const(t, dtype: dtype.Value, operName: name);
+
+            return new Tensor(this) { output = o };
         }
 
-        public Tensor const_(int v)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Tensor const_(double v)
-        {
-            throw new NotImplementedException();
-        }
 
         public Tensor div(Tensor e, Tensor s)
         {
@@ -236,13 +297,7 @@ namespace KerasSharp.Backends
         }
 
 
-        public int get_uid(string prefix)
-        {
-            if (!_UID_PREFIXES.ContainsKey(prefix))
-                _UID_PREFIXES[prefix] = 0;
 
-            return _UID_PREFIXES[prefix]++;
-        }
 
         public object get_variable_shape(Tensor p)
         {
@@ -351,40 +406,44 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor mul(double scale, Tensor tensor)
+        public Tensor mul<T>(T a, Tensor b)
         {
-            throw new NotImplementedException();
+            return mul(constant(a), b);
         }
 
-        public Tensor mul(Tensor w, Tensor tensor)
+        public Tensor mul(Tensor a, Tensor b)
         {
-            throw new NotImplementedException();
+            return new Tensor(this) { output = tf.Mul(a.output, b.output) };
         }
 
-        public Tensor mul(double rate, Tensor tensor1, Tensor tensor2)
+        public Tensor mul<T>(Tensor a, T b)
         {
-            throw new NotImplementedException();
+            return mul(a, constant(b));
         }
 
-        public Tensor mul(double rate, double v, Tensor tensor)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Tensor mul(Tensor momentum, object v)
-        {
-            throw new NotImplementedException();
-        }
-
-        public double mul(Tensor batch_out, int length)
-        {
-            throw new NotImplementedException();
-        }
 
         public Tensor mul(List<Tensor> batch_outs, int length)
         {
             throw new NotImplementedException();
         }
+
+
+        public Tensor add(Tensor a, Tensor b)
+        {
+            return new Tensor(this) { output = tf.Add(a.output, b.output) };
+        }
+
+        public Tensor add<T>(T a, Tensor b)
+        {
+            return mul(constant(a), b);
+        }
+
+        public Tensor add<T>(Tensor a, T b)
+        {
+            return mul(a, constant(b));
+        }
+
+
 
         public IDisposable name_scope(string name)
         {
@@ -422,7 +481,7 @@ namespace KerasSharp.Backends
 
             var tfshape = this.shape(shape);
 
-            Tensor x = new Tensor(tf, s);
+            Tensor x = new Tensor(this);
             x.output = tf.Placeholder(dtype.Value, tfshape, operName: name);
             x._keras_shape = shape;
             x._uses_learning_phase = false;
@@ -458,7 +517,7 @@ namespace KerasSharp.Backends
             var tf_shape = tf.Const(shape.Apply(x => (long)x));
             TFOutput u = tf.RandomUniform(tf_shape, dtype: dtype, seed: seed, operName: name);
 
-            var t = new Tensor(tf, s);
+            var t = new Tensor(this);
             t.output = tf.Add(tf.Mul(u, tf.Const(new TFTensor(maxval - minval), dtype: dtype)),
                                         tf.Const(new TFTensor(minval), dtype: dtype));
             return t;
@@ -577,7 +636,7 @@ namespace KerasSharp.Backends
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L308
 
-            Tensor t = new Tensor(tf, s);
+            Tensor t = new Tensor(this);
             // trick for being type safe and still allow all numeric types supported by TFTensor 
             t.output = tf.Const(new TFTensor((dynamic)value), operName: name);
             t._keras_shape = new int?[] { };
@@ -597,7 +656,7 @@ namespace KerasSharp.Backends
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L308
 
-            Tensor t = new Tensor(tf, s);
+            Tensor t = new Tensor(this);
             t.output = tf.Const(new TFTensor(array), operName: name);
             t._keras_shape = array.GetLength().Apply(x => (int?)x);
             t._uses_learning_phase = false;
@@ -616,7 +675,7 @@ namespace KerasSharp.Backends
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L308
 
-            Tensor t = new Tensor(tf, s);
+            Tensor t = new Tensor(this);
             if (tensor.tensor == null)
                 t.output = tensor.output;
             else
@@ -628,7 +687,12 @@ namespace KerasSharp.Backends
 
         public object eval(Tensor tensor)
         {
-            return tensor.eval();
+            TFTensor[] result = _SESSION.Run(new TFOutput[] { }, new TFTensor[] { }, new[] { tensor.output });
+
+            if (result.Length == 1)
+                return result[0].GetValue();
+
+            return result.Apply(x => x.GetValue());
         }
 
 
@@ -668,7 +732,6 @@ namespace KerasSharp.Backends
 
 
 
-
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
@@ -681,8 +744,8 @@ namespace KerasSharp.Backends
                     // TODO: dispose managed state (managed objects).
                     if (tf != null)
                         tf.Dispose();
-                    if (s != null)
-                        s.Dispose();
+                    if (_SESSION != null)
+                        _SESSION.Dispose();
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
@@ -690,7 +753,7 @@ namespace KerasSharp.Backends
 
                 disposedValue = true;
                 tf = null;
-                s = null;
+                _SESSION = null;
             }
         }
 

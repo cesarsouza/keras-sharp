@@ -349,7 +349,7 @@ namespace KerasSharp.Models
                 {
                     if (this.losses.Count == 0)
                         throw new Exception($"The model cannot be compiled because it has no loss to optimize.");
-                    else total_loss = K.const_(0.0);
+                    else total_loss = K.constant(0.0);
                 }
 
                 // Add regularization penalties
@@ -869,7 +869,7 @@ namespace KerasSharp.Models
                 if (batch_index == 0)
                 {
                     foreach (Tensor batch_out in batch_outs)
-                        outs.Add(K.const_(0.0));
+                        outs.Add(K.constant(0.0));
 
                     for (int i = 0; i < batch_outs.Count; i++)
                     {
@@ -880,7 +880,7 @@ namespace KerasSharp.Models
                 else
                 {
                     if (batch_index == 0)
-                        outs.Add(K.const_(0.0));
+                        outs.Add(K.constant(0.0));
                     outs[0] = K.add(outs[0], K.mul(batch_outs, batch_ids.Length));
                 }
 

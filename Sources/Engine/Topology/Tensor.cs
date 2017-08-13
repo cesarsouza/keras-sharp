@@ -27,6 +27,7 @@
 namespace KerasSharp.Engine.Topology
 {
     using Accord.Math;
+    using KerasSharp.Backends;
     using KerasSharp.Layers;
     using System;
     using System.Collections.Generic;
@@ -39,8 +40,7 @@ namespace KerasSharp.Engine.Topology
     [DataContract]
     public class Tensor
     {
-        public TFGraph graph;
-        public TFSession session;
+        public IBackend K;
         public TFTensor tensor;
         public TFOutput output;
         public int?[] _keras_shape;
@@ -60,10 +60,9 @@ namespace KerasSharp.Engine.Topology
             }
         }
 
-        public Tensor(TFGraph g, TFSession s)
+        public Tensor(IBackend backend)
         {
-            this.graph = g;
-            this.session = s;
+            this.K = backend;
         }
 
         public static IEnumerable<Tensor> Zero { get; internal set; }
@@ -83,12 +82,30 @@ namespace KerasSharp.Engine.Topology
 
         public object eval()
         {
-            TFTensor[] result = session.Run(new TFOutput[] { }, new TFTensor[] { }, new[] { output });
+            return K.eval(this);
+        }
 
-            if (result.Length == 1)
-                return result[0].GetValue();
 
-            return result.Apply(x => x.GetValue());
+        // TODO: Generate these operators automatically
+
+        public static Tensor operator *(double a, Tensor b)
+        {
+            return b.K.mul(a, b);
+        }
+
+        public static Tensor operator *(Tensor a, Tensor b)
+        {
+            return b.K.mul(a, b);
+        }
+
+        public static Tensor operator +(double a, Tensor b)
+        {
+            return b.K.add(a, b);
+        }
+
+        public static Tensor operator +(Tensor a, Tensor b)
+        {
+            return b.K.add(a, b);
         }
     }
 

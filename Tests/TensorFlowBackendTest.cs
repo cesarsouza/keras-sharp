@@ -3,6 +3,7 @@ using Accord.Statistics;
 using Accord.Statistics.Distributions.Univariate;
 using KerasSharp;
 using KerasSharp.Backends;
+using KerasSharp.Engine.Topology;
 using KerasSharp.Losses;
 using KerasSharp.Models;
 using KerasSharp.Optimizers;
@@ -139,6 +140,30 @@ namespace Tests
 
                 Assert.AreEqual(expected, actual);
             }
+        }
+
+        [Test]
+        public void elementwise_multiplication()
+        {
+            using (var K = new TensorFlowBackend())
+            {
+                #region doc_mul
+                double[,] a = Matrix.Magic(5);
+                double[,] b = Matrix.Identity(5);
+                Tensor tb = K.constant(b);
+                var kvar = K.mul(a, tb);
+                #endregion
+
+                double[,] actual = (double[,])kvar.eval();
+                double[,] expected = Elementwise.Multiply(a, b);
+
+                AreEqual(actual, expected);
+            }
+        }
+
+        private static void AreEqual(double[,] actual, double[,] expected)
+        {
+            Assert.IsTrue(expected.IsEqual(actual, 1e-10));
         }
     }
 }

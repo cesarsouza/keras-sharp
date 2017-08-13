@@ -166,7 +166,7 @@ namespace KerasSharp.Engine.Topology
                 // In this case we will later create an input layer
                 // to insert before the current layer
                 if (input_shape != null)
-                    batch_input_shape = new[] { batch_size } .Concatenate(input_shape);
+                    batch_input_shape = new[] { batch_size }.Concatenate(input_shape);
                 this.batch_input_shape = batch_input_shape;
             }
 
@@ -181,26 +181,26 @@ namespace KerasSharp.Engine.Topology
                 this._initial_weights = non_trainable_weights;
         }
 
-		private static string _to_snake_case(string s)
-		{
-			var re = "(.)([A-Z][a-z0-9]+)";
-			var intermediate = System.Text.RegularExpressions.Regex.Replace(s, re, "$1_$2");
+        private static string _to_snake_case(string s)
+        {
+            var re = "(.)([A-Z][a-z0-9]+)";
+            var intermediate = System.Text.RegularExpressions.Regex.Replace(s, re, "$1_$2");
 
-			var insecurePattern = "([a-z])([A-Z])";
-			var insecure = System.Text.RegularExpressions.Regex.Replace(intermediate, insecurePattern, "$1_$2").ToLower();
-			/*
+            var insecurePattern = "([a-z])([A-Z])";
+            var insecure = System.Text.RegularExpressions.Regex.Replace(intermediate, insecurePattern, "$1_$2").ToLower();
+            /*
 			 In Python, a class starting with "_" is insecure for creating scopes. 
 			 While this is not a concern in C#, it's implemented here for compatibility with Keras naming.
 			*/
-			if (insecure.StartsWith("_", StringComparison.InvariantCulture))
-			{
-				return "private" + insecure;
-			}
-			else
-			{
-				return insecure;
-			}
-		}
+            if (insecure.StartsWith("_", StringComparison.InvariantCulture))
+            {
+                return "private" + insecure;
+            }
+            else
+            {
+                return insecure;
+            }
+        }
 
         public virtual List<List<List<Tensor>>> losses
         {
@@ -357,10 +357,14 @@ namespace KerasSharp.Engine.Topology
                             int axis = pair.Key;
                             int? value = pair.Value;
 
-                            if (value != null && x_shape[axis] != null)
+                            if (value != null)
                             {
-                                throw new Exception($"Input {input_index} is incompatible with layer {this.name}: expected " +
-                                    $"axis {axis} of input shape to have value {value} but got shape {x_shape}.");
+                                int? v = x_shape.Get(axis);
+                                if (v != value && v != null)
+                                {
+                                    throw new Exception($"Input {input_index} is incompatible with layer {this.name}: expected " +
+                                        $"axis {axis} of input shape to have value {value} but got shape {x_shape}.");
+                                }
                             }
                         }
                     }
@@ -468,8 +472,9 @@ namespace KerasSharp.Engine.Topology
                 this.assert_input_compatibility(inputs);
 
                 // Handle mask propagation.
-                List<Tensor> previous_mask = null;//_collect_previous_mask(inputs);
-                                                  //var user_kwargs = copy.copy(kwargs);
+                List<Tensor> previous_mask = Container._collect_previous_mask(inputs);
+                //var user_kwargs = copy.copy(kwargs);
+
                 List<Tensor> nextMask = null;
                 if (previous_mask.Any((Tensor x) => x != null))
                 {
@@ -481,6 +486,9 @@ namespace KerasSharp.Engine.Topology
                         nextMask = previous_mask;
                     }
                 }
+
+                // Handle automatic shape inference (only useful for Theano).
+                List<int?[]> input_shape = Container._collect_input_shape(inputs);
 
                 // Actually call the layer, collecting output(s), mask(s), and shape(s).
                 List<Tensor> output = this.InnerCall(inputs, nextMask, training);
@@ -498,8 +506,23 @@ namespace KerasSharp.Engine.Topology
                     else output_ls_copy.Add(x);
                 }
 
-                List<int?[]> input_shape = null;
-                List<int?[]> output_shape = null;
+                List<int?[]> output_shape;
+
+                // Infering the output shape is only relevant for Theano.
+                if (input_shape.All(s => s != null))
+                {
+                    output_shape = this.compute_output_shape(input_shape);
+                }
+                else
+                {
+                    output_shape = input_shape.Select(x => (int?[])null).ToList();
+                }
+
+                //if (output_ls.Count > 1)
+                //{
+                //    // Augment the mask to match the length of the output.
+                //    output_mask = output_ls.Select(x => output_mask).ToList();
+                //}
 
                 // Add an inbound node to the layer, so that it keeps track
                 // of the call and of all new variables created during the call.
@@ -536,7 +559,8 @@ namespace KerasSharp.Engine.Topology
         {
             if (inputs.Count != 1)
                 throw new InvalidCastException();
-            return new List<Tensor>() { InnerCall(inputs[0], mask[0], training) };
+
+            return new List<Tensor>() { InnerCall(inputs[0], mask?[0], training) };
         }
 
         /// <summary>
@@ -1114,7 +1138,7 @@ namespace KerasSharp.Engine.Topology
 
         private string str(List<int?[]> obj)
         {
-            throw new NotImplementedException();
+            return Matrix.ToString(obj.ToArray());
         }
 
     }

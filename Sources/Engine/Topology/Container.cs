@@ -485,7 +485,7 @@ namespace KerasSharp.Engine.Topology
             throw new Exception("No such layer: " + name);
         }
 
-        private string id(Tensor x)
+        private static string id(Tensor x)
         {
             throw new NotImplementedException();
         }
@@ -1146,7 +1146,7 @@ namespace KerasSharp.Engine.Topology
 
 
 
-        public string _object_list_uid(List<Tensor> object_list)
+        public static string _object_list_uid(List<Tensor> object_list)
         {
             return string.Join(", ", object_list.Select(x => id(x)));
         }
@@ -1162,7 +1162,7 @@ namespace KerasSharp.Engine.Topology
         ///
         /// <returns>A mask tensor or list of mask tensors.</returns>
         ///
-        public List<Tensor> _collect_previous_mask(List<Tensor> input_tensors)
+        public static List<Tensor> _collect_previous_mask(List<Tensor> input_tensors)
         {
             var masks = new List<Tensor>();
 
@@ -1191,7 +1191,7 @@ namespace KerasSharp.Engine.Topology
         /// 
         /// <returns>List of shape tuples(or single tuple), one tuple per input.</returns>
         /// 
-        public List<int?[]> _collect_input_shape(List<Tensor> input_tensors)
+        public static List<int?[]> _collect_input_shape(List<Tensor> input_tensors)
         {
             var shapes = new List<int?[]>();
 

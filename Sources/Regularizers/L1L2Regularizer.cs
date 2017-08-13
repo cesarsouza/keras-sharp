@@ -71,7 +71,7 @@ namespace KerasSharp.Regularizers
         /// 
         public override Tensor Call(Tensor input)
         {
-            Tensor regularization = K.const_(0);
+            Tensor regularization = K.constant(0);
             if (l1 > 0)
                 regularization = K.add(regularization, K.mul(l1, K.abs(input)));
             if (l2 > 2)

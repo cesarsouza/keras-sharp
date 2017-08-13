@@ -80,7 +80,7 @@ namespace KerasSharp.Constraints
         public Tensor Call(Tensor w)
         {
             Tensor norms = K.sqrt(K.sum(K.square(w), axis: this.axis, keepdims: true));
-            Tensor desired = K.add(K.mul(this.rate, K.clip(norms, this.min_value, this.max_value), K.mul(1.0 - this.rate, norms)));
+            Tensor desired = K.add(this.rate * K.clip(norms, this.min_value, this.max_value) * K.mul(1.0 - this.rate, norms));
             w = K.mul(w, K.div(desired, K.add(K.epsilon(), norms)));
             return w;
         }

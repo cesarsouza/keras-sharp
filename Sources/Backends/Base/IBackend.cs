@@ -53,7 +53,7 @@ namespace KerasSharp.Backends
         TFDataType floatx();
 
         Tensor greater_equal(Tensor w, double v);
-
+        void clear_session();
         Tensor cast(object v1, object v2);
 
         Tensor dropout(object p, double retain_prob, object noise_shape, object seed);
@@ -75,7 +75,23 @@ namespace KerasSharp.Backends
 
         Tensor hard_sigmoid(Tensor x);
 
-        Tensor mul(double scale, Tensor tensor);
+
+
+        Tensor mul<T>(T a, Tensor b);
+
+        Tensor mul<T>(Tensor a, T b);
+
+        Tensor mul(List<Tensor> batch_outs, int length);
+
+
+
+        Tensor add(Tensor a, Tensor b);
+
+        Tensor add<T>(Tensor a, T b);
+
+        Tensor add<T>(T a, Tensor b);
+
+
 
         Tensor elu(Tensor x, double alpha);
 
@@ -95,13 +111,13 @@ namespace KerasSharp.Backends
 
         object eval(Tensor tensor);
 
-        Tensor add(Tensor desired, Tensor v);
+        
 
         Tensor mul(Tensor w, Tensor tensor);
 
         Tensor clip(Tensor norms, double min_value, double max_value);
 
-        Tensor add(double v, Tensor tensor);
+        
 
         Tensor random_uniform(int?[] shape, double minvalue = 0.0, double maxvalue = 1.0, TFDataType dtype = Utils.DEFAULT_DTYPE, int? seed = null, string name = null);
 
@@ -112,8 +128,6 @@ namespace KerasSharp.Backends
         Tensor minus(Tensor tensor);
 
         Tensor mean(Tensor tensor, int axis);
-
-        Tensor const_(int v);
 
         Tensor abs(Tensor input);
 
@@ -131,7 +145,7 @@ namespace KerasSharp.Backends
 
         double subtract(double v, Tensor expected);
 
-        Tensor add(object v1, double v2);
+
 
         Tensor variable(Array array, string name = null);
 
@@ -143,7 +157,7 @@ namespace KerasSharp.Backends
 
         TFDataType? dtype(Tensor input_tensor);
 
-        Tensor constant<T>(T value, int?[] shape, TFDataType dtype = Utils.DEFAULT_DTYPE, string name = null);
+        Tensor constant<T>(T value, int?[] shape = null, TFDataType? dtype = null, string name = null);
 
         int get_uid(string prefix);
 
@@ -180,11 +194,7 @@ namespace KerasSharp.Backends
 
         Tensor placeholder(int ndim, string name);
 
-        Tensor mul(double rate, Tensor tensor1, Tensor tensor2);
-
         Tensor add(Tensor tensor);
-
-        Tensor mul(double rate, double v, Tensor tensor);
 
         object get_variable_shape(Tensor p);
 
@@ -198,25 +208,18 @@ namespace KerasSharp.Backends
 
         Tensor add(object total_loss, object v);
 
-        Tensor const_(double v);
-
         object learning_phase();
 
         Function function(object inputs, List<Tensor> list, Func<List<List<Tensor>>> updates, string name);
 
         Function function(object inputs, List<Tensor> list, List<List<Tensor>> updates, string name);
 
-        Tensor mul(Tensor momentum, object v);
 
         Function function<TSource>(List<Tensor> inputs, List<object> list, List<TSource> updates, string name);
 
         Function function(List<Tensor> inputs, List<object> list, Func<List<object>> updates, string name);
 
         Tensor update(object m, object v);
-
-        double mul(Tensor batch_out, int length);
-
-        Tensor mul(List<Tensor> batch_outs, int length);
 
         Tensor div(Tensor tensor, int samples);
 

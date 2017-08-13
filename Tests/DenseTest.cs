@@ -33,10 +33,10 @@ namespace Tests
             #endregion
 
             Assert.AreEqual(2, model.layers.Count);
-            Assert.AreEqual(0, model.layers[0].name);
-            Assert.AreEqual(0, model.layers[0].input_shape);
-            Assert.AreEqual(0, model.layers[1].name);
-            Assert.AreEqual(0, model.layers[1].input_shape);
+            Assert.AreEqual("dense_1", model.layers[0].name);
+            Assert.AreEqual(new int?[] { null, 16 }, model.layers[0].input_shape[0]);
+            Assert.AreEqual("dense_2", model.layers[1].name);
+            Assert.AreEqual(new int?[] { null, 32 }, model.layers[1].input_shape[0]);
         }
 
         [Test]
@@ -54,6 +54,16 @@ namespace Tests
 
             Assert.AreEqual(0, model.trainable_weights);
         }
-     
+
+        [SetUp]
+        protected void SetUp()
+        {
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            KerasSharp.Backends.Current.K.clear_session();
+        }
     }
 }

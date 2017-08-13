@@ -167,16 +167,20 @@ namespace KerasSharp
             return output;
         }
 
-        public int[] get_output_shape(int[] input_shape)
+        public override List<int?[]> compute_output_shape(List<int?[]> input_shapes)
         {
+            if (input_shapes.Count != 1)
+                throw new Exception("Expected a single input.");
+            int?[] input_shape = input_shapes[0];
+
             if (input_shape.Length < 2)
-                throw new Exception();
+                throw new Exception("Shape should contain at least a batch size and number of dimensions.");
             if (input_shape.Get(-1) <= 0)
                 throw new Exception();
 
-            int[] output_shape = input_shape.Copy();
-            output_shape.Set(-1, this.units);
-            return output_shape;
+            int?[] output_shape = input_shape.Copy();
+            output_shape.Set(index: -1, value: this.units);
+            return new[] { output_shape }.ToList();
         }
 
     }

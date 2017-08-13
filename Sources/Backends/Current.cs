@@ -32,11 +32,17 @@ namespace KerasSharp.Backends
     using System.Text;
     using System.Threading.Tasks;
     using KerasSharp.Engine.Topology;
+    using System.Threading;
 
     public static class Current
     {
 
-        public static IBackend K { get; set; } = new TensorFlowBackend();
+        private static ThreadLocal<IBackend> backend = new ThreadLocal<IBackend>(() => new TensorFlowBackend());
 
+        public static IBackend K
+        {
+            get { return backend.Value; }
+            set { backend.Value = value; }
+        }
     }
 }
