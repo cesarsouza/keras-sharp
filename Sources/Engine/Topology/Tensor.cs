@@ -93,7 +93,7 @@ namespace KerasSharp.Engine.Topology
         }
 
 
-        // TODO: Generate these operators automatically
+        // TODO: Generate these operators using T4 templates
 
         public static Tensor operator *(double a, Tensor b)
         {
@@ -103,6 +103,16 @@ namespace KerasSharp.Engine.Topology
         public static Tensor operator *(Tensor a, Tensor b)
         {
             return b.K.mul(a, b);
+        }
+
+        public static Tensor operator /(double a, Tensor b)
+        {
+            return b.K.div(a, b);
+        }
+
+        public static Tensor operator /(Tensor a, Tensor b)
+        {
+            return b.K.div(a, b);
         }
 
         public static Tensor operator +(double a, Tensor b)

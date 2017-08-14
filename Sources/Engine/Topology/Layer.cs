@@ -39,6 +39,7 @@ namespace KerasSharp.Engine.Topology
     using TensorFlow;
 
     using static KerasSharp.Backends.Current;
+    using static KerasSharp.Python;
 
 
 
@@ -61,7 +62,7 @@ namespace KerasSharp.Engine.Topology
         private bool _built;
 
         public bool supports_masking;
-        protected bool trainable;
+        public virtual bool trainable { get; set; }
         public string name;
         public virtual bool uses_learning_phase { get; set; }
         public IWeightRegularizer activity_regularizer;
@@ -74,6 +75,8 @@ namespace KerasSharp.Engine.Topology
 
 
         public TFDataType dtype;
+        internal IEnumerable<Layer> _flattened_layers;
+
         public virtual bool stateful { get; set; }
 
 
@@ -1062,7 +1065,7 @@ namespace KerasSharp.Engine.Topology
             throw new NotImplementedException();
         }
 
-        public List<Tensor> get_updates_for(List<Tensor> inputs)
+        public virtual List<Tensor> get_updates_for(List<Tensor> inputs)
         {
             string inputs_hash;
             if (inputs != null)
@@ -1075,7 +1078,7 @@ namespace KerasSharp.Engine.Topology
         }
 
 
-        public List<List<Tensor>> get_losses_for(List<Tensor> inputs)
+        public virtual List<List<Tensor>> get_losses_for(List<Tensor> inputs)
         {
             string inputs_hash;
             if (inputs != null)
@@ -1094,7 +1097,7 @@ namespace KerasSharp.Engine.Topology
         ///   Weights values as a list of numpy arrays.
         /// </returns>
         /// 
-        public List<Tensor> weights
+        public virtual List<Tensor> weights
         {
             get { return this.trainable_weights.Concat(this.non_trainable_weights).ToList(); }
         }
@@ -1103,14 +1106,14 @@ namespace KerasSharp.Engine.Topology
         ///   Sets the weights of the layer, from .NET arrays.
         /// </summary>
         /// 
-        /// <param name="weights">
+        /// <param name="value">
         ///   A list of Numpy arrays. The number of arrays and their shape must match the number of the dimensions of the weights of the layer (i.e.it should match the output of `get_weights`).
         /// </param>
         /// 
-        public virtual void set_weights(List<Array> weights)
+        public virtual void set_weights(List<Array> value)
         {
-            if (this.weights.Count != weights.Count)
-                throw new Exception($"You called `set_weights(weights)` on layer {this.name} with a  weight list of length {weights.Count}, but the layer was expecting {this.weights.Count} weights. Provided weights: { weights }");
+            if (this.weights.Count != value.Count)
+                throw new Exception($"You called `set_weights(weights)` on layer {this.name} with a  weight list of length {value.Count}, but the layer was expecting {this.weights.Count} weights. Provided weights: { value }");
 
             if (this.weights.Count == 0)
                 return;
@@ -1123,19 +1126,13 @@ namespace KerasSharp.Engine.Topology
             {
                 Array pv = param_values[i];
                 Tensor p = this.weights[i];
-                Array w = weights[i];
+                Array w = value[i];
                 if (pv.GetLength().IsEqual(w.GetLength()))
                     throw new Exception($"Layer weight shape {pv.GetLength()} not compatible with provided weight shape {w.GetLength()}");
                 weight_value_tuples.Add(Tuple.Create(p, w));
             }
 
             K.batch_set_value(weight_value_tuples);
-        }
-
-
-        private string str(List<int?[]> obj)
-        {
-            return Matrix.ToString(obj.ToArray());
         }
 
     }

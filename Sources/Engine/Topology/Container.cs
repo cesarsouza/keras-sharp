@@ -38,7 +38,9 @@ namespace KerasSharp.Engine.Topology
     using TensorFlow;
 
     using static KerasSharp.Backends.Current;
+    using static KerasSharp.Python;
     using Accord.Math;
+    using KerasSharp.Regularizers;
 
     /// <summary>
     ///   A Container is a directed acyclic graph of layers.
@@ -88,6 +90,8 @@ namespace KerasSharp.Engine.Topology
 
         public Container(List<Tensor> inputs, List<Tensor> outputs, string name = null)
         {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/topology.py#L1478
+
             // Handle `name` argument.
             if (name == null)
             {
@@ -167,8 +171,8 @@ namespace KerasSharp.Engine.Topology
                 masks.Add(mask);
             }
 
-            string mask_cache_key = String.Join(",", this.inputs.Select(x => id(x)));
-            mask_cache_key += "_" + String.Join(",", this.masks.Select(x => id(x)));
+            string mask_cache_key = String.Join(",", this.inputs.Select(x => str(id(x))));
+            mask_cache_key += "_" + String.Join(",", masks.Select(x => str(id(x))));
 
             masks = new List<Tensor>();
             foreach (Tensor x in this.outputs)
@@ -208,7 +212,7 @@ namespace KerasSharp.Engine.Topology
 
                 // Check that layer is an InputLayer.
                 if (!(layer is InputLayer))
-                    throw new Exception($"Input layers to a `Model` must be `InputLayer` objects. Received inputs: {inputs}. Input {i} (0-based) originates from layer type `{layer}`.");
+                    throw new Exception($"Input layers to a 'Model' must be 'InputLayer' objects. Received inputs: {inputs}. Input {i} (0-based) originates from layer type '{layer}'.");
 
                 this.input_names.Add(layer.name);
 
@@ -485,11 +489,6 @@ namespace KerasSharp.Engine.Topology
             throw new Exception("No such layer: " + name);
         }
 
-        private static string id(Tensor x)
-        {
-            throw new NotImplementedException();
-        }
-
         /// <summary>
         ///   Returns the `updates` from all layers that are stateful.
         /// </summary>
@@ -619,7 +618,7 @@ namespace KerasSharp.Engine.Topology
         /// 
         /// <returns>A list of update ops.</returns>
         /// 
-        public List<List<Tensor>> state_updates()
+        public virtual List<List<Tensor>> state_updates()
         {
             var state_updates = new List<List<Tensor>>(); ;
             foreach (Layer layer in this.layers)
@@ -631,6 +630,11 @@ namespace KerasSharp.Engine.Topology
             return state_updates;
         }
 
+
+        public virtual Dictionary<Tensor, IWeightRegularizer> regularizers
+        {
+            get; set;
+        }
 
         public override Dictionary<Tensor, IWeightConstraint> constraints
         {
@@ -776,8 +780,8 @@ namespace KerasSharp.Engine.Topology
             if (mask == null)
                 masks = inputs.Select(x => (Tensor)x).ToList();
 
-            string cache_key = String.Join(",", inputs.Select(x => id(x)));
-            cache_key += '_' + String.Join(",", masks.Select(x => id(x)));
+            string cache_key = String.Join(",", inputs.Select(x => str(id(x))));
+            cache_key += '_' + String.Join(",", masks.Select(x => str(id(x))));
 
             if (this._output_tensor_cache.ContainsKey(cache_key))
                 return this._output_tensor_cache[cache_key];
@@ -791,8 +795,8 @@ namespace KerasSharp.Engine.Topology
             if (mask == null)
                 masks = inputs.Select(x => (Tensor)x).ToList();
 
-            string cache_key = String.Join(",", inputs.Select(x => id(x)));
-            cache_key += '_' + String.Join(",", masks.Select(x => id(x)));
+            string cache_key = String.Join(",", inputs.Select(x => str(id(x))));
+            cache_key += '_' + String.Join(",", masks.Select(x => str(id(x))));
 
             if (this._output_mask_cache.ContainsKey(cache_key))
                 return this._output_mask_cache[cache_key];
@@ -896,16 +900,6 @@ namespace KerasSharp.Engine.Topology
             }
         }
 
-        private string str(int?[] x)
-        {
-            throw new NotImplementedException();
-        }
-
-        private string str(int? x)
-        {
-            throw new NotImplementedException();
-        }
-
         /// <summary>
         ///   Computes output tensors for new inputs.
         /// </summary>
@@ -930,7 +924,7 @@ namespace KerasSharp.Engine.Topology
             // we assume a 1:1 mapping from tensor to mask
             // TODO: raise exception when a '.compute_mask()' call
             // does not return a list the same size as 'call'
-            var tensor_map = new Dictionary<string, (Tensor, Tensor)>();
+            var tensor_map = new Dictionary<long, (Tensor, Tensor)>();
 
             for (int i = 0; i < this.inputs.Count; i++)
             {
@@ -1068,8 +1062,8 @@ namespace KerasSharp.Engine.Topology
 
                 // Update cache;
                 // keys are based on ids on input tensors and inputs masks.
-                string cache_key = String.Join(",", inputs.Select(x => id(x)));
-                cache_key += "_" + String.Join(",", masks.Select(x => id(x)));
+                string cache_key = String.Join(",", inputs.Select(x => str(id(x))));
+                cache_key += "_" + String.Join(",", masks.Select(x => str(id(x))));
 
                 this._output_tensor_cache[cache_key] = output_tensors;
                 this._output_mask_cache[cache_key] = output_masks;
@@ -1148,7 +1142,7 @@ namespace KerasSharp.Engine.Topology
 
         public static string _object_list_uid(List<Tensor> object_list)
         {
-            return string.Join(", ", object_list.Select(x => id(x)));
+            return string.Join(", ", object_list.Select(x => str(id(x))));
         }
 
 

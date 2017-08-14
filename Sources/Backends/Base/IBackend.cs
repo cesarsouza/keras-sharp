@@ -137,6 +137,8 @@ namespace KerasSharp.Backends
 
         Tensor mean(Tensor tensor, int axis = -1);
 
+        Tensor mean(Tensor tensor, int[] axis);
+
         Tensor abs(Tensor input);
 
         Tensor categorical_crossentropy(Tensor expected, Tensor actual);
@@ -230,5 +232,6 @@ namespace KerasSharp.Backends
 
         Tensor truncated_normal(int?[] shape, double v, double stddev, TFDataType dtype, int? seed);
 
+        Tensor not_equal(Tensor weights, double v);
     }
 }

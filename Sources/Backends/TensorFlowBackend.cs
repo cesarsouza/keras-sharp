@@ -314,6 +314,11 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
+        public Tensor not_equal(Tensor w, double v)
+        {
+            throw new NotImplementedException();
+        }
+
         public Tensor hard_sigmoid(Tensor x)
         {
             throw new NotImplementedException();
@@ -396,6 +401,11 @@ namespace KerasSharp.Backends
         }
 
         public Tensor mean(Tensor tensor, int axis)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Tensor mean(Tensor tensor, int[] axis)
         {
             throw new NotImplementedException();
         }

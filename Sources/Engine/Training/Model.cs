@@ -38,6 +38,8 @@ namespace KerasSharp.Models
     using KerasSharp.Losses;
 
     using static KerasSharp.Backends.Current;
+    using static KerasSharp.Python;
+
     using Accord.Math;
     using System.Collections;
 
@@ -92,29 +94,29 @@ namespace KerasSharp.Models
         public List<Layer> output_layers;
 
         internal Sequential callback_model;
-        private IOptimizer optimizer;
-        private Dictionary<string, string> sample_weight_mode;
-        private Dictionary<string, ILoss> loss;
-        private Dictionary<string, double> loss_weights;
-        private Tensor total_loss;
-        private List<Tensor> sample_weights;
-        private List<ILoss> loss_functions;
-        private List<Tensor> _feed_outputs;
-        private List<string> _feed_output_names;
-        private List<int?[]> _feed_output_shapes;
-        private List<object> _feed_loss_fns;
-        private List<Tensor> targets;
-        private List<Tensor> _feed_targets;
-        private IMetric metrics;
-        private List<string> metrics_names;
-        private List<Tensor> metrics_tensors;
-        private List<Tensor> _feed_sample_weights;
-        private List<Tensor> _collected_trainable_weights;
-        private Function train_function;
-        private Function test_function;
-        private Function predict_function;
-        private bool stop_training;
-        private History history;
+        public IOptimizer optimizer;
+        public Dictionary<string, string> sample_weight_mode;
+        public Dictionary<string, ILoss> loss;
+        public Dictionary<string, double> loss_weights;
+        public Tensor total_loss;
+        public List<Tensor> sample_weights;
+        protected List<ILoss> loss_functions;
+        protected List<Tensor> _feed_outputs;
+        protected List<string> _feed_output_names;
+        protected List<int?[]> _feed_output_shapes;
+        protected List<object> _feed_loss_fns;
+        public List<Tensor> targets;
+        protected List<Tensor> _feed_targets;
+        public IMetric metrics;
+        public List<string> metrics_names;
+        public List<Tensor> metrics_tensors;
+        protected List<Tensor> _feed_sample_weights;
+        protected List<Tensor> _collected_trainable_weights;
+        protected Function train_function;
+        protected Function test_function;
+        protected Function predict_function;
+        protected bool stop_training;
+        protected History history;
         public List<object> _feed_sample_weight_modes;
 
 
@@ -151,7 +153,12 @@ namespace KerasSharp.Models
         /// 
         public void Compile(IOptimizer optimizer, ILoss loss, IMetric metrics = null)
         {
-            Compile(optimizer, new Dictionary<string, ILoss>() { { "output", loss } }, metrics);
+            Compile(optimizer, loss.to_dict(), metrics);
+        }
+
+        public void Compile(IOptimizer optimizer, List<ILoss> loss, IMetric metrics = null)
+        {
+            Compile(optimizer, loss.to_dict(), metrics);
         }
 
         public void Compile(string optimizer, string loss, string[] metrics = null)
@@ -192,9 +199,11 @@ namespace KerasSharp.Models
         ///   `null` defaults to sample - wise weights(1D). If the model has multiple outputs, you can use a different `sample_weight_mode` 
         ///     on each output by passing a dictionary or a list of modes.</param>
         /// 
-        public void Compile(IOptimizer optimizer, Dictionary<string, ILoss> loss, IMetric metrics = null,
+        public virtual void Compile(IOptimizer optimizer, Dictionary<string, ILoss> loss, IMetric metrics = null,
             Dictionary<string, double> loss_weights = null, Dictionary<string, string> sample_weight_mode = null)
         {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L681
+
             if (loss == null)
                 loss = new Dictionary<string, ILoss>();
 
@@ -205,21 +214,36 @@ namespace KerasSharp.Models
             this.loss_weights = loss_weights;
 
             // Prepare loss functions.
-            foreach (string name in loss.Keys)
-            {
-                if (!this.output_names.Contains(name))
-                    throw new Exception($"Unknown entry in loss dictionary: {name}. Only expected the following keys: {this.output_names}");
-            }
-
             var loss_functions = new List<ILoss>();
 
-            foreach (string name in this.output_names)
+            if (loss.is_dict())
             {
-                if (!loss.ContainsKey(name))
+                foreach (string name in loss.Keys)
                 {
-                    Trace.TraceWarning($"Output {name} missing from loss dictionary. We assume this was done on purpose, and we will not be expecting any data to be passed to {name} during training.");
-                    loss_functions.Add(loss[name]);
+                    if (!this.output_names.Contains(name))
+                        throw new Exception($"Unknown entry in loss dictionary: {name}. Only expected the following keys: {this.output_names}");
                 }
+                foreach (string name in this.output_names)
+                {
+                    if (!loss.ContainsKey(name))
+                    {
+                        Trace.TraceWarning($"Output {name} missing from loss dictionary. We assume this was done on purpose, and we will not be expecting any data to be passed to {name} during training.");
+                        loss_functions.Add(loss[name]);
+                    }
+                }
+            }
+            else if (loss.is_list())
+            {
+                List<ILoss> list = loss.to_list();
+                if (list.Count != this.outputs.Count)
+                    throw new Exception($"When passing a list as loss, it should have one entry per model outputs. The model has " +
+                        $"{this.outputs.Count} outputs, but you passed loss={loss}");
+                loss_functions = list;
+            }
+            else
+            {
+                ILoss loss_function = loss.to_single();
+                loss_functions = this.outputs.Select(x => loss_function).ToList();
             }
 
             this.loss_functions = loss_functions;
@@ -475,6 +499,9 @@ namespace KerasSharp.Models
             }
         }
 
+
+
+
         private List<List<IMetric>> _collect_metrics(IMetric metrics, List<string> output_names)
         {
             throw new NotImplementedException();
@@ -485,12 +512,54 @@ namespace KerasSharp.Models
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        ///   Adds support for masking and sample-weighting to an objective function.
+        ///   It transforms an objective function `fn(y_true, y_pred)` into a sample - 
+        ///   weighted, cost - masked objective function `fn(y_true, y_pred, weights, mask)`.
+        /// </summary>
+        /// 
+        /// <param name="fn">The objective function to wrap, with signature `fn(y_true, y_pred)`.</param>
+        /// 
+        /// <returns>A function with signature `fn(y_true, y_pred, weights, mask)`.</returns>
+        /// 
         private ILoss _weighted_masked_objective(ILoss fn)
         {
-            throw new NotImplementedException();
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L406
+
+            if (fn == null)
+                return null;
+
+            Tensor weighted(Tensor y_true, Tensor y_pred, Tensor weights, Tensor mask = null)
+            {
+                // score_array has ndim >= 2
+                Tensor score_array = fn.Call(y_true, y_pred);
+
+                if (mask != null)
+                {
+                    // Cast the mask to floatX to avoid float64 upcasting in theano
+                    mask = K.cast(mask, K.floatx());
+                    // mask should have the same shape as score_array
+                    score_array = score_array * mask;
+                    //  the loss per batch should be proportional
+                    //  to the number of unmasked samples.
+                    score_array = score_array / K.mean(mask);
+                }
+                // reduce score_array to same ndim as weight array
+                int? ndim = K.ndim(score_array);
+                var weight_ndim = K.ndim(weights);
+                score_array = K.mean(score_array, axis: range(weight_ndim, ndim));
+
+                // apply sample weighting
+                if (weights != null)
+                {
+                    score_array = score_array * weights;
+                    score_array = score_array / K.mean(K.cast(K.not_equal(weights, 0), K.floatx()));
+                }
+                return K.mean(score_array);
+            }
+
+            return new CustomLoss(weighted);
         }
-
-
 
 
 
@@ -749,7 +818,7 @@ namespace KerasSharp.Models
 
 
 
-        public List<Tensor> _predict_loop(Function f, List<Tensor> ins, int batch_size = 32, int verbose = 0)
+        public Array[] _predict_loop(Function f, List<Tensor> ins, int batch_size = 32, int verbose = 0)
         {
             // """Abstract method to loop over some data in batches.
             // // Arguments
@@ -777,7 +846,7 @@ namespace KerasSharp.Models
                 verbose = 2;
             }
 
-            var outs = new List<Tensor>();
+            var outs = new List<Array>();
 
             Progbar progbar = null;
             if (verbose == 1)
@@ -811,7 +880,7 @@ namespace KerasSharp.Models
                     foreach (var batch_out in batch_outs)
                     {
                         var shape = new int?[] { samples }.Concatenate(batch_out.shape.Get(1, 0));
-                        outs.Add(Tensor.Zeros(shape, dtype: KerasSharp.Utils.ToNetType(batch_out.dtype)));
+                        //outs.Add(Tensor.Zeros(shape, dtype: KerasSharp.Utils.ToNetType(batch_out.dtype)));
                     }
                 }
 
@@ -824,7 +893,7 @@ namespace KerasSharp.Models
                 }
             }
 
-            return outs;
+            return outs.ToArray();
         }
 
         /// <summary>
@@ -908,7 +977,9 @@ namespace KerasSharp.Models
 
             for (int i = 0; i < outs.Count; i++)
                 outs[i] = K.div(outs[i], samples);
-            return outs;
+
+            //return outs;
+            return null;
         }
 
         private object _slice_arrays(List<Tensor> ins, int[] batch_ids)
@@ -1251,7 +1322,7 @@ namespace KerasSharp.Models
         ///   the scalar outputs.
         /// </returns>
         /// 
-        public Tensor evaluate(Array x, Array y, int batch_size = 32, int verbose = 1, List<double> sample_weight = null)
+        public  Array evaluate(Array x, Array y, int batch_size = 32, int verbose = 1, List<double> sample_weight = null)
         {
             return evaluate(new[] { x }, new[] { y }, batch_size, verbose, sample_weight)[0];
         }
@@ -1277,7 +1348,7 @@ namespace KerasSharp.Models
         ///   the scalar outputs.
         /// </returns>
         /// 
-        public List<Tensor> evaluate(Array[] x, Array[] y, int batch_size = 32, int verbose = 1, List<double> sample_weight = null)
+        public virtual Array[] evaluate(Array[] x, Array[] y, int batch_size = 32, int verbose = 1, List<double> sample_weight = null)
         {
             // Validate user data.
             var (xx, yy, sample_weightsx) = this._standardize_user_data(
@@ -1285,10 +1356,10 @@ namespace KerasSharp.Models
                 check_batch_axis: false,
                 batch_size: batch_size);
 
-            return evaluate(xx, yy, batch_size, verbose, sample_weightsx);
+            return (Array[])evaluate(xx, yy, batch_size, verbose, sample_weightsx);
         }
 
-        public List<Tensor> evaluate(List<Tensor> x, List<Tensor> y, int batch_size = 32, int verbose = 1, List<Tensor> sample_weight = null)
+        public virtual Array evaluate(List<Tensor> x, List<Tensor> y, int batch_size = 32, int verbose = 1, List<Tensor> sample_weight = null)
         {
             // Prepare inputs, delegate logic to `_test_loop`.
             var ins = new List<Tensor>();
@@ -1299,7 +1370,8 @@ namespace KerasSharp.Models
 
             this._make_test_function();
             var f = this.test_function;
-            return this._test_loop(f, ins, batch_size: batch_size, verbose: verbose);
+            //return this._test_loop(f, ins, batch_size: batch_size, verbose: verbose);
+            return null;
         }
 
         /// <summary>
@@ -1316,7 +1388,7 @@ namespace KerasSharp.Models
         /// 
         /// <returns>Numpy array(s) of predictions.</returns>
         /// 
-        public List<Tensor> predict(Array[] x, int batch_size = 32, int verbose = 0)
+        public virtual Array[] predict(Array[] x, int batch_size = 32, int verbose = 0)
         {
             // Validate user data.
             List<Tensor> xx = _standardize_input_data(x, this._feed_input_names, this._feed_input_shapes, check_batch_axis: false);
@@ -1352,7 +1424,7 @@ namespace KerasSharp.Models
         /// 
         /// <returns>Scalar training loss (if the model has a single output and no metrics) or list of scalars (if the model has multiple outputs and/or metrics). The attribute `model.metrics_names` will give you the display labels for the scalar outputs.</returns>
         /// 
-        public List<Tensor> train_on_batch(Array[] x, Array[] y, List<double> sample_weight = null, Dictionary<int, double> class_weight = null)
+        public virtual List<Tensor> train_on_batch(Array[] x, Array[] y, List<double> sample_weight = null, Dictionary<int, double> class_weight = null)
         {
             var (xx, yy, sample_weightsx) = this._standardize_user_data(x, y, sample_weight: sample_weight,
                 class_weight: class_weight, check_batch_axis: true);
@@ -1360,7 +1432,7 @@ namespace KerasSharp.Models
             return train_on_batch(xx, yy, sample_weightsx);
         }
 
-        public List<Tensor> train_on_batch(List<Tensor> x, List<Tensor> y, List<Tensor> sample_weightsx, Dictionary<int, Tensor> class_weight = null)
+        public virtual List<Tensor> train_on_batch(List<Tensor> x, List<Tensor> y, List<Tensor> sample_weightsx, Dictionary<int, Tensor> class_weight = null)
         {
             var ins = new List<Tensor>();
             if (this.uses_learning_phase && !(K.learning_phase() is int))
@@ -1390,7 +1462,7 @@ namespace KerasSharp.Models
         //    and/or metrics). The attribute `model.metrics_names` will give you the display labels for the scalar outputs.
         /// </returns>
         ///   
-        public List<Tensor> test_on_batch(Array[] x, Array[] y, List<double> sample_weight = null)
+        public virtual List<Tensor> test_on_batch(Array[] x, Array[] y, List<double> sample_weight = null)
         {
             var (xx, yy, sample_weightsx) = this._standardize_user_data(x, y,
                 sample_weight: sample_weight, check_batch_axis: true);
@@ -1415,7 +1487,7 @@ namespace KerasSharp.Models
             return outputs;
         }
 
-        public List<Tensor> predict_on_batch(Array[] x)
+        public virtual List<Tensor> predict_on_batch(Array[] x)
         {
             //"""Returns predictions for a single batch of samples.
             //// Arguments
@@ -1669,7 +1741,7 @@ namespace KerasSharp.Models
                                 // Epoch finished.
                                 if (steps_done >= steps_per_epoch && do_validation)
                                 {
-                                    List<Tensor> val_outs;
+                                    object val_outs;
 
                                     if (val_gen)
                                     {
@@ -1692,10 +1764,10 @@ namespace KerasSharp.Models
                                     }
 
                                     // Same labels assumed.
-                                    foreach (var (l, o) in Enumerable.Zip(out_labels, val_outs, (a, b) => Tuple.Create(a, b)))
-                                    {
-                                        epoch_logs["val_" + l] = o;
-                                    }
+                                    //foreach (var (l, o) in Enumerable.Zip(out_labels, val_outs, (a, b) => Tuple.Create(a, b)))
+                                    //{
+                                    //    epoch_logs["val_" + l] = o;
+                                    //}
                                 }
 
                                 callbacks.on_epoch_end(epoch, epoch_logs);
