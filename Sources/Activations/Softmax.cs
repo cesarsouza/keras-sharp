@@ -73,7 +73,7 @@ namespace KerasSharp.Activations
 
             if (ndim > 2)
             {
-                Tensor e = K.exp(K.subtract(x, K.max(x, axis: axis, keepdims: true)));
+                Tensor e = K.exp(x - K.max(x, axis: axis, keepdims: true));
                 Tensor s = K.sum(e, axis: axis, keepdims: true);
                 return K.div(e, s);
             }

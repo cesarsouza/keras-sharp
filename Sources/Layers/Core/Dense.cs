@@ -164,9 +164,11 @@ namespace KerasSharp
 
         protected override Tensor InnerCall(Tensor inputs, Tensor mask = null, bool? training = null)
         {
-            Tensor output = K.mul(inputs, this.kernel);
+            // https://github.com/fchollet/keras/blob/2382f788b4f14646fa8b6b2d8d65f1fc138b35c4/keras/layers/core.py#L840
+            Tensor output = K.dot(inputs, this.kernel);
+
             if (this.use_bias)
-                output = K.add(inputs, this.bias);
+                output = K.add(output, this.bias);
             if (this.activation != null)
                 output = this.activation.Call(output, mask);
             return output;

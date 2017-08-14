@@ -40,6 +40,83 @@ namespace Tests
         }
 
         [Test]
+        public void partial_shape_test()
+        {
+            // Note: Keras/TensorFlow represent unknown dimensions 
+            // as None, whereas TensorFlowSharp represents as -1:
+            /*
+                import keras
+
+                from keras.models import Sequential
+                from keras.layers import Dense
+                from keras import backend as K
+                import numpy as np
+
+                a = K.placeholder(shape = (None, 2))
+                b = K.variable(np.matrix([[ 1, 2, 3], [4, 5, 6]]))
+                ab = K.dot(a, b)
+
+                shape_a = K.int_shape(a)
+                shape_b = K.int_shape(b)
+                shape_ab = K.int_shape(ab)
+
+                print(shape_a)
+                print(shape_b)
+                print(shape_ab)
+
+                >>> Using TensorFlow backend.
+                (None, 2)
+                (2, 3)
+                (None, 3)
+             */
+
+            using (var K = new TensorFlowBackend())
+            {
+                Tensor a = K.placeholder(shape: new int?[] { null, 2 });
+                Tensor b = K.variable(array: new float[,] { { 1, 2, 3 },
+                                                            { 4, 5, 6 } });
+
+                var ab = K.dot(a, b);
+
+                int?[] shape_a = K.int_shape(a);
+                int?[] shape_b = K.int_shape(b);
+                int?[] shape_ab = K.int_shape(ab);
+
+                long[] tf_shape_a = a.TF_Shape;
+                long[] tf_shape_b = b.TF_Shape;
+                long[] tf_shape_ab = ab.TF_Shape;
+
+                AssertEx.AreEqual(new int?[] { null, 2 }, shape_a);
+                AssertEx.AreEqual(new int?[] { 2, 3 }, shape_b);
+                AssertEx.AreEqual(new int?[] { null, 3 }, shape_ab);
+
+                AssertEx.AreEqual(new long[] { -1, 2 }, tf_shape_a);
+                AssertEx.AreEqual(new long[] { 2, 3 }, tf_shape_b);
+                AssertEx.AreEqual(new long[] { -1, 3 }, tf_shape_ab);
+            }
+        }
+
+        [Test]
+        public void softmax_test()
+        {
+            using (var K = new TensorFlowBackend())
+            {
+                double[,] a = new double[,] { { -4, 2 }, { 0.02, 0.3 } };
+                var ta = K.variable(array: (Array)a, name: "example_var");
+
+                var tr = K.softmax(ta);
+                double[,] r = (double[,])tr.eval();
+
+                AssertEx.AreEqual(new double[,] {
+                    { 0.0024726231566347748, 0.99752737684336534 },
+                    { 0.430453776060771,     0.56954622393922893 } }, r, 1e-8);
+
+                AssertEx.AreEqual(r.GetRow(0), Accord.Math.Special.Softmax(a.GetRow(0)), 1e-8);
+                AssertEx.AreEqual(r.GetRow(1), Accord.Math.Special.Softmax(a.GetRow(1)), 1e-8);
+            }
+        }
+
+        [Test]
         public void variable_test()
         {
             using (var K = new TensorFlowBackend())

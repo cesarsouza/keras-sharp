@@ -270,9 +270,6 @@ namespace KerasSharp.Engine.Topology
             IWeightInitializer initializer = null, IWeightRegularizer regularizer = null,
                    bool trainable = true, IWeightConstraint constraint = null)
         {
-            if (dtype == null)
-                dtype = K.floatx();
-
             Tensor weight = K.variable(tensor: initializer.Call(shape), dtype: dtype, name: name);
 
             if (regularizer != null)

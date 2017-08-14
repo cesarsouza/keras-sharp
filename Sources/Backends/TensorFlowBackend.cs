@@ -41,14 +41,14 @@ namespace KerasSharp.Backends
 
     public class TensorFlowBackend : IBackend
     {
-        TFGraph tf;
+        internal TFGraph tf;
 
 
         // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L25
 
         // This is the default internal TF session used by Keras.
         // It can be set manually via `set_session(sess)`.
-        private TFSession _SESSION;
+        internal TFSession _SESSION;
 
         // This dictionary holds a mapping {graph: learning_phase}.
         // A learning phase is a bool tensor used to run Keras models in
@@ -139,16 +139,6 @@ namespace KerasSharp.Backends
 
 
 
-        public Tensor add(Tensor tensor)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Tensor add(object total_loss, object v)
-        {
-            throw new NotImplementedException();
-        }
-
         public List<Array> batch_get_value(List<Tensor> weights)
         {
             throw new NotImplementedException();
@@ -207,7 +197,7 @@ namespace KerasSharp.Backends
                 tf.Const(t, operName: name) :
                 tf.Const(t, dtype: dtype.Value, operName: name);
 
-            return new Tensor(this) { output = o };
+            return tensor(o);
         }
 
 
@@ -339,6 +329,7 @@ namespace KerasSharp.Backends
         /// </summary>
         /// 
         /// <param name="x">Tensor or variable.</param>
+        /// 
         /// <returns>A tuple of integers(or None entries).</returns>
         /// 
         public int?[] int_shape(Tensor x)
@@ -348,7 +339,15 @@ namespace KerasSharp.Backends
             if (x._keras_shape != null)
                 return x._keras_shape;
 
-            return x.get_shape();
+            try
+            {
+                long[] shape = tf.GetTensorShape(x.output);
+                return shape.Apply(i => i == -1 ? null : (int?)i);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public int?[] int_shape(TFTensor input_tensor)
@@ -413,7 +412,7 @@ namespace KerasSharp.Backends
 
         public Tensor mul(Tensor a, Tensor b)
         {
-            return new Tensor(this) { output = tf.Mul(a.output, b.output) };
+            return tensor(tf.Mul(a.output, b.output));
         }
 
         public Tensor mul<T>(Tensor a, T b)
@@ -421,6 +420,11 @@ namespace KerasSharp.Backends
             return mul(a, constant(b));
         }
 
+
+        public Tensor dot(Tensor a, Tensor b)
+        {
+            return tensor(tf.MatMul(a.output, b.output));
+        }
 
         public Tensor mul(List<Tensor> batch_outs, int length)
         {
@@ -430,17 +434,34 @@ namespace KerasSharp.Backends
 
         public Tensor add(Tensor a, Tensor b)
         {
-            return new Tensor(this) { output = tf.Add(a.output, b.output) };
+            return tensor(tf.Add(a.output, b.output));
         }
 
         public Tensor add<T>(T a, Tensor b)
         {
-            return mul(constant(a), b);
+            return add(constant(a), b);
         }
 
         public Tensor add<T>(Tensor a, T b)
         {
-            return mul(a, constant(b));
+            return add(a, constant(b));
+        }
+
+
+
+        public Tensor subtract(Tensor a, Tensor b)
+        {
+            return tensor(tf.Sub(a.output, b.output));
+        }
+
+        public Tensor subtract<T>(T a, Tensor b)
+        {
+            return subtract(constant(a), b);
+        }
+
+        public Tensor subtract<T>(Tensor a, T b)
+        {
+            return subtract(a, constant(b));
         }
 
 
@@ -463,11 +484,13 @@ namespace KerasSharp.Backends
         public int? ndim(Tensor x)
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L519
-            int?[] dims = x.get_shape();
+
+            int?[] dims = x.shape;
 
             if (dims != null)
                 return dims.Length;
-            return null;
+
+            return tf.GetTensorNumDims(x.output);
         }
 
         public Tensor placeholder(int?[] shape, TFDataType? dtype = Utils.DEFAULT_DTYPE, bool sparse = false, string name = null)
@@ -517,10 +540,9 @@ namespace KerasSharp.Backends
             var tf_shape = tf.Const(shape.Apply(x => (long)x));
             TFOutput u = tf.RandomUniform(tf_shape, dtype: dtype, seed: seed, operName: name);
 
-            var t = new Tensor(this);
-            t.output = tf.Add(tf.Mul(u, tf.Const(new TFTensor(maxval - minval), dtype: dtype)),
-                                        tf.Const(new TFTensor(minval), dtype: dtype));
-            return t;
+            
+            return tensor (tf.Add(tf.Mul(u, tf.Const(new TFTensor(maxval - minval), dtype: dtype)),
+                                        tf.Const(new TFTensor(minval), dtype: dtype)));
         }
 
         public Tensor relu(Tensor x)
@@ -535,7 +557,7 @@ namespace KerasSharp.Backends
 
         public Tensor softmax(Tensor x)
         {
-            throw new NotImplementedException();
+            return tensor(tf.Softmax(x.output));
         }
 
         public Tensor softplus(Tensor x)
@@ -554,16 +576,6 @@ namespace KerasSharp.Backends
         }
 
         public Tensor square(Tensor w)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Tensor subtract(Tensor x, Tensor tensor)
-        {
-            throw new NotImplementedException();
-        }
-
-        public double subtract(double v, Tensor expected)
         {
             throw new NotImplementedException();
         }
@@ -680,7 +692,7 @@ namespace KerasSharp.Backends
                 t.output = tensor.output;
             else
                 t.output = tf.Const(tensor.tensor);
-            t._keras_shape = tensor.get_shape();
+            t._keras_shape = tensor.shape;
             t._uses_learning_phase = false;
             return t;
         }
@@ -698,10 +710,12 @@ namespace KerasSharp.Backends
 
         public TFShape shape(int?[] shape)
         {
-            if (shape.Contains(null))
-                return TFShape.Unknown;
+            return new TFShape(shape.Select(x => x.HasValue ? (long)x.Value : -1).ToArray());
+        }
 
-            return new TFShape(shape.Select(x => (long)x.Value).ToArray());
+        public Tensor tensor(TFOutput output)
+        {
+            return new Tensor(this) { output = output };
         }
 
 

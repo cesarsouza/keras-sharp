@@ -92,12 +92,20 @@ namespace KerasSharp.Backends
         Tensor add<T>(T a, Tensor b);
 
 
+        Tensor subtract(Tensor a, Tensor b);
+
+        Tensor subtract<T>(Tensor a, T b);
+
+        Tensor subtract<T>(T a, Tensor b);
+
+
+
+        Tensor dot(Tensor a, Tensor b);
+
 
         Tensor elu(Tensor x, double alpha);
 
         Tensor sigmoid(Tensor x);
-
-        Tensor subtract(Tensor x, Tensor tensor);
 
         Tensor softplus(Tensor x);
 
@@ -143,7 +151,6 @@ namespace KerasSharp.Backends
 
         Tensor binary_crossentropy(Tensor expected, Tensor actual);
 
-        double subtract(double v, Tensor expected);
 
 
 
@@ -163,7 +170,7 @@ namespace KerasSharp.Backends
 
         List<Tensor> gradients(Tensor loss, object param);
 
-        int?[] int_shape(Tensor input_tensor);
+        int?[] int_shape(Tensor tensor);
 
 
         object sum(object[] v);
@@ -194,8 +201,6 @@ namespace KerasSharp.Backends
 
         Tensor placeholder(int ndim, string name);
 
-        Tensor add(Tensor tensor);
-
         object get_variable_shape(Tensor p);
 
         Tensor get_variable_shape(object s);
@@ -205,8 +210,6 @@ namespace KerasSharp.Backends
         bool is_sparse(Tensor tensor);
 
         Tensor placeholder(int ndim, string name, bool sparse, TFDataType? dtype);
-
-        Tensor add(object total_loss, object v);
 
         object learning_phase();
 

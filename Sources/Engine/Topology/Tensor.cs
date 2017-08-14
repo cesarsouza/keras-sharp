@@ -48,7 +48,6 @@ namespace KerasSharp.Engine.Topology
         public int?[] int_shape;
         public (Layer layer, int node_index, int tensor_index)? _keras_history;
         public string name;
-        public int?[] shape;
 
         public TFDataType dtype
         {
@@ -73,12 +72,20 @@ namespace KerasSharp.Engine.Topology
             throw new NotImplementedException();
         }
 
-        public int?[] get_shape()
+        public int?[] shape
         {
-            if (_keras_shape != null)
-                return _keras_shape;
-            return shape;
+            get { return K.int_shape(this); }
         }
+
+        internal long[] TF_Shape
+        {
+            get
+            {
+                var tf = (K as TensorFlowBackend).tf;
+                return tf.GetShape(output);
+            }
+        }
+
 
         public object eval()
         {
@@ -106,6 +113,16 @@ namespace KerasSharp.Engine.Topology
         public static Tensor operator +(Tensor a, Tensor b)
         {
             return b.K.add(a, b);
+        }
+
+        public static Tensor operator -(double a, Tensor b)
+        {
+            return b.K.subtract(a, b);
+        }
+
+        public static Tensor operator -(Tensor a, Tensor b)
+        {
+            return b.K.subtract(a, b);
         }
     }
 

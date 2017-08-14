@@ -79,9 +79,11 @@ namespace KerasSharp.Constraints
         /// <returns>The output tensor with the constraint applied.</returns>
         public Tensor Call(Tensor w)
         {
+            // https://github.com/fchollet/keras/blob/2382f788b4f14646fa8b6b2d8d65f1fc138b35c4/keras/constraints.py#L130
             Tensor norms = K.sqrt(K.sum(K.square(w), axis: this.axis, keepdims: true));
-            Tensor desired = K.add(this.rate * K.clip(norms, this.min_value, this.max_value) * K.mul(1.0 - this.rate, norms));
-            w = K.mul(w, K.div(desired, K.add(K.epsilon(), norms)));
+            Tensor desired = (this.rate * K.clip(norms, this.min_value, this.max_value) +
+                (1.0 - this.rate) * norms);
+            w = w * K.div(desired, K.add(K.epsilon(), norms));
             return w;
         }
     }
