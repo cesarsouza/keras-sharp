@@ -128,9 +128,13 @@ namespace KerasSharp.Models
                     // Instantiate the input layer.
                     var x = Input(batch_shape: layer.batch_input_shape, dtype: layer.dtype, name: $"{layer.name}_input");
 
+                    Debug.Assert(x[0]._keras_history.Value.layer.GetType() == typeof(InputLayer));
+
                     // This will build the current layer and create the node connecting 
                     // the current layer to the input layer we just created.
                     layer.Call(x);
+
+                    Debug.Assert(x[0]._keras_history.Value.layer.GetType() == typeof(InputLayer));
                 }
 
 

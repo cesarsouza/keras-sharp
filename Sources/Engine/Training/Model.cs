@@ -71,27 +71,7 @@ namespace KerasSharp.Models
     /// 
     public partial class Model : Container
     {
-        public object _output_mask_cache;
-        public object _output_tensor_cache;
-
         public bool Trainable { get; set; }
-
-        public object _output_shape_cache;
-
-        internal object _feed_input_names;
-        public List<Tensor> _feed_inputs;
-
-
-        internal object input_layers;
-        internal object input_layers_node_indices;
-        internal object input_layers_tensor_indices;
-        internal object output_layers_node_indices;
-        internal object output_layers_tensor_indices;
-        internal object nodes_by_depth;
-        internal object container_nodes;
-        public List<string> output_names;
-        public List<string> input_names;
-        public List<Layer> output_layers;
 
         internal Sequential callback_model;
         public IOptimizer optimizer;
@@ -270,74 +250,150 @@ namespace KerasSharp.Models
             }
 
             // Prepare output masks.
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L774
             var masks = this.compute_mask(this.inputs, mask: null);
 
             if (masks == null)
                 masks = this.output.Select(x => (Tensor)null).ToList();
 
             // Prepare loss weights.
-            var loss_weights_list = new List<double>();
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L781
+            List<double> loss_weights_list;
             if (loss_weights == null)
             {
                 loss_weights_list = this.outputs.Select(x => 1.0).ToList();
             }
-            else
+            else if (loss_weights.is_dict())
             {
                 foreach (string name in loss_weights.Keys)
                 {
                     if (!this.output_names.Contains(name))
-                        throw new Exception($"Unknown entry in loss_weights dictionary: {name}. Only expected the following keys: {this.output_names}");
+                        throw new InvalidOperationException($"Unknown entry in loss_weights dictionary: '{name}'. Only expected the following keys: {str(this.output_names)}.");
                 }
+
+                loss_weights_list = new List<double>();
+                foreach (string name in this.output_names)
+                    loss_weights_list.Add(loss_weights.get(name, 1.0));
+            }
+            else if (loss_weights.is_list())
+            {
+                List<double> lw = loss_weights.to_list();
+                if (lw.Count != this.outputs.Count)
+                    throw new InvalidOperationException($"When passing a list as loss_weights, it should have one entry per model outputs. The model has {str(this.outputs.Count)} outputs, but you passed loss_weights='{str(loss_weights)}'.");
+                loss_weights_list = lw;
+            }
+            else
+            {
+                throw new InvalidOperationException($"Could not interpret loss_weights argument: {str(loss_weights)} - expected a list of dicts.");
             }
 
-            loss_weights_list = new List<double>();
+            // Prepare sample weights.
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L807
             var sample_weights = new List<Tensor>();
             var sample_weight_modes = new List<string>();
-            foreach (string name in this.output_names)
+            if (sample_weight_mode.is_dict())
             {
-                double w = 1;
-                if (loss_weights.ContainsKey(name))
-                    w = loss_weights[name];
-                loss_weights_list.Add(w);
-
-                // Prepare sample weights.
-                if (sample_weight_mode.ContainsKey(name))
+                foreach (string name in sample_weight_mode.Keys)
                 {
                     if (!this.output_names.Contains(name))
-                        throw new Exception($"Unknown entry in sample_weight_mode dictionary: {name}. Only expected the following keys: {this.output_names}.");
+                    {
+                        if (!this.output_names.Contains(name))
+                            throw new InvalidOperationException($"Unknown entry in sample_weight_mode dictionary: {name}. Only expected the following keys: {str(this.output_names)}.");
+                    }
+                }
+
+                for (int i = 0; i < this.output_names.Count; i++)
+                {
+                    string name = this.output_names[i];
+
+                    Tensor weight;
+                    if (skip_indices.Contains(i))
+                    {
+                        weight = null;
+                        sample_weight_modes.Add(null);
+                    }
+                    else
+                    {
+                        if (!sample_weight_mode.Keys.Contains(name))
+                            throw new InvalidOperationException($"Output '{name}' missing from sample_weight_modes dictionary.");
+
+                        if (sample_weight_mode[name] == "temporal")
+                        {
+                            weight = K.placeholder(ndim: 2, name: name + "_sample_weights");
+                            sample_weight_modes.Add("temporal");
+                        }
+                        else
+                        {
+                            weight = K.placeholder(ndim: 1, name: name + "_sample_weights");
+                            sample_weight_modes.Add(null);
+                        }
+                    }
+                    sample_weights.Add(weight);
                 }
             }
-
-            for (int i = 0; i < this.output_names.Count; i++)
+            else if (sample_weight_mode.is_list())
             {
-                string name = this.output_names[i];
+                var swm = sample_weight_mode.to_list();
+                if (swm.Count != this.outputs.Count)
+                    throw new InvalidOperationException($"When passing a list as sample_weight_mode, it should have one entry per model outputs. The model has {str(this.outputs.Count)} outputs, but you passed sample_weight_mode={str(sample_weight_mode)}");
 
-                if (skip_indices.Contains(i))
+                for (int i = 0; i < this.output_names.Count; i++)
                 {
-                    sample_weight_modes.Add(null);
-                }
+                    Tensor weight;
+                    if (skip_indices.Contains(i))
+                    {
+                        weight = null;
+                        swm.Add(null);
+                    }
+                    else
+                    {
+                        var mode = swm[i];
+                        name = this.output_names[i];
+                        if (mode == "temporal")
+                        {
+                            weight = K.placeholder(ndim: 2, name: name + "_sample_weights");
+                            sample_weight_modes.Add("temporal");
+                        }
+                        else
+                        {
+                            weight = K.placeholder(ndim: 1, name: name + "_sample_weights");
+                            sample_weight_modes.Add(null);
+                        }
+                    }
 
-                if (!sample_weight_mode.ContainsKey(name))
-                {
-                    throw new Exception($"Output { name } missing from sample_weight_modes dictionary");
+                    sample_weights.Add(weight);
                 }
+            }
+            else
+            {
+                for (int i = 0; i < this.output_names.Count; i++)
+                {
+                    var swm = sample_weight_mode.to_single();
+                    string name = this.output_names[i];
 
-                Tensor weight;
-                if (sample_weight_mode[name] == "temporal")
-                {
-                    weight = K.placeholder(ndim: 2, name: name + "_sample_weights");
-                    sample_weight_modes.Add("temporal");
+                    if (!skip_indices.Contains(i))
+                    {
+                        sample_weight_modes.Add(null);
+                        sample_weights.Add(null);
+                    }
+                    else
+                    {
+                        if (swm == "temporal")
+                        {
+                            sample_weights.Add(K.placeholder(ndim: 2, name: name + "_sample_weights"));
+                            sample_weight_modes.Add("temporal");
+                        }
+                        else
+                        {
+                            sample_weights.Add(K.placeholder(ndim: 1, name: name + "_sample_weights"));
+                            sample_weight_modes.Add(null);
+                        }
+                    }
                 }
-                else
-                {
-                    weight = K.placeholder(ndim: 1, name: name + "_sample_weights");
-                    sample_weight_modes.Add(null);
-                }
-
-                sample_weights.Add(weight);
             }
 
             // Prepare targets of model.
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L882
             this.targets = new List<Tensor>();
             this._feed_targets = new List<Tensor>();
             for (int i = 0; i < this.output_names.Count; i++)
@@ -563,9 +619,6 @@ namespace KerasSharp.Models
 
 
 
-
-
-
         public void _make_train_function()
         {
             if (this.train_function == null)
@@ -615,7 +668,7 @@ namespace KerasSharp.Models
             {
                 if (this.uses_learning_phase && !(K.learning_phase() is int))
                 {
-                    inputs = this._feed_inputs.Concat(new[] { (Tensor)K.learning_phase() }).ToList();
+                    inputs = this._feed_inputs.Concat(new List<Tensor>() { (Tensor)K.learning_phase() }).ToList();
                 }
                 else
                 {
@@ -1322,7 +1375,7 @@ namespace KerasSharp.Models
         ///   the scalar outputs.
         /// </returns>
         /// 
-        public  Array evaluate(Array x, Array y, int batch_size = 32, int verbose = 1, List<double> sample_weight = null)
+        public Array evaluate(Array x, Array y, int batch_size = 32, int verbose = 1, List<double> sample_weight = null)
         {
             return evaluate(new[] { x }, new[] { y }, batch_size, verbose, sample_weight)[0];
         }

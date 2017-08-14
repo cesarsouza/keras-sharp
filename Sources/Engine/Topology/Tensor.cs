@@ -35,9 +35,12 @@ namespace KerasSharp.Engine.Topology
     using System.Runtime.Serialization;
     using System.Text;
     using System.Threading.Tasks;
+    using static KerasSharp.Python;
     using TensorFlow;
+    using System.Diagnostics;
 
     [DataContract]
+    [DebuggerDisplay("{ToString()}")]
     public class Tensor
     {
         public IBackend K;
@@ -46,7 +49,12 @@ namespace KerasSharp.Engine.Topology
         public int?[] _keras_shape;
         public bool _uses_learning_phase;
         public int?[] int_shape;
-        public (Layer layer, int node_index, int tensor_index)? _keras_history;
+        public (Layer layer, int node_index, int tensor_index)? _keras_history
+        {
+            get;
+            set;
+        }
+
         public string name;
 
         public TFDataType dtype
@@ -133,6 +141,18 @@ namespace KerasSharp.Engine.Topology
         public static Tensor operator -(Tensor a, Tensor b)
         {
             return b.K.subtract(a, b);
+        }
+
+
+
+
+        public override string ToString()
+        {
+            string n = output.Operation.Name;
+            long i = output.Index;
+            string s = str(shape);
+            string r = $"KerasSharp.Engine.Topology.Tensor '{n}_{i}' shape={s} dtype={output.OutputType}";
+            return r;
         }
     }
 

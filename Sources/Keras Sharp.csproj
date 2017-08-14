@@ -80,6 +80,7 @@
     <Compile Include="Activations\TanH.cs" />
     <Compile Include="Backends\Base\IBackend.cs" />
     <Compile Include="Backends\Current.cs" />
+    <Compile Include="Backends\BackendBase.cs" />
     <Compile Include="Backends\TensorFlowBackend.cs" />
     <Compile Include="Callbacks\Base\Callback.cs" />
     <Compile Include="Callbacks\Base\CallbackList.cs" />

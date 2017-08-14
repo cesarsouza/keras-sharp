@@ -234,13 +234,26 @@ namespace Tests
                 double[,] actual = (double[,])kvar.eval();
                 double[,] expected = Elementwise.Multiply(a, b);
 
-                AreEqual(actual, expected);
+                AssertEx.AreEqual(actual, expected);
             }
         }
 
-        private static void AreEqual(double[,] actual, double[,] expected)
+        [Test]
+        public void toString()
         {
-            Assert.IsTrue(expected.IsEqual(actual, 1e-10));
+            using (var K = new TensorFlowBackend())
+            {
+                var input = K.placeholder(shape: new int?[] { 2, 4, 5 });
+                double[,] val = new double[,] { { 1, 2 }, { 3, 4 } };
+                var kvar = K.variable(array: (Array)val);
+
+                string a = input.ToString();
+                string b = kvar.ToString();
+
+                Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'Placeholder0_0' shape=[2, 4, 5] dtype=Float", a);
+                Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'Const0_0' shape=[2, 2] dtype=Double", b);
+            }
         }
+
     }
 }

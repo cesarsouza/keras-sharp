@@ -120,7 +120,7 @@ namespace KerasSharp.Layers
             if (input_tensor == null)
             {
                 this.is_placeholder = true;
-                this.input_tensor = K.placeholder(shape: batch_input_shape,
+                input_tensor = K.placeholder(shape: batch_input_shape,
                                         dtype: dtype,
                                         sparse: this.sparse,
                                         name: this.name);
@@ -128,20 +128,20 @@ namespace KerasSharp.Layers
             else
             {
                 this.is_placeholder = false;
-                this.input_tensor._keras_shape = batch_input_shape;
+                input_tensor._keras_shape = batch_input_shape;
             }
 
             // Create an input node to add to this.outbound_node
             // and set output_tensors" _keras_history.
-            this.input_tensor._uses_learning_phase = false;
-            this.input_tensor._keras_history = (this, 0, 0);
+            input_tensor._uses_learning_phase = false;
+            input_tensor._keras_history = (this, 0, 0);
 
             var node = new Node(this,
                 inbound_layers: new List<Layer>(),
                 node_indices: new List<int?>(),
                 tensor_indices: new List<int?>(),
-                input_tensors: new List<Tensor> { this.input_tensor },
-                output_tensors: new List<Tensor> { this.input_tensor },
+                input_tensors: new List<Tensor> { input_tensor },
+                output_tensors: new List<Tensor> { input_tensor },
                 input_masks: new List<Tensor> { null },
                 output_masks: new List<Tensor> { null },
                 input_shapes: new List<int?[]> { batch_input_shape },

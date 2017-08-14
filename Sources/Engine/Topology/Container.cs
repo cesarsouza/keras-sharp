@@ -55,32 +55,32 @@ namespace KerasSharp.Engine.Topology
     /// 
     public class Container : Layer
     {
-        object _per_input_losses;
-        object _per_input_updates;
+        protected internal object _per_input_losses;
+        protected internal object _per_input_updates;
 
-        public List<Tensor> inputs;
-        public List<Tensor> masks;
-        public List<Tensor> outputs;
-        List<Layer> input_layers;
-        private List<int> input_layers_node_indices;
-        private List<int> input_layers_tensor_indices;
-        List<Layer> output_layers;
-        private List<int> output_layers_node_indices;
-        private List<int> output_layers_tensor_indices;
-        private Dictionary<string, List<Tensor>> _output_tensor_cache;
-        private Dictionary<string, List<int?[]>> _output_shape_cache;
-        Dictionary<string, List<Tensor>> _output_mask_cache;
-        private List<string> input_names;
-        private List<string> output_names;
-        private List<string> _feed_input_names;
-        private List<List<Tensor>> _feed_inputs;
-        public List<int?[]> _feed_input_shapes;
-        private int?[][] internal_input_shapes;
-        public int?[][] internal_output_shapes;
-        private List<Layer> layers;
-        private Dictionary<int, List<Layer>> layers_by_depth;
-        private HashSet<string> container_nodes;
-        private Dictionary<int, List<Node>> nodes_by_depth;
+        protected List<Tensor> inputs;
+        protected List<Tensor> masks;
+        protected List<Tensor> outputs;
+        public List<Layer> input_layers;
+        public List<int> input_layers_node_indices;
+        public List<int> input_layers_tensor_indices;
+        public List<Layer> output_layers;
+        public List<int> output_layers_node_indices;
+        public List<int> output_layers_tensor_indices;
+        protected internal Dictionary<string, List<Tensor>> _output_tensor_cache;
+        protected internal Dictionary<string, List<int?[]>> _output_shape_cache;
+        protected internal Dictionary<string, List<Tensor>> _output_mask_cache;
+        public List<string> input_names;
+        public List<string> output_names;
+        protected internal List<string> _feed_input_names;
+        protected internal List<Tensor> _feed_inputs;
+        protected internal List<int?[]> _feed_input_shapes;
+        protected int?[][] internal_input_shapes;
+        protected int?[][] internal_output_shapes;
+        protected List<Layer> layers;
+        protected Dictionary<int, List<Layer>> layers_by_depth;
+        public HashSet<string> container_nodes;
+        public Dictionary<int, List<Node>> nodes_by_depth;
 
 
         public Container()
@@ -203,7 +203,7 @@ namespace KerasSharp.Engine.Topology
             this.input_names = new List<string>();
             this.output_names = new List<string>();
             this._feed_input_names = new List<string>();
-            this._feed_inputs = new List<List<Tensor>>();
+            this._feed_inputs = new List<Tensor>();
             this._feed_input_shapes = new List<int?[]>();
 
             for (int i = 0; i < this.input_layers.Count; i++)
@@ -219,7 +219,7 @@ namespace KerasSharp.Engine.Topology
                 if (layer.is_placeholder)
                 {
                     this._feed_input_names.Add(layer.name);
-                    this._feed_inputs.Add(layer.input);
+                    this._feed_inputs.AddRange(layer.input);
                     this._feed_input_shapes.Add(this.inputs[i]._keras_shape);
                 }
             }
@@ -274,7 +274,7 @@ namespace KerasSharp.Engine.Topology
                 container_nodes.Add(node_key);
 
                 // Store the traversal order for layer sorting.
-                if (layer_indices.ContainsKey(layer))
+                if (!layer_indices.ContainsKey(layer))
                     layer_indices[layer] = layer_indices.Count;
 
                 nodes_in_progress.Add(node);
@@ -293,6 +293,7 @@ namespace KerasSharp.Engine.Topology
                 nodes_in_progress.Remove(node);
 
                 nodes_in_decreasing_depth.Add(node);
+                return;
             }
 
             {
@@ -311,7 +312,8 @@ namespace KerasSharp.Engine.Topology
 
                     // Update the depth of the corresponding layer
                     int previous_depth = 0;
-                    layers_depths.TryGetValue(node.outbound_layer, out previous_depth);
+                    if (layers_depths.ContainsKey(node.outbound_layer))
+                        previous_depth = layers_depths[node.outbound_layer];
 
                     // If we've seen this layer before at a higher depth, we should use that depth instead
                     // of the node depth.  This is necessary for shared layers that have inputs at different
@@ -326,6 +328,7 @@ namespace KerasSharp.Engine.Topology
                         var inbound_layer = node.inbound_layers[i];
                         int node_index = node.node_indices[i].Value;
                         var inbound_node = inbound_layer.inbound_nodes[node_index];
+                        previous_depth = 0;
                         nodes_depths.TryGetValue(inbound_node, out previous_depth);
                         nodes_depths[inbound_node] = Math.Max(depth + 1, previous_depth);
                     }
@@ -793,7 +796,7 @@ namespace KerasSharp.Engine.Topology
         public override List<Tensor> compute_mask(List<Tensor> inputs, List<Tensor> mask)
         {
             if (mask == null)
-                masks = inputs.Select(x => (Tensor)x).ToList();
+                masks = inputs.Select(x => (Tensor)null).ToList();
 
             string cache_key = String.Join(",", inputs.Select(x => str(id(x))));
             cache_key += '_' + String.Join(",", masks.Select(x => str(id(x))));
@@ -1104,13 +1107,13 @@ namespace KerasSharp.Engine.Topology
             if (layer == null || node_index == null)
                 (layer, node_index, _) = tensor._keras_history.Value;
 
-            if (layer.inbound_nodes.Count > 0)
+            if (layer.inbound_nodes.Count == 0)
                 return new List<Tensor>() { tensor };
 
 
             var node = layer.inbound_nodes[node_index.Value];
 
-            if (node.inbound_layers.Count > 0)
+            if (node.inbound_layers.Count == 0)
             {
                 // Reached an Input layer, stop recursion.
                 return node.input_tensors;

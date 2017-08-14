@@ -48,7 +48,7 @@ namespace KerasSharp.Backends
 
         Tensor clip(Tensor norms, int v, int maxValue);
 
-        Tensor epsilon();
+        float epsilon();
 
         TFDataType floatx();
 
@@ -141,7 +141,7 @@ namespace KerasSharp.Backends
 
         Tensor abs(Tensor input);
 
-        Tensor categorical_crossentropy(Tensor expected, Tensor actual);
+        Tensor categorical_crossentropy(Tensor target, Tensor output, bool from_logits = false);
 
         Tensor sum(Tensor tensor, int axis);
 
@@ -189,7 +189,10 @@ namespace KerasSharp.Backends
 
         void batch_set_value(List<Tuple<Tensor, Array>> weight_value_tuples);
 
-        Tensor placeholder(int?[] shape, TFDataType? dtype = Utils.DEFAULT_DTYPE, bool sparse = false, string name = null);
+        Tensor placeholder(int?[] shape = null, int? ndim = null, TFDataType? dtype = Utils.DEFAULT_DTYPE, bool sparse = false, string name = null);
+
+        // Tensor placeholder(int ndim, TFDataType? dtype = Utils.DEFAULT_DTYPE, bool sparse = false, string name = null);
+
 
         int?[] int_shape(TFTensor input_tensor);
 
@@ -201,7 +204,6 @@ namespace KerasSharp.Backends
 
         Tensor update_add(Tensor iterations, int v);
 
-        Tensor placeholder(int ndim, string name);
 
         object get_variable_shape(Tensor p);
 
@@ -211,7 +213,6 @@ namespace KerasSharp.Backends
 
         bool is_sparse(Tensor tensor);
 
-        Tensor placeholder(int ndim, string name, bool sparse, TFDataType? dtype);
 
         object learning_phase();
 

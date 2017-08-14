@@ -62,16 +62,32 @@ namespace KerasSharp
 
         public static string str(object obj)
         {
+            if (obj == null)
+                return "null";
+
             if (obj is IEnumerable)
             {
                 var l = new List<string>();
                 foreach (object o in (IEnumerable)obj)
                     l.Add(str(o));
 
-                return "[ " + String.Join(", ", l.ToArray()) + " ]";
+                return "[" + String.Join(", ", l.ToArray()) + "]";
             }
 
             return obj.ToString();
+        }
+
+        public static TValue get<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue def)
+        {
+            TValue r;
+            if (dict.TryGetValue(key, out r))
+                return r;
+            return def;
+        }
+
+        public static int len(this ICollection list)
+        {
+            return list.Count;
         }
 
         public static bool hasattr(object obj, string name)
@@ -106,16 +122,22 @@ namespace KerasSharp
 
         public static bool is_dict<T>(this Dictionary<string, T> dict)
         {
+            if (dict == null)
+                return false;
             return !dict.Keys.Any(x => x.StartsWith("__K__"));
         }
 
         public static bool is_list<T>(this Dictionary<string, T> dict)
         {
+            if (dict == null)
+                return false;
             return dict.Keys.All(x => x.StartsWith("__K__list__"));
         }
 
         public static bool is_single<T>(this Dictionary<string, T> dict)
         {
+            if (dict == null)
+                return true;
             return dict.Keys.Count == 1 && dict.ContainsKey("__K__single__");
         }
 
@@ -129,6 +151,8 @@ namespace KerasSharp
 
         public static T to_single<T>(this Dictionary<string, T> dict)
         {
+            if (dict == null)
+                return default(T);
             return dict["__K__single__"];
         }
 

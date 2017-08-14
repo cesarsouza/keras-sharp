@@ -36,10 +36,11 @@ namespace KerasSharp.Backends
     using KerasSharp.Models;
     using TensorFlow;
     using Accord.Math;
+    using static KerasSharp.Python;
 
     // TODO:
 
-    public class TensorFlowBackend : IBackend
+    public class TensorFlowBackend : BackendBase, IBackend
     {
         internal TFGraph tf;
 
@@ -169,8 +170,34 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor categorical_crossentropy(Tensor expected, Tensor actual)
+        /// <summary>
+        ///   Categorical crossentropy between an output tensor and a target tensor.
+        /// </summary>
+        /// 
+        /// <param name="target">A tensor of the same shape as `output`.</param>
+        /// <param name="output">A tensor resulting from a softmax (unless `from_logits` is True, in which case `output` is expected to be the logits).</param>
+        /// <param name="from_logits">Boolean, whether `output` is the result of a softmax, or is a tensor of logits.</param>
+        /// 
+        /// <returns>Output tensor.</returns>
+        /// 
+        public Tensor categorical_crossentropy(Tensor target, Tensor output, bool from_logits = false)
         {
+            // Note: tf.nn.softmax_cross_entropy_with_logits
+            // expects logits, Keras expects probabilities.
+            if (!from_logits)
+            {
+                // scale preds so that the class probas of each sample sum to 1
+                var shape = output.shape;
+                var o = output.output;
+                o = tf.Div(o, tf.ReduceSum(output.output, axis: tf.Const(new TFTensor(shape.Length - 1)), keep_dims: true));
+                // manual computation of crossentropy
+                var _epsilon = constant(epsilon(), dtype: output.dtype);
+                //output = tf.clip_by_value(output, _epsilon, 1.0 - _epsilon);
+                //return -tf.reduce_sum(target * tf.log(output), axis: len(output.get_shape()) - 1);
+            }
+
+            //return tf.softmax_cross_entropy_with_logits(labels: target, logits: output);
+
             throw new NotImplementedException();
         }
 
@@ -242,11 +269,6 @@ namespace KerasSharp.Backends
         }
 
         public Tensor elu(object x)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Tensor epsilon()
         {
             throw new NotImplementedException();
         }
@@ -367,7 +389,7 @@ namespace KerasSharp.Backends
 
         public bool is_sparse(Tensor tensor)
         {
-            throw new NotImplementedException();
+            return false;
         }
 
         public Tensor l2_normalize(Tensor expected, int axis)
@@ -503,32 +525,28 @@ namespace KerasSharp.Backends
             return tf.GetTensorNumDims(x.output);
         }
 
-        public Tensor placeholder(int?[] shape, TFDataType? dtype = Utils.DEFAULT_DTYPE, bool sparse = false, string name = null)
+        public Tensor placeholder(int?[] shape = null, int? ndim = null, TFDataType? dtype = Utils.DEFAULT_DTYPE, bool sparse = false, string name = null)
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L397
 
             if (sparse)
                 throw new NotImplementedException();
+
             if (dtype == null)
                 dtype = floatx();
 
+            if (shape == null)
+            {
+                if (ndim != null)
+                    shape = new int?[ndim.Value];
+            }
+
             var tfshape = this.shape(shape);
 
-            Tensor x = new Tensor(this);
-            x.output = tf.Placeholder(dtype.Value, tfshape, operName: name);
+            Tensor x = tensor(tf.Placeholder(dtype.Value, tfshape, operName: name));
             x._keras_shape = shape;
             x._uses_learning_phase = false;
             return x;
-        }
-
-        public Tensor placeholder(int ndim, string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Tensor placeholder(int ndim, string name, bool sparse, TFDataType? dtype)
-        {
-            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -550,8 +568,8 @@ namespace KerasSharp.Backends
             var tf_shape = tf.Const(shape.Apply(x => (long)x));
             TFOutput u = tf.RandomUniform(tf_shape, dtype: dtype, seed: seed, operName: name);
 
-            
-            return tensor (tf.Add(tf.Mul(u, tf.Const(new TFTensor(maxval - minval), dtype: dtype)),
+
+            return tensor(tf.Add(tf.Mul(u, tf.Const(new TFTensor(maxval - minval), dtype: dtype)),
                                         tf.Const(new TFTensor(minval), dtype: dtype)));
         }
 

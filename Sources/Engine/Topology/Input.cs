@@ -67,8 +67,8 @@ namespace KerasSharp.Engine.Topology
 
             if (batch_shape == null && tensor == null)
             {
-                throw new ArgumentException("Please provide to Input either a `shape` or a `batch_shape` argument. Note that " +
-                    "`shape` does not include the batch dimension.");
+                throw new ArgumentException("Please provide to Input either a 'shape' or a 'batch_shape' argument. Note that " +
+                    "'shape' does not include the batch dimension.");
             }
 
             if (shape != null && batch_shape != null)
