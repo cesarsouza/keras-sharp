@@ -517,7 +517,7 @@ namespace KerasSharp.Models
         }
 
 
-        public override void Compile(IOptimizer optimizer, Dictionary<string, ILoss> loss, IMetric metrics = null,
+        public override void Compile(IOptimizer optimizer, Dictionary<string, ILoss> loss, Dictionary<string, List<IMetric>> metrics = null,
             Dictionary<string, double> loss_weights = null, Dictionary<string, string> sample_weight_mode = null)
         {
             //"""Configures the learning process.

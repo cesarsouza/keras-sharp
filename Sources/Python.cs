@@ -107,12 +107,12 @@ namespace KerasSharp
         // to detect what those values originally were before being
         // transformed to dictionaries.
 
-        public static Dictionary<string, T> to_dict<T>(this T value)
+        public static Dictionary<string, T> dict_from_single<T>(this T value)
         {
             return new Dictionary<string, T>() { { "__K__single__", value } };
         }
 
-        public static Dictionary<string, T> to_dict<T>(this List<T> list)
+        public static Dictionary<string, T> dict_from_list<T>(this List<T> list)
         {
             var dict = new Dictionary<string, T>();
             for (int i = 0; i < list.Count; i++)

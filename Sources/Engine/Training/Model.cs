@@ -87,7 +87,7 @@ namespace KerasSharp.Models
         protected List<object> _feed_loss_fns;
         public List<Tensor> targets;
         protected List<Tensor> _feed_targets;
-        public IMetric metrics;
+        public Dictionary<string, List<IMetric>> metrics;
         public List<string> metrics_names;
         public List<Tensor> metrics_tensors;
         protected List<Tensor> _feed_sample_weights;
@@ -111,6 +111,11 @@ namespace KerasSharp.Models
         }
 
 
+        public void Compile(IOptimizer optimizer, ILoss loss, IMetric metrics = null)
+        {
+            Compile(optimizer, loss.dict_from_single(), new List<IMetric>() { metrics }.dict_from_single());
+        }
+
         /// <summary>
         ///   Configures the model for training.
         /// </summary>
@@ -131,14 +136,14 @@ namespace KerasSharp.Models
         ///   `null` defaults to sample - wise weights(1D). If the model has multiple outputs, you can use a different `sample_weight_mode` 
         ///     on each output by passing a dictionary or a list of modes.</param>
         /// 
-        public void Compile(IOptimizer optimizer, ILoss loss, IMetric metrics = null)
+        public void Compile(IOptimizer optimizer, ILoss loss, List<IMetric> metrics = null)
         {
-            Compile(optimizer, loss.to_dict(), metrics);
+            Compile(optimizer, loss.dict_from_single(), metrics.dict_from_single());
         }
 
-        public void Compile(IOptimizer optimizer, List<ILoss> loss, IMetric metrics = null)
+        public void Compile(IOptimizer optimizer, List<ILoss> loss, List<List<IMetric>> metrics = null)
         {
-            Compile(optimizer, loss.to_dict(), metrics);
+            Compile(optimizer, loss.dict_from_list(), metrics.dict_from_list());
         }
 
         public void Compile(string optimizer, string loss, string[] metrics = null)
@@ -179,7 +184,7 @@ namespace KerasSharp.Models
         ///   `null` defaults to sample - wise weights(1D). If the model has multiple outputs, you can use a different `sample_weight_mode` 
         ///     on each output by passing a dictionary or a list of modes.</param>
         /// 
-        public virtual void Compile(IOptimizer optimizer, Dictionary<string, ILoss> loss, IMetric metrics = null,
+        public virtual void Compile(IOptimizer optimizer, Dictionary<string, ILoss> loss, Dictionary<string, List<IMetric>> metrics = null,
             Dictionary<string, double> loss_weights = null, Dictionary<string, string> sample_weight_mode = null)
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L681
@@ -572,13 +577,34 @@ namespace KerasSharp.Models
         /// 
         /// <param name="metrics">A list or dict of metric functions.</param>
         /// <param name="output_names">A list of the names (strings) of model outputs.</param>
+        /// 
         /// <returns>A list (one entry per model output) of lists of metric functions.</returns>
         /// 
-        private List<List<IMetric>> _collect_metrics(IMetric metrics, List<string> output_names)
+        private List<List<IMetric>> _collect_metrics(Dictionary<string, List<IMetric>> metrics, List<string> output_names)
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L293
 
-            throw new NotImplementedException();
+            if (metrics == null)
+                return output_names.Select(x => new List<IMetric>()).ToList();
+
+            if (metrics.is_single())
+            {
+                // we then apply all metrics to all outputs.
+                return output_names.Select(x => metrics.to_single()).ToList();
+            }
+            else if (metrics.is_dict())
+            {
+                var nested_metrics = new List<List<IMetric>>();
+                foreach (string name in output_names)
+                {
+                    List<IMetric> output_metrics = metrics.get(name, new List<IMetric>());
+                    nested_metrics.Add(output_metrics);
+                }
+
+                return nested_metrics;
+            }
+
+            throw new InvalidOperationException($"Type of `metrics` argument not understood. Expected a list or dictionary, found: {str(metrics)}.");
         }
 
         private IMetric _masked_objective(IMetric metric_fn)
