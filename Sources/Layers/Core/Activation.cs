@@ -36,6 +36,7 @@ namespace KerasSharp
     using KerasSharp.Engine.Topology;
 
     using static KerasSharp.Backends.Current;
+    using System.Reflection;
 
 
     /// <summary>
@@ -48,7 +49,6 @@ namespace KerasSharp
     public class Activation : Layer
     {
         private IActivationFunction activation;
-        private string v;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Activation"/> class.
@@ -62,9 +62,20 @@ namespace KerasSharp
             this.activation = activation;
         }
 
-        public Activation(string v)
+        public Activation(string name)
         {
-            this.v = v;
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/activations.py#L90
+            Type type = typeof(IActivationFunction);
+            Type activationType = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(s => s.GetTypes())
+                .Where(p => type.IsAssignableFrom(p) && !p.IsInterface)
+                .Where(p => p.Name.ToUpperInvariant() == name.ToUpperInvariant())
+                .FirstOrDefault();
+
+            if (activationType == null)
+                throw new ArgumentOutOfRangeException("name", $"Could not find activation function '{name}'.");
+
+            this.activation = (IActivationFunction)Activator.CreateInstance(activationType);
         }
 
         protected override List<Tensor> InnerCall(List<Tensor> inputs, List<Tensor> mask = null, bool? training = null)

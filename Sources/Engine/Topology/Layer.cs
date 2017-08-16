@@ -706,7 +706,7 @@ namespace KerasSharp.Engine.Topology
             {
                 if (mask != null)
                 {
-                    foreach (var m in mask)
+                    foreach (Tensor m in mask)
                         throw new Exception("Layer {this.name} does not support masking, but was passed an input_mask: " + m);
                 }
             }

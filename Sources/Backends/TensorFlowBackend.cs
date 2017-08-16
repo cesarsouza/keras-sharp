@@ -626,7 +626,7 @@ namespace KerasSharp.Backends
 
         public Tensor relu(Tensor x)
         {
-            throw new NotImplementedException();
+            return tensor(tf.Relu(x));
         }
 
         public Tensor sigmoid(Tensor x)

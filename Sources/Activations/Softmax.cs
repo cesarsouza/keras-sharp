@@ -52,9 +52,18 @@ namespace KerasSharp.Activations
         /// Initializes a new instance of the <see cref="Softmax"/> class.
         /// </summary>
         /// 
+        public Softmax()
+            : this(-1)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Softmax"/> class.
+        /// </summary>
+        /// 
         /// <param name="axis">The axis along which the softmax normalization is applied.</param>
         /// 
-        public Softmax(int axis = -1)
+        public Softmax(int axis)
         {
             this.axis = axis;
         }
