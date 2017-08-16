@@ -428,7 +428,7 @@ namespace KerasSharp.Models
             return this.model.get_updates_for(inputs);
         }
 
-        public override List<List<List<Tensor>>> losses
+        public override List<Tensor> losses
         {
             get
             {
@@ -438,7 +438,7 @@ namespace KerasSharp.Models
             }
         }
 
-        public override List<List<Tensor>> get_losses_for(List<Tensor> inputs)
+        public override List<Tensor> get_losses_for(List<Tensor> inputs)
         {
             if (this.model == null)
                 this.build();

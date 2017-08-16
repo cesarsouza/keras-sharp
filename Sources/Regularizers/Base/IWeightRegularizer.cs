@@ -45,14 +45,22 @@ namespace KerasSharp.Regularizers
         /// 
         /// <returns>The output tensor with the regularization applied.</returns>
         /// 
-        List<Tensor> Call(params Tensor[] input);
+        Tensor Call(Tensor input);
 
-
+        /// <summary>
+        /// Wires the regularizer to the graph.
+        /// </summary>
+        /// 
+        /// <param name="w">The weights tensor.</param>
+        /// 
+        /// <returns>The output tensor with the regularization applied.</returns>
+        /// 
+        List<Tensor> Call(List<Tensor> input);
     }
 
     public abstract class WeightRegularizerBase
     {
-        public List<Tensor> Call(params Tensor[] input)
+        public List<Tensor> Call(List<Tensor> input)
         {
             return input.Select(x => Call(x)).ToList();
         }

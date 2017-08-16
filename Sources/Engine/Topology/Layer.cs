@@ -50,16 +50,16 @@ namespace KerasSharp.Engine.Topology
     public abstract class Layer
     {
         public virtual List<InputSpec> input_spec { get; set; }
-        private List<Tensor> _trainable_weights;
-        private List<Tensor> _non_trainable_weights;
-        private bool _trainable;
-        private List<Array> _initial_weights;
-        private Dictionary<Tensor, IWeightConstraint> _constraints;
-        private List<List<List<Tensor>>> _losses;
-        private List<List<Tensor>> _updates;
-        private Dictionary<string, List<List<Tensor>>> _per_input_losses;
-        private Dictionary<string, List<Tensor>> _per_input_updates;
-        private bool _built;
+        public List<Tensor> _trainable_weights;
+        public List<Tensor> _non_trainable_weights;
+        public bool _trainable;
+        public List<Array> _initial_weights;
+        public Dictionary<Tensor, IWeightConstraint> _constraints;
+        public List<Tensor> _losses;
+        public List<List<Tensor>> _updates;
+        public Dictionary<string, List<Tensor>> _per_input_losses;
+        public Dictionary<string, List<Tensor>> _per_input_updates;
+        public bool _built;
 
         public bool supports_masking;
         public virtual bool trainable { get; set; }
@@ -71,11 +71,11 @@ namespace KerasSharp.Engine.Topology
         public List<Node> inbound_nodes;
         public int?[] batch_input_shape;
         public TFDataType? input_dtype;
-        internal bool is_placeholder;
+        public bool is_placeholder;
 
 
         public TFDataType dtype;
-        internal IEnumerable<Layer> _flattened_layers;
+        public IEnumerable<Layer> _flattened_layers;
 
         public virtual bool stateful { get; set; }
 
@@ -128,9 +128,9 @@ namespace KerasSharp.Engine.Topology
             this._trainable_weights = new List<Tensor>();
             this._non_trainable_weights = new List<Tensor>();
             this._constraints = new Dictionary<Tensor, IWeightConstraint>();  // dict {tensor: constraint instance}
-            this._losses = new List<List<List<Tensor>>>();
+            this._losses = new List<Tensor>();
             this._updates = new List<List<Tensor>>();
-            this._per_input_losses = new Dictionary<string, List<List<Tensor>>>();
+            this._per_input_losses = new Dictionary<string, List<Tensor>>();
             this._per_input_updates = new Dictionary<string, List<Tensor>>();
             this._built = false;
 
@@ -205,7 +205,7 @@ namespace KerasSharp.Engine.Topology
             }
         }
 
-        public virtual List<List<List<Tensor>>> losses
+        public virtual List<Tensor> losses
         {
             get { return this._losses; }
         }
@@ -276,7 +276,7 @@ namespace KerasSharp.Engine.Topology
             Tensor weight = K.variable(tensor: initializer.Call(shape), dtype: dtype, name: name);
 
             if (regularizer != null)
-                this.add_loss(new List<List<Tensor>>() { regularizer.Call(weight) });
+                this.add_loss(new List<Tensor>() { regularizer.Call(weight) });
 
             if (constraint != null)
                 this.constraints[weight] = constraint;
@@ -538,7 +538,7 @@ namespace KerasSharp.Engine.Topology
                 // Apply activity regularizer if any:
                 if (this.activity_regularizer != null)
                 {
-                    List<List<Tensor>> regularization_losses = output.Select(x => this.activity_regularizer.Call(x)).ToList();
+                    List<Tensor> regularization_losses = this.activity_regularizer.Call(output);
                     this.add_loss(regularization_losses, inputs);
                 }
 
@@ -982,7 +982,7 @@ namespace KerasSharp.Engine.Topology
         /// 
         /// <remarks>The loss may potentially be conditional on some inputs tensors, for instance activity losses are conditional on the layer"s inputs.</remarks>
         /// 
-        public void add_loss(List<List<Tensor>> losses, List<Tensor> inputs = null)
+        public void add_loss(List<Tensor> losses, List<Tensor> inputs = null)
         {
             if (losses == null || losses.Count == 0)
                 return;
@@ -990,7 +990,7 @@ namespace KerasSharp.Engine.Topology
             // Update this.losses
             if (this._losses != null)
             {
-                this._losses.Add(losses);
+                this._losses.AddRange(losses);
 
                 // Update this._per_input_updates
                 if (inputs != null && inputs.Count == 0)
@@ -1008,7 +1008,7 @@ namespace KerasSharp.Engine.Topology
                 }
 
                 if (!this._per_input_losses.ContainsKey(inputs_hash))
-                    this._per_input_losses[inputs_hash] = new List<List<Tensor>>();
+                    this._per_input_losses[inputs_hash] = new List<Tensor>();
                 this._per_input_losses[inputs_hash].AddRange(losses);
             }
         }
@@ -1062,7 +1062,8 @@ namespace KerasSharp.Engine.Topology
 
         private string _object_list_uid(List<Tensor> inputs)
         {
-            throw new NotImplementedException();
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/topology.py#L2706
+            return String.Join(", ", inputs.Select(x => str(id(x))));
         }
 
         public virtual List<Tensor> get_updates_for(List<Tensor> inputs)
@@ -1078,16 +1079,15 @@ namespace KerasSharp.Engine.Topology
         }
 
 
-        public virtual List<List<Tensor>> get_losses_for(List<Tensor> inputs)
+        public virtual List<Tensor> get_losses_for(List<Tensor> inputs)
         {
-            string inputs_hash;
+            string inputs_hash = String.Empty;
             if (inputs != null)
                 inputs_hash = _object_list_uid(inputs);
-            else inputs_hash = null;
 
             if (this._per_input_losses.ContainsKey(inputs_hash))
                 return this._per_input_losses[inputs_hash];
-            return new List<List<Tensor>>();
+            return new List<Tensor>();
         }
 
         /// <summary>

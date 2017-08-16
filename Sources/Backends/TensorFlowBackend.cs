@@ -165,9 +165,9 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor cast(object v1, object v2)
+        public Tensor cast(Tensor x, TFDataType dataType)
         {
-            throw new NotImplementedException();
+            return tensor(tf.Cast(x, dataType));
         }
 
         /// <summary>
@@ -187,18 +187,17 @@ namespace KerasSharp.Backends
             if (!from_logits)
             {
                 // scale preds so that the class probas of each sample sum to 1
-                var shape = output.shape;
-                var o = output.output;
-                o = tf.Div(o, tf.ReduceSum(output.output, axis: tf.Const(new TFTensor(shape.Length - 1)), keep_dims: true));
+                int?[] shape = output.shape;
+                var last = tf.Const(new TFTensor(shape.Length - 1));
+                TFOutput o = tf.Div(output, tf.ReduceSum(output, axis: last, keep_dims: true));
                 // manual computation of crossentropy
-                var _epsilon = constant(epsilon(), dtype: output.dtype);
-                //output = tf.clip_by_value(output, _epsilon, 1.0 - _epsilon);
-                //return -tf.reduce_sum(target * tf.log(output), axis: len(output.get_shape()) - 1);
+                TFOutput _epsilon = constant(epsilon(), dtype: output.dtype);
+                o = tf.ClipByValue(o, _epsilon, tf.Sub(constant(1f), _epsilon));
+                o = tf.Neg(tf.ReduceSum(tf.Mul(target, tf.Log(output)), axis: last));
+                return tensor(o);
             }
 
-            //return tf.softmax_cross_entropy_with_logits(labels: target, logits: output);
-
-            throw new NotImplementedException();
+            return tensor(tf.SoftmaxCrossEntropyWithLogits(target, output).loss);
         }
 
         public Tensor clip(Tensor norms, int v, int maxValue)
@@ -228,25 +227,8 @@ namespace KerasSharp.Backends
         }
 
 
-        public Tensor div(Tensor e, Tensor s)
-        {
-            throw new NotImplementedException();
-        }
 
-        public Tensor div(Tensor desired, object v)
-        {
-            throw new NotImplementedException();
-        }
 
-        public Tensor div(double v1, object v2)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Tensor div(Tensor tensor, int samples)
-        {
-            throw new NotImplementedException();
-        }
 
         public Tensor dropout(object p, double retain_prob, object noise_shape, object seed)
         {
@@ -336,9 +318,14 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor not_equal(Tensor w, double v)
+        public Tensor not_equal(Tensor x, Tensor y)
         {
-            throw new NotImplementedException();
+            return tensor(tf.NotEqual(x, y));
+        }
+
+        public Tensor not_equal(Tensor x, double y)
+        {
+            return tensor(tf.NotEqual(x, tf.Const(y, x.dtype)));
         }
 
         public Tensor hard_sigmoid(Tensor x)
@@ -422,24 +409,69 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor mean(Tensor tensor, int axis)
+
+
+        public TFOutput _normalize_axis(int[] axis, int? ndim)
         {
-            throw new NotImplementedException();
+            axis = (int[])axis.Clone();
+            for (int i = 0; i < axis.Length; i++)
+            {
+                if (axis[i] < 0)
+                    axis[i] = axis[i] % ndim.Value;
+            }
+
+            return tf.Const(axis);
         }
 
-        public Tensor mean(Tensor tensor, int[] axis)
+        /// <summary>
+        ///   Mean of a tensor, alongside the specified axis.
+        /// </summary>
+        /// 
+        /// <param name="x">A tensor or variable.</param>
+        /// <param name="axis">A list of integer. Axes to compute the mean.</param>
+        /// <param name="keepdims>A boolean, whether to keep the dimensions or not. If <paramref name="keepdims"/> is <c>false</c>, 
+        ///   the rank of the tensor is reduced by 1 for each entry in <paramref name="axis"/>. If <paramref name="keepdims"/> is 
+        ///   <c>true</c>, the reduced dimensions are retained with length 1.
+        ///   
+        /// <returns>A tensor with the mean of elements of <c>x</c>.</returns>
+        /// 
+        public Tensor mean(Tensor x, int[] axis, bool keepdims = false, string name = null)
         {
-            throw new NotImplementedException();
+            return tensor(tf.ReduceMean(x, _normalize_axis(axis, ndim(x)), keepdims, operName: name));
         }
+
+        /// <summary>
+        ///   Mean of a tensor, alongside the specified axis.
+        /// </summary>
+        /// 
+        /// <param name="x">A tensor or variable.</param>
+        /// <param name="axis">The axis where to compute the mean.</param>
+        /// <param name="keepdims>A boolean, whether to keep the dimensions or not. If <paramref name="keepdims"/> is <c>false</c>, 
+        ///   the rank of the tensor is reduced by 1 for each entry in <paramref name="axis"/>. If <paramref name="keepdims"/> is 
+        ///   <c>true</c>, the reduced dimensions are retained with length 1.
+        ///   
+        /// <returns>A tensor with the mean of elements of <c>x</c>.</returns>
+        /// 
+        public Tensor mean(Tensor x, int axis = -1, bool keepdims = false, string name = null)
+        {
+            return tensor(tf.ReduceMean(x, axis: tf.Const(axis), keep_dims: keepdims, operName: name));
+        }
+
 
         public Tensor minus(Tensor tensor)
         {
             throw new NotImplementedException();
         }
 
+        public Tensor dot(Tensor a, Tensor b)
+        {
+            return tensor(tf.MatMul(a.output, b.output));
+        }
+
+
         public Tensor mul<T>(T a, Tensor b)
         {
-            return mul(constant(a), b);
+            return mul(constant(a, dtype: b.dtype), b);
         }
 
         public Tensor mul(Tensor a, Tensor b)
@@ -449,19 +481,38 @@ namespace KerasSharp.Backends
 
         public Tensor mul<T>(Tensor a, T b)
         {
-            return mul(a, constant(b));
-        }
-
-
-        public Tensor dot(Tensor a, Tensor b)
-        {
-            return tensor(tf.MatMul(a.output, b.output));
+            return mul(a, constant(b, dtype: a.dtype));
         }
 
         public Tensor mul(List<Tensor> batch_outs, int length)
         {
             throw new NotImplementedException();
         }
+
+
+
+
+
+        public Tensor div<T>(T a, Tensor b)
+        {
+            return div(constant(a, dtype: b.dtype), b);
+        }
+
+        public Tensor div(Tensor a, Tensor b)
+        {
+            return tensor(tf.Mul(a.output, b.output));
+        }
+
+        public Tensor div<T>(Tensor a, T b)
+        {
+            return div(a, constant(b, dtype: a.dtype));
+        }
+
+        public Tensor div(List<Tensor> batch_outs, int length)
+        {
+            throw new NotImplementedException();
+        }
+
 
 
         public Tensor add(Tensor a, Tensor b)
@@ -608,14 +659,14 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor sum(Tensor v, int axis, bool keepdims)
+        public Tensor sum(Tensor x, int[] axis, bool keepdims = false, string name = null)
         {
-            throw new NotImplementedException();
+            return tensor(tf.ReduceSum(x, tf.Const(axis), keepdims, name));
         }
 
-        public Tensor sum(Tensor tensor, int axis)
+        public Tensor sum(Tensor x, int axis, bool keepdims = false, string name = null)
         {
-            throw new NotImplementedException();
+            return tensor(tf.ReduceSum(x, tf.Const(axis), keepdims, name));
         }
 
         public object sum(object[] v)
@@ -628,7 +679,7 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public object sum(double v, Tensor tensor)
+        public Tensor sum(double v, Tensor tensor)
         {
             throw new NotImplementedException();
         }

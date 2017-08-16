@@ -55,9 +55,6 @@ namespace KerasSharp.Engine.Topology
     /// 
     public class Container : Layer
     {
-        protected internal object _per_input_losses;
-        protected internal object _per_input_updates;
-
         protected List<Tensor> inputs;
         protected List<Tensor> masks;
         protected List<Tensor> outputs;
@@ -102,8 +99,6 @@ namespace KerasSharp.Engine.Topology
 
             this.supports_masking = false;
             this.trainable = true;
-            this._per_input_losses = new object[] { };
-            this._per_input_updates = new object[] { };
 
             this.inputs = inputs;
             this.outputs = outputs;
@@ -545,11 +540,11 @@ namespace KerasSharp.Engine.Topology
         /// 
         /// <returns>A list of loss tensors.</returns>
         ///
-        public override List<List<List<Tensor>>> losses
+        public override List<Tensor> losses
         {
             get
             {
-                var losses = new List<List<List<Tensor>>>();
+                var losses = new List<Tensor>();
                 // Retrieve losses for all internal layers.
                 foreach (var layer in this.layers)
                 {
@@ -567,17 +562,17 @@ namespace KerasSharp.Engine.Topology
                             {
                                 // The model owns this layer node.
                                 inputs = node.input_tensors;
-                                losses.Add(layer.get_losses_for(inputs));
+                                losses.AddRange(layer.get_losses_for(inputs));
                             }
-
-                            // Collect unconditional losses.
-                            losses.Add(layer.get_losses_for(null));
                         }
+
+                        // Collect unconditional losses.
+                        losses.AddRange(layer.get_losses_for(null));
                     }
                 }
 
                 // Add any potential unconditional model-level loss.
-                losses.Add(this.get_losses_for(null));
+                losses.AddRange(this.get_losses_for(null));
                 return losses;
             }
         }

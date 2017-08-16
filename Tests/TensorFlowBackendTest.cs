@@ -255,5 +255,71 @@ namespace Tests
             }
         }
 
+        [Test]
+        public void sum_test()
+        {
+            using (var K = new TensorFlowBackend())
+            {
+                var x = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
+                {
+                    double a = (double)K.sum(x, axis: new[] { 0, 1 }).eval();
+                    Assert.AreEqual(21, a);
+
+                    double[] b = (double[])K.sum(x, axis: new[] { 0 }).eval();
+                    Assert.AreEqual(new[] { 5.0, 7.0, 9.0 }, b);
+
+                    double[] c = (double[])K.sum(x, axis: new[] { 1 }).eval();
+                    Assert.AreEqual(new[] { 6.0, 15.0 }, c);
+
+                    double[,] d = (double[,])K.sum(x, axis: new int[] { }).eval();
+                    Assert.AreEqual(new double[,] { { 1, 2, 3 }, { 4, 5, 6 } }, d);
+                }
+
+                {
+                    double[] a = (double[])K.sum(x, axis: -1).eval();
+                    Assert.AreEqual(new[] { 6.0, 15.0 }, a);
+
+                    double[] b = (double[])K.sum(x, axis: 0).eval();
+                    Assert.AreEqual(new[] { 5.0, 7.0, 9.0 }, b);
+
+                    double[] c = (double[])K.sum(x, axis: 1).eval();
+                    Assert.AreEqual(new[] { 6.0, 15.0 }, c);
+                }
+            }
+        }
+
+        [Test]
+        public void mean_test()
+        {
+            using (var K = new TensorFlowBackend())
+            {
+                var x = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
+                {
+                    double a = (double)K.mean(x, axis: new[] { 0, 1 }).eval();
+                    Assert.AreEqual(3.5, a);
+
+                    double[] b = (double[])K.mean(x, axis: new[] { 0 }).eval();
+                    Assert.AreEqual(new[] { 2.5, 3.5, 4.5 }, b);
+
+                    double[] c = (double[])K.mean(x, axis: new[] { 1 }).eval();
+                    Assert.AreEqual(new[] { 2.0, 5.0 }, c);
+
+                    double[,] d = (double[,])K.mean(x, axis: new int[] { }).eval();
+                    Assert.AreEqual(new double[,] { { 1, 2, 3 }, { 4, 5, 6 } }, d);
+                }
+
+                {
+                    double[] a = (double[])K.mean(x, axis: -1).eval();
+                    Assert.AreEqual(new[] { 2, 5 }, a);
+
+                    double[] b = (double[])K.mean(x, axis: 0).eval();
+                    Assert.AreEqual(new[] { 2.5, 3.5, 4.5 }, b);
+
+                    double[] c = (double[])K.mean(x, axis: 1).eval();
+                    Assert.AreEqual(new[] { 2.0, 5.0 }, c);
+                }
+            }
+        }
+
     }
 }

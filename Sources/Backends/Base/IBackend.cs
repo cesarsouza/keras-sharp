@@ -44,7 +44,11 @@ namespace KerasSharp.Backends
 
         Tensor square(Tensor w);
 
-        Tensor sum(Tensor v, int axis, bool keepdims);
+        Tensor sum(Tensor x, int[] axis = null, bool keepdims = false, string name = null);
+
+        Tensor sum(Tensor x, int axis, bool keepdims = false, string name = null);
+
+
 
         Tensor clip(Tensor norms, int v, int maxValue);
 
@@ -54,7 +58,8 @@ namespace KerasSharp.Backends
 
         Tensor greater_equal(Tensor w, double v);
         void clear_session();
-        Tensor cast(object v1, object v2);
+
+        Tensor cast(Tensor x, TFDataType dataType);
 
         Tensor dropout(object p, double retain_prob, object noise_shape, object seed);
 
@@ -69,19 +74,30 @@ namespace KerasSharp.Backends
 
         Tensor max(Tensor x, int axis, bool keepdims);
 
-        Tensor div(Tensor e, Tensor s);
 
         Tensor elu(Tensor x);
 
         Tensor hard_sigmoid(Tensor x);
 
 
+        Tensor mul(Tensor a, Tensor b);
 
         Tensor mul<T>(T a, Tensor b);
 
         Tensor mul<T>(Tensor a, T b);
 
         Tensor mul(List<Tensor> batch_outs, int length);
+
+
+
+
+        Tensor div(Tensor a, Tensor b);
+
+        Tensor div<T>(T a, Tensor b);
+
+        Tensor div<T>(Tensor a, T b);
+
+
 
 
 
@@ -115,17 +131,14 @@ namespace KerasSharp.Backends
 
         Tensor exp(object v);
 
-        Tensor div(Tensor desired, object v);
-
         object eval(Tensor tensor);
 
-        
 
-        Tensor mul(Tensor w, Tensor tensor);
+
 
         Tensor clip(Tensor norms, double min_value, double max_value);
 
-        
+
 
         Tensor random_uniform(int?[] shape, double minvalue = 0.0, double maxvalue = 1.0, TFDataType dtype = Utils.DEFAULT_DTYPE, int? seed = null, string name = null);
 
@@ -135,15 +148,13 @@ namespace KerasSharp.Backends
 
         Tensor minus(Tensor tensor);
 
-        Tensor mean(Tensor tensor, int axis = -1);
+        Tensor mean(Tensor tensor, int axis = -1, bool keepdims = false, string name = null);
 
-        Tensor mean(Tensor tensor, int[] axis);
+        Tensor mean(Tensor tensor, int[] axis, bool keepdims = false, string name = null);
 
         Tensor abs(Tensor input);
 
         Tensor categorical_crossentropy(Tensor target, Tensor output, bool from_logits = false);
-
-        Tensor sum(Tensor tensor, int axis);
 
         Tensor max(Tensor tensor, int axis);
 
@@ -179,8 +190,6 @@ namespace KerasSharp.Backends
 
         IDisposable name_scope(string name);
 
-        object sum(Tensor tensor);
-
         Tensor clip_norm(Tensor g, double clipnorm, Tensor norm);
 
         Tensor identity(Tensor x);
@@ -196,8 +205,6 @@ namespace KerasSharp.Backends
 
         int?[] int_shape(TFTensor input_tensor);
 
-        Tensor div(double v1, object v2);
-
         List<Array> batch_get_value(List<List<Tensor>> weights);
 
         void batch_set_value(List<(Tensor, Array)> tuples);
@@ -209,7 +216,7 @@ namespace KerasSharp.Backends
 
         Tensor get_variable_shape(object s);
 
-        object sum(double v, Tensor tensor);
+        Tensor sum(double v, Tensor tensor);
 
         bool is_sparse(Tensor tensor);
 
@@ -226,8 +233,6 @@ namespace KerasSharp.Backends
         Function function(List<Tensor> inputs, List<object> list, Func<List<object>> updates, string name);
 
         Tensor update(object m, object v);
-
-        Tensor div(Tensor tensor, int samples);
 
         Tensor truncated_normal(int[] shape, double v, double stddev, TFDataType dtype, int? seed);
 

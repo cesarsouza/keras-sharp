@@ -371,7 +371,7 @@ namespace KerasSharp.Models
                     var swm = sample_weight_mode.to_single();
                     string name = this.output_names[i];
 
-                    if (!skip_indices.Contains(i))
+                    if (skip_indices.Contains(i))
                     {
                         sample_weight_modes.Add(null);
                         sample_weights.Add(null);
@@ -419,28 +419,37 @@ namespace KerasSharp.Models
             this.metrics_tensors = new List<Tensor>();
 
             // Compute total loss.
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L903
             Tensor total_loss = null;
-            for (int i = 0; i < this.outputs.Count; i++)
+            using (K.name_scope("loss"))
             {
-                if (skip_indices.Contains(i))
-                    continue;
-
-                Tensor y_true = this.targets[i];
-                Tensor y_pred = this.outputs[i];
-                ILoss weighted_loss = weighted_losses[i];
-                Tensor sample_weight = sample_weights[i];
-                Tensor mask = masks[i];
-                double loss_weight = loss_weights_list[i];
-                Tensor output_loss = weighted_loss.Call(y_true, y_pred, sample_weight, mask);
-
-                if (this.outputs.Count > 1)
+                for (int i = 0; i < this.outputs.Count; i++)
                 {
-                    this.metrics_tensors.Add(output_loss);
-                    this.metrics_names.Add(this.output_names[i] + "_loss");
+                    if (skip_indices.Contains(i))
+                        continue;
+
+                    Tensor y_true = this.targets[i];
+                    Tensor y_pred = this.outputs[i];
+                    ILoss weighted_loss = weighted_losses[i];
+                    Tensor sample_weight = sample_weights[i];
+                    Tensor mask = masks[i];
+                    double loss_weight = loss_weights_list[i];
+
+                    Tensor output_loss;
+                    using (K.name_scope(this.output_names[i] + "_loss"))
+                        output_loss = weighted_loss.Call(y_true, y_pred, sample_weight, mask);
+
+                    if (this.outputs.Count > 1)
+                    {
+                        this.metrics_tensors.Add(output_loss);
+                        this.metrics_names.Add(this.output_names[i] + "_loss");
+                    }
+
                     if (total_loss == null)
                         total_loss = K.mul(loss_weight, output_loss);
                     else
                         total_loss = K.add(total_loss, K.mul(loss_weight, output_loss));
+
                 }
 
                 if (total_loss == null)
@@ -452,7 +461,7 @@ namespace KerasSharp.Models
 
                 // Add regularization penalties
                 // and other layer-specific losses.
-                foreach (var loss_tensor in this.losses)
+                foreach (Tensor loss_tensor in this.losses)
                 {
                     total_loss = K.add(total_loss, loss_tensor);
                 }
@@ -557,9 +566,18 @@ namespace KerasSharp.Models
 
 
 
-
+        /// <summary>
+        ///   Maps metric functions to model outputs.
+        /// </summary>
+        /// 
+        /// <param name="metrics">A list or dict of metric functions.</param>
+        /// <param name="output_names">A list of the names (strings) of model outputs.</param>
+        /// <returns>A list (one entry per model output) of lists of metric functions.</returns>
+        /// 
         private List<List<IMetric>> _collect_metrics(IMetric metrics, List<string> output_names)
         {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L293
+
             throw new NotImplementedException();
         }
 
@@ -602,8 +620,9 @@ namespace KerasSharp.Models
                 }
                 // reduce score_array to same ndim as weight array
                 int? ndim = K.ndim(score_array);
-                var weight_ndim = K.ndim(weights);
-                score_array = K.mean(score_array, axis: range(weight_ndim, ndim));
+                int? weight_ndim = K.ndim(weights);
+                if (ndim != weight_ndim)
+                    score_array = K.mean(score_array, axis: range(weight_ndim, ndim));
 
                 // apply sample weighting
                 if (weights != null)

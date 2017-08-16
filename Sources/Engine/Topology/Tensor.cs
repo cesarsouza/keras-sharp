@@ -101,6 +101,12 @@ namespace KerasSharp.Engine.Topology
         }
 
 
+        public static implicit operator TFOutput(Tensor t)
+        {
+            return t.output;
+        }
+
+
         // TODO: Generate these operators using T4 templates
 
         public static Tensor operator *(double a, Tensor b)
