@@ -49,7 +49,7 @@ namespace Tests
                 Tensor variable_new_shape = K.reshape(variable, new int[] { 1, 4 });
                 double[,] output = (double[,])variable_new_shape.eval();
 
-                Assert.AreEqual(3, output);
+                Assert.AreEqual(new double[,] { { 1, 2, 3, 4 } }, output);
             }
         }
 
