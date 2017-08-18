@@ -40,6 +40,20 @@ namespace Tests
         }
 
         [Test]
+        public void reshape_test()
+        {
+            using (var K = new TensorFlowBackend())
+            {
+                double[,] input_array = new double[,] { { 1, 2 }, { 3, 4 } };
+                Tensor variable = K.variable(array: input_array);
+                Tensor variable_new_shape = K.reshape(variable, new int[] { 1, 4 });
+                double[,] output = (double[,])variable_new_shape.eval();
+
+                Assert.AreEqual(3, output);
+            }
+        }
+
+        [Test]
         public void partial_shape_test()
         {
             // Note: Keras/TensorFlow represent unknown dimensions 

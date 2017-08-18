@@ -125,8 +125,20 @@ namespace KerasSharp.Backends
 
 
 
-
-
+        /// <summary>
+        ///   Reshapes a tensor to the specified shape.
+        /// </summary>
+        /// 
+        /// <param name="x">The Tensor or variable.</param>
+        /// <param name="shape">The target shape.</param>
+        /// 
+        /// <returns>Tensor.</returns>
+        /// 
+        public Tensor reshape(Tensor x, int[] shape)
+        {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L1724
+            return tensor(tf.Reshape(x, constant(shape)));
+        }
 
 
 
