@@ -65,16 +65,16 @@ namespace KerasSharp.Engine.Topology
         public virtual bool trainable { get; set; }
         public string name;
         public virtual bool uses_learning_phase { get; set; }
-        public IWeightRegularizer activity_regularizer;
+        protected internal IWeightRegularizer activity_regularizer;
 
         public List<Node> outbound_nodes;
         public List<Node> inbound_nodes;
-        public int?[] batch_input_shape;
-        public TFDataType? input_dtype;
+        protected internal int?[] batch_input_shape;
+        protected internal TFDataType? input_dtype;
         public bool is_placeholder;
 
 
-        public TFDataType dtype;
+        protected internal TFDataType dtype;
         public virtual List<Layer> _flattened_layers { get; set; }
 
         public virtual bool stateful { get; set; }

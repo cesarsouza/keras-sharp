@@ -73,7 +73,7 @@ namespace KerasSharp.Models
     {
         public bool Trainable { get; set; }
 
-        internal Sequential callback_model;
+        protected internal Sequential callback_model;
         public IOptimizer optimizer;
         public Dictionary<string, string> sample_weight_mode;
         public Dictionary<string, ILoss> loss;

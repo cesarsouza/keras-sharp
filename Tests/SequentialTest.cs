@@ -1,6 +1,7 @@
 ﻿using KerasSharp;
 using KerasSharp.Activations;
 using KerasSharp.Engine.Topology;
+using KerasSharp.Layers;
 using KerasSharp.Losses;
 using KerasSharp.Metrics;
 using KerasSharp.Models;
@@ -25,6 +26,22 @@ namespace Tests
         [Test]
         public void sequential_example_1()
         {
+
+            /* Python:
+import keras
+
+from keras.models import Sequential
+from keras.layers import Dense
+from keras import backend as K
+import numpy as np
+
+model = Sequential()
+model.add(Dense(32, input_shape = (500,)))
+model.add(Dense(10, activation = 'softmax'))
+model.compile(optimizer = 'rmsprop',
+      loss = 'categorical_crossentropy',
+      metrics =['accuracy'])
+*/
             #region doc_sequential_example_1
             var model = new Sequential();
             model.Add(new Dense(32, input_shape: new int?[] { 500 }));
@@ -35,16 +52,77 @@ namespace Tests
 
             #endregion
 
-            Assert.AreEqual(42, model.activity_regularizer);
-            Assert.AreEqual(42, model.batch_input_shape);
-            Assert.AreEqual(42, model.callback_model);
-            Assert.AreEqual(42, model.container_nodes);
-            Assert.AreEqual(42, model.dtype);
-            Assert.AreEqual(42, model.inbound_nodes);
-            Assert.AreEqual(42, model.input_dtype);
-            Assert.AreEqual(42, model.input_layers);
-            Assert.AreEqual(42, model.input_layers_node_indices);
-            Assert.AreEqual(42, model.input_layers_tensor_indices);
+            // Assert.AreEqual(42, model.activity_regularizer);
+            //Assert.AreEqual(42, model.batch_input_shape);
+            //Assert.AreEqual(42, model.callback_model);
+            Assert.IsTrue(model.container_nodes.SetEquals(new[] { "dense_1_ib-0", "dense_2_ib-0", "dense_1_input_ib-0" }));
+            // Assert.AreEqual(42, model.dtype);
+            Assert.AreEqual(true, model.built);
+            Assert.AreEqual(1, model.inbound_nodes.Count);
+            Assert.AreEqual(0, model.inbound_nodes[0].inbound_layers.Count);
+            // Assert.AreEqual(0, model.inbound_nodes[0].input_mask.Count);
+            Assert.AreEqual(1, model.inbound_nodes[0].input_masks.Count);
+            Assert.AreEqual(null, model.inbound_nodes[0].input_masks[0]);
+            Assert.AreEqual(1, model.inbound_nodes[0].input_shapes.Count);
+            Assert.AreEqual(new int?[][] { new int?[] { null, 500 } }, model.inbound_nodes[0].input_shapes);
+            Assert.AreEqual(1, model.inbound_nodes[0].input_tensors.Count);
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1_input_0' shape=[null, 500] dtype=Float", model.inbound_nodes[0].input_tensors[0].ToString());
+            Assert.AreEqual(0, model.inbound_nodes[0].node_indices.Count);
+            Sequential l = model.inbound_nodes[0].outbound_layer as Sequential;
+            Assert.IsNotNull(l);
+            Assert.AreEqual(model, l);
+            // Assert.AreEqual(0, model.inbound_nodes[0].output_mask);
+            Assert.AreEqual(1, model.inbound_nodes[0].output_masks.Count);
+            Assert.AreEqual(null, model.inbound_nodes[0].output_masks[0]);
+            Assert.AreEqual(1, model.inbound_nodes[0].output_shapes.Count);
+            Assert.AreEqual(new int?[] { null, 10 }, model.inbound_nodes[0].output_shapes[0]);
+            Assert.AreEqual(1, model.inbound_nodes[0].output_tensors.Count);
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Softmax0_0' shape=[null, 10] dtype=Float", model.inbound_nodes[0].output_tensors[0].ToString());
+            Assert.AreEqual(0, model.inbound_nodes[0].tensor_indices.Count);
+            // Assert.AreEqual(42, model.input_dtype);
+            Assert.AreEqual(1, model.input_layers.Count);
+            Assert.IsTrue(model.input_layers[0] is InputLayer);
+            //Assert.AreEqual(1, model.input_layers[0].activity_regularizer);
+            Assert.AreEqual(new int?[] { null, 500 }, model.input_layers[0].batch_input_shape);
+            Assert.AreEqual(true, model.input_layers[0].built);
+
+            // --- verified until here
+
+            Assert.AreEqual(1, model.input_layers[0].constraints);
+            Assert.AreEqual(1, model.input_layers[0].dtype);
+            Assert.AreEqual(1, model.input_layers[0].inbound_nodes);
+            Assert.AreEqual(1, model.input_layers[0].input_dtype);
+            Assert.AreEqual(1, model.input_layers[0].input_mask);
+            Assert.AreEqual(1, model.input_layers[0].input_shape);
+            Assert.AreEqual(1, model.input_layers[0].input_spec);
+            Assert.AreEqual(1, model.input_layers[0].is_placeholder);
+            Assert.AreEqual(1, model.input_layers[0].losses);
+            Assert.AreEqual(1, model.input_layers[0].name);
+            Assert.AreEqual(1, model.input_layers[0].non_trainable_weights);
+            Assert.AreEqual(1, model.input_layers[0].outbound_nodes);
+            Assert.AreEqual(1, model.input_layers[0].output);
+            Assert.AreEqual(1, model.input_layers[0].output_mask);
+            Assert.AreEqual(1, model.input_layers[0].output_shape);
+            Assert.AreEqual(1, model.input_layers[0].stateful);
+            Assert.AreEqual(1, model.input_layers[0].supports_masking);
+            Assert.AreEqual(1, model.input_layers[0].trainable);
+            Assert.AreEqual(1, model.input_layers[0].trainable_weights);
+            Assert.AreEqual(1, model.input_layers[0].updates);
+            Assert.AreEqual(1, model.input_layers[0].uses_learning_phase);
+            Assert.AreEqual(1, model.input_layers[0].weights);
+            Assert.AreEqual(1, model.input_layers[0]._built);
+            Assert.AreEqual(1, model.input_layers[0]._constraints);
+            Assert.AreEqual(1, model.input_layers[0]._flattened_layers);
+            Assert.AreEqual(1, model.input_layers[0]._initial_weights);
+            Assert.AreEqual(1, model.input_layers[0]._losses);
+            Assert.AreEqual(1, model.input_layers[0]._non_trainable_weights);
+            Assert.AreEqual(1, model.input_layers[0]._per_input_losses);
+            Assert.AreEqual(1, model.input_layers[0]._per_input_updates);
+            Assert.AreEqual(1, model.input_layers[0]._trainable);
+            Assert.AreEqual(1, model.input_layers[0]._trainable_weights);
+            Assert.AreEqual(1, model.input_layers[0]._updates);
+            Assert.AreEqual(new[] { 0 }, model.input_layers_node_indices);
+            Assert.AreEqual(new[] { 0 }, model.input_layers_tensor_indices);
             Assert.AreEqual(42, model.input_mask);
             Assert.AreEqual(42, model.input_names);
             Assert.AreEqual(42, model.input_shape);
