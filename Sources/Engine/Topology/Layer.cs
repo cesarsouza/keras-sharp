@@ -75,7 +75,7 @@ namespace KerasSharp.Engine.Topology
 
 
         public TFDataType dtype;
-        public IEnumerable<Layer> _flattened_layers;
+        public virtual List<Layer> _flattened_layers { get; set; }
 
         public virtual bool stateful { get; set; }
 

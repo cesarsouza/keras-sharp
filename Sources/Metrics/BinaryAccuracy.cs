@@ -32,7 +32,7 @@ namespace KerasSharp.Metrics
 
     public class BinaryAccuracy : IMetric
     {
-        public List<Tensor> Call(Tensor expected, Tensor actual, Tensor mask = null)
+        public Tensor Call(Tensor expected, Tensor actual, Tensor mask = null)
         {
             throw new System.NotImplementedException();
         }

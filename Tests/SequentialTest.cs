@@ -35,7 +35,73 @@ namespace Tests
 
             #endregion
 
-            Assert.AreEqual(0, model.trainable_weights);
+            Assert.AreEqual(42, model.activity_regularizer);
+            Assert.AreEqual(42, model.batch_input_shape);
+            Assert.AreEqual(42, model.callback_model);
+            Assert.AreEqual(42, model.container_nodes);
+            Assert.AreEqual(42, model.dtype);
+            Assert.AreEqual(42, model.inbound_nodes);
+            Assert.AreEqual(42, model.input_dtype);
+            Assert.AreEqual(42, model.input_layers);
+            Assert.AreEqual(42, model.input_layers_node_indices);
+            Assert.AreEqual(42, model.input_layers_tensor_indices);
+            Assert.AreEqual(42, model.input_mask);
+            Assert.AreEqual(42, model.input_names);
+            Assert.AreEqual(42, model.input_shape);
+            Assert.AreEqual(42, model.input_spec);
+            Assert.AreEqual(42, model.is_placeholder);
+            Assert.AreEqual(42, model.layers);
+            Assert.AreEqual(42, model.layers_by_depth);
+            Assert.AreEqual(42, model.loss);
+            Assert.AreEqual(42, model.losses);
+            Assert.AreEqual(42, model.loss_weights);
+            Assert.AreEqual(42, model.metrics);
+            Assert.AreEqual(42, model.metrics_names);
+            Assert.AreEqual(42, model.metrics_tensors);
+            Assert.AreEqual(42, model.model);
+            Assert.AreEqual(42, model.name);
+            Assert.AreEqual(42, model.nodes_by_depth);
+            Assert.AreEqual(42, model.non_trainable_weights);
+            Assert.AreEqual(42, model.optimizer);
+            Assert.AreEqual(42, model.outbound_nodes);
+            Assert.AreEqual(42, model.output);
+            Assert.AreEqual(42, model.output_layers);
+            Assert.AreEqual(42, model.output_layers_node_indices);
+            Assert.AreEqual(42, model.output_layers_tensor_indices);
+            Assert.AreEqual(42, model.output_mask);
+            Assert.AreEqual(42, model.output_names);
+            Assert.AreEqual(42, model.output_shape);
+            Assert.AreEqual(42, model.regularizers);
+            Assert.AreEqual(42, model.sample_weights);
+            Assert.AreEqual(42, model.sample_weight_mode);
+            Assert.AreEqual(42, model.stateful);
+            Assert.AreEqual(42, model.supports_masking);
+            Assert.AreEqual(42, model.targets);
+            Assert.AreEqual(42, model.total_loss);
+            Assert.AreEqual(42, model.Trainable);
+            Assert.AreEqual(42, model.trainable);
+            Assert.AreEqual(42, model.trainable_weights);
+            Assert.AreEqual(42, model.updates);
+            Assert.AreEqual(42, model.uses_learning_phase);
+            Assert.AreEqual(42, model.weights);
+            Assert.AreEqual(42, model._built);
+            Assert.AreEqual(42, model._constraints);
+            Assert.AreEqual(42, model._feed_inputs);
+            Assert.AreEqual(42, model._feed_input_names);
+            Assert.AreEqual(42, model._feed_input_shapes);
+            Assert.AreEqual(42, model._feed_sample_weight_modes);
+            Assert.AreEqual(42, model._flattened_layers);
+            Assert.AreEqual(42, model._initial_weights);
+            Assert.AreEqual(42, model._losses);
+            Assert.AreEqual(42, model._non_trainable_weights);
+            Assert.AreEqual(42, model._output_mask_cache);
+            Assert.AreEqual(42, model._output_shape_cache);
+            Assert.AreEqual(42, model._output_tensor_cache);
+            Assert.AreEqual(42, model._per_input_losses);
+            Assert.AreEqual(42, model._per_input_updates);
+            Assert.AreEqual(42, model._trainable);
+            Assert.AreEqual(42, model._trainable_weights);
+            Assert.AreEqual(42, model._updates);
         }
 
         [Test]

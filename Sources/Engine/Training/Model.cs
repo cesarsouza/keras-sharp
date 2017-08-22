@@ -478,77 +478,77 @@ namespace KerasSharp.Models
 
             void append_metric(int layer_num, string metric_name, Tensor metric_tensor)
             {
-                // """Helper function used in loop below."""
-                if (output_names.Count > 1)
+                // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L939
+                if (this.output_names.Count > 1)
+                    metric_name = this.output_layers[layer_num].name + '_' + metric_name;
+
+                this.metrics_names.Add(metric_name);
+                this.metrics_tensors.Add(metric_tensor);
+
+                for (int i = 0; i < this.outputs.Count; i++)
                 {
-                    metric_name = this.output_layers[layer_num].name + "_" + metric_name;
-                    this.metrics_names.Add(metric_name);
-                    this.metrics_tensors.Add(metric_tensor);
+                    if (skip_indices.Contains(i))
+                        continue;
+
+                    Tensor y_true = this.targets[i];
+                    Tensor y_pred = this.outputs[i];
+                    List<IMetric> output_metrics = nested_metrics[i];
+
+                    foreach (IMetric metric in output_metrics)
+                    {
+                        IMetric acc_fn;
+
+                        if (metric is Accuracy)
+                        {
+                            // custom handling of accuracy
+                            // (because of class mode duality)
+                            int?[] output_shape = this.internal_output_shapes[i];
+                            acc_fn = null;
+
+                            if (output_shape.Get(-1) == 1 || this.loss_functions[i] is BinaryCrossEntropy)
+                            {
+                                // case: binary accuracy
+                                acc_fn = new BinaryAccuracy();
+                            }
+                            else if (this.loss_functions[i] is SparseCategoricalCrossEntropy)
+                            {
+                                // case: categorical accuracy with sparse targets
+                                acc_fn = new SparseCategoricalAccuracy();
+                            }
+                            else
+                            {
+                                acc_fn = new CategoricalAccuracy();
+                            }
+
+                            var masked_fn = _masked_objective(acc_fn);
+                            append_metric(i, "acc", masked_fn.Call(y_true, y_pred, mask: masks[i]));
+                        }
+                        else
+                        {
+                            //metric_fn = metrics_module.get(metric)
+                            //masked_metric_fn = _masked_objective(metric_fn)
+                            //metric_result = masked_metric_fn(y_true, y_pred, mask = masks[i])
+                            //metric_result = {
+                            //            metric_fn.__name__: metric_result
+                            //}
+                            //for name, tensor in six.iteritems(metric_result):
+                            //    append_metric(i, name, tensor)
+                            throw new NotImplementedException();
+                        }
+                    }
                 }
-            }
-
-            List<Tensor> metric_result = null;
-            for (int i = 0; i < this.outputs.Count; i++)
-            {
-                if (skip_indices.Contains(i))
-                    continue;
-
-                Tensor y_true = this.targets[i];
-                Tensor y_pred = this.outputs[i];
-                List<IMetric> output_metrics = nested_metrics[i];
-                foreach (IMetric metric in output_metrics)
-                {
-                    //if (metric is IAccuracy)
-                    //{
-                    //    // custom handling of accuracy
-                    //    // (because of class mode duality)
-                    //    int?[] output_shape = this.internal_output_shapes[i];
-                    //    object acc_fn = null;
-                    //    if (output_shape.Get(-1) == 1 || this.loss_functions[i] is BinaryCrossEntropy)
-                    //    {
-                    //        // case: binary accuracy
-                    //        acc_fn = new BinaryAccuracy();
-                    //    }
-                    //    else if (this.loss_functions[i] is SparseCategoricalCrossEntropy)
-                    //    {
-                    //        // case: categorical accuracy with sparse targets
-                    //        acc_fn = new SparseCategoricalAccuracy();
-                    //    }
-                    //    else
-                    //    {
-                    //        acc_fn = new CategoricalAccuracy();
-                    //    }
-
-                    //    var masked_fn = _masked_objective(acc_fn);
-                    //    append_metric(i, "acc", masked_fn(y_true, y_pred, mask = masks[i]));
-                    //}
-                    //else
-                    //{
-                    IMetric metric_fn = metric;
-                    IMetric masked_metric_fn = _masked_objective(metric_fn);
-                    metric_result = masked_metric_fn.Call(y_true, y_pred, mask: masks[i]);
-                    //}
-                }
-            }
-
-            for (int i = 0; i < metric_result.Count; i++)
-            {
-                string name = metric_result[i].name;
-                Tensor tensor = metric_result[i];
-                append_metric(i, name, tensor);
             }
 
             // Prepare gradient updates and state updates.
             this.total_loss = total_loss;
-
             this.sample_weights = sample_weights;
-
             this._feed_sample_weights = new List<Tensor>();
             for (int i = 0; i < this.sample_weights.Count; i++)
             {
                 if (!skip_indices.Contains(i))
                     this._feed_sample_weights.Add(sample_weights[i]);
             }
+
             // Functions for train, test and predict will
             // be compiled lazily when required.
             // This saves time when the user != using all functions.
@@ -607,9 +607,42 @@ namespace KerasSharp.Models
             throw new InvalidOperationException($"Type of `metrics` argument not understood. Expected a list or dictionary, found: {str(metrics)}.");
         }
 
+        /// <summary>
+        ///   Adds support for masking to an objective function.
+        /// </summary>
+        /// 
+        /// <remarks>
+        ///   It transforms an objective function <c>fn(y_true, y_pred)</c> into a cost-masked objective 
+        ///   function </c>fn(y_true, y_pred, mask)</c>.
+        /// </remarks>
+        /// 
+        /// <param name="metric_fn">The objective function to wrap, with signature <c>fn(y_true, y_pred)</c>.</param>
+        /// 
+        /// <returns>A function with signature <c>fn(y_true, y_pred, mask)</c>.</returns>
+        /// 
         private IMetric _masked_objective(IMetric metric_fn)
         {
-            throw new NotImplementedException();
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L459
+
+            Tensor masked(Tensor y_true, Tensor y_pred, Tensor mask = null)
+            {
+                // score_array has ndim >= 2
+                Tensor score_array = metric_fn.Call(y_true, y_pred);
+
+                if (mask != null)
+                {
+                    // Cast the mask to floatX to avoid float64 upcasting in theano
+                    mask = K.cast(mask, K.floatx());
+                    // mask should have the same shape as score_array
+                    score_array *= mask;
+                    //  the loss per batch should be proportional
+                    //  to the number of unmasked samples.
+                    score_array /= K.mean(mask);
+                }
+                return K.mean(score_array);
+            }
+
+            return new CustomMetric(masked);
         }
 
         /// <summary>

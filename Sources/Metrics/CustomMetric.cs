@@ -27,14 +27,22 @@
 namespace KerasSharp.Metrics
 {
     using KerasSharp.Engine.Topology;
+    using System;
     using System.Collections.Generic;
     using TensorFlow;
 
-    public class SparseCategoricalAccuracy : IMetric
+    public class CustomMetric : IMetric
     {
+        private Func<Tensor, Tensor, Tensor, Tensor> func;
+
+        public CustomMetric(Func<Tensor, Tensor, Tensor, Tensor> func)
+        {
+            this.func = func;
+        }
+
         public Tensor Call(Tensor expected, Tensor actual, Tensor mask = null)
         {
-            throw new System.NotImplementedException();
+            return func(expected, actual, mask);
         }
     }
 }

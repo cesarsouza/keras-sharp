@@ -74,8 +74,8 @@ namespace KerasSharp.Engine.Topology
         protected internal List<int?[]> _feed_input_shapes;
         protected int?[][] internal_input_shapes;
         protected int?[][] internal_output_shapes;
-        protected List<Layer> layers;
-        protected Dictionary<int, List<Layer>> layers_by_depth;
+        public List<Layer> layers;
+        public Dictionary<int, List<Layer>> layers_by_depth;
         public HashSet<string> container_nodes;
         public Dictionary<int, List<Node>> nodes_by_depth;
 

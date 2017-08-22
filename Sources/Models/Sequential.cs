@@ -65,10 +65,6 @@ namespace KerasSharp.Models
     public class Sequential : Model, IEnumerable<Layer>
     {
 
-        public List<Layer> layers;
-        public bool _trainable;
-        public object _initial_weights;
-
         public Model model;
 
 
@@ -296,7 +292,7 @@ namespace KerasSharp.Models
             }
         }
 
-        public List<Layer> _flattened_layers
+        public override List<Layer> _flattened_layers
         {
             get
             {
@@ -383,7 +379,7 @@ namespace KerasSharp.Models
                 if (!this.trainable)
                     return null;
                 // Support for legacy behavior
-                return this._gather_list_attr<Tensor>("trainable_weights");
+                return base.trainable_weights;
             }
         }
 

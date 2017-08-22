@@ -45,6 +45,6 @@ namespace KerasSharp.Metrics
         /// 
         /// <returns>A scalar value representing how close the model's predictions were from the ground-truth.</returns>
         /// 
-        List<Tensor> Call(Tensor expected, Tensor actual, Tensor mask = null);
+        Tensor Call(Tensor expected, Tensor actual, Tensor mask = null);
     }
 }

@@ -139,6 +139,7 @@
     <Compile Include="Losses\SparseCategoricalCrossEntropy.cs" />
     <Compile Include="Losses\CustomLoss.cs" />
     <Compile Include="Losses\SquaredHinge.cs" />
+    <Compile Include="Metrics\CustomMetric.cs" />
     <Compile Include="Metrics\Base\IMetric.cs" />
     <Compile Include="Metrics\Accuracy.cs" />
     <Compile Include="Metrics\BinaryAccuracy.cs" />
