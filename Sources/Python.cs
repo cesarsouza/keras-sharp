@@ -60,6 +60,11 @@ namespace KerasSharp
             return generator.GetId(x, out firstTime);
         }
 
+        public static int?[] tuple(params int?[] values)
+        {
+            return values;
+        }
+
         public static string str(object obj)
         {
             if (obj == null)
@@ -72,6 +77,15 @@ namespace KerasSharp
                     l.Add(str(o));
 
                 return "[" + String.Join(", ", l.ToArray()) + "]";
+            }
+            else if (obj is IDictionary)
+            {
+                var dict = obj as IDictionary;
+                var l = new List<string>();
+                foreach (object k in dict.Keys)
+                    l.Add($"{str(k)}: {str(dict[k])}");
+
+                return "{" + String.Join(", ", l.ToArray()) + "}";
             }
 
             return obj.ToString();

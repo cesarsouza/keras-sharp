@@ -35,6 +35,8 @@ namespace KerasSharp.Engine.Topology
     using TensorFlow;
     using static KerasSharp.Backends.Current;
 
+    using static KerasSharp.Python;
+
 
     /// <summary>
     ///   A Node describes the connectivity between two layers.
@@ -152,5 +154,13 @@ namespace KerasSharp.Engine.Topology
         //            'node_indices': this.node_indices,
         //            'tensor_indices': this.tensor_indices}
         //    }
+
+        public override string ToString()
+        {
+            string inputLayers = String.Join(", ", this.inbound_layers.Select(x => x.ToString()));
+            string outputLayer = this.outbound_layer.ToString();
+
+            return $"{{ {inputLayers} }} => {outputLayer}";
+        }
     }
 }

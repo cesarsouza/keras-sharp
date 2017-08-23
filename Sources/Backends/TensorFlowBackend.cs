@@ -292,12 +292,12 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Function function(object inputs, List<Tensor> list, Func<List<List<Tensor>>> updates, string name)
+        public Function function(object inputs, List<Tensor> list, Func<List<Tensor>> updates, string name)
         {
             throw new NotImplementedException();
         }
 
-        public Function function(object inputs, List<Tensor> list, List<List<Tensor>> updates, string name)
+        public Function function(object inputs, List<Tensor> list, List<Tensor> updates, string name)
         {
             throw new NotImplementedException();
         }

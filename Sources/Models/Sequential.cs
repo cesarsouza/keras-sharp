@@ -243,7 +243,7 @@ namespace KerasSharp.Models
 
             // actually create the model
             this.model = new Model(this.inputs, this.outputs, name: $"{this.name}_model");
-            this.model.Trainable = this.trainable;
+            this.model.trainable = this.trainable;
 
             // mirror model attributes
             this.supports_masking = this.model.supports_masking;
@@ -388,10 +388,10 @@ namespace KerasSharp.Models
             get
             {
                 // Support for legacy behavior
-                List<Tensor> weights = this._gather_list_attr<Tensor>("non_trainable_weights");
+                List<Tensor> weights = base.non_trainable_weights;
                 if (!this.trainable)
                 {
-                    trainable_weights = this._gather_list_attr<Tensor>("trainable_weights");
+                    trainable_weights = base.trainable_weights;
                     return trainable_weights.Concat(weights).ToList();
                 }
 
@@ -400,7 +400,7 @@ namespace KerasSharp.Models
         }
 
 
-        public override List<List<Tensor>> updates
+        public override List<Tensor> updates
         {
             get
             {
@@ -410,7 +410,7 @@ namespace KerasSharp.Models
             }
         }
 
-        public override List<List<Tensor>> state_updates()
+        public override List<Tensor> state_updates()
         {
             if (this.model == null)
                 this.build();

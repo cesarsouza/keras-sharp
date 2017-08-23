@@ -56,13 +56,19 @@ namespace KerasSharp.Engine.Topology
         public List<Array> _initial_weights;
         public Dictionary<Tensor, IWeightConstraint> _constraints;
         public List<Tensor> _losses;
-        public List<List<Tensor>> _updates;
+        public List<Tensor> _updates;
         public Dictionary<string, List<Tensor>> _per_input_losses;
         public Dictionary<string, List<Tensor>> _per_input_updates;
         public bool _built;
 
         public bool supports_masking;
-        public virtual bool trainable { get; set; }
+
+        public virtual bool trainable
+        {
+            get { return _trainable; }
+            set { _trainable = value; }
+        }
+
         public string name;
         public virtual bool uses_learning_phase { get; set; }
         protected internal IWeightRegularizer activity_regularizer;
@@ -111,7 +117,7 @@ namespace KerasSharp.Engine.Topology
         /// <param name="batch_input_shape"></param>
         /// <param name="batch_size"></param>
         /// 
-        public Layer(string name = null, List<InputSpec> input_spec = null, bool trainable = false,
+        public Layer(string name = null, List<InputSpec> input_spec = null, bool trainable = true,
             bool uses_learning_phase = true, int?[] input_shape = null, int[] output_shape = null,
             List<Node> inbound_nodes = null, List<Node> outbound_nodes = null, Tensor input = null,
             Tensor output = null, Tensor input_mask = null, Tensor output_mask = null, List<Tensor> trainable_weights = null,
@@ -129,7 +135,7 @@ namespace KerasSharp.Engine.Topology
             this._non_trainable_weights = new List<Tensor>();
             this._constraints = new Dictionary<Tensor, IWeightConstraint>();  // dict {tensor: constraint instance}
             this._losses = new List<Tensor>();
-            this._updates = new List<List<Tensor>>();
+            this._updates = new List<Tensor>();
             this._per_input_losses = new Dictionary<string, List<Tensor>>();
             this._per_input_updates = new Dictionary<string, List<Tensor>>();
             this._built = false;
@@ -210,7 +216,7 @@ namespace KerasSharp.Engine.Topology
             get { return this._losses; }
         }
 
-        public virtual List<List<Tensor>> updates
+        public virtual List<Tensor> updates
         {
             get { return this._updates; }
         }
@@ -1037,7 +1043,7 @@ namespace KerasSharp.Engine.Topology
 
             // Update this.updates
             if (this._updates != null)
-                this._updates.Add(updates);
+                this._updates.AddRange(updates);
 
             // Update this._per_input_updates
             if (inputs != null && inputs.Count == 0)
@@ -1071,7 +1077,8 @@ namespace KerasSharp.Engine.Topology
             string inputs_hash;
             if (inputs != null)
                 inputs_hash = _object_list_uid(inputs);
-            else inputs_hash = null;
+            else
+                inputs_hash = String.Empty;
 
             if (this._per_input_updates.ContainsKey(inputs_hash))
                 return this._per_input_updates[inputs_hash];
@@ -1135,6 +1142,10 @@ namespace KerasSharp.Engine.Topology
             K.batch_set_value(weight_value_tuples);
         }
 
+        public override string ToString()
+        {
+            return $"{this.name} ({str(this.input_shape)} -> {str(this.output_shape)})";
+        }
     }
 }
 

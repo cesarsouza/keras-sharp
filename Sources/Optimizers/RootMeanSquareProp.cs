@@ -39,7 +39,7 @@ namespace KerasSharp.Optimizers
     [DataContract]
     public class RootMeanSquareProp : OptimizerBase, IOptimizer
     {
-        public List<List<Tensor>> get_updates(List<Tensor> collected_trainable_weights, Dictionary<Tensor, IWeightConstraint> constraints, Tensor total_loss)
+        public List<Tensor> get_updates(List<Tensor> collected_trainable_weights, Dictionary<Tensor, IWeightConstraint> constraints, Tensor total_loss)
         {
             throw new NotImplementedException();
         }

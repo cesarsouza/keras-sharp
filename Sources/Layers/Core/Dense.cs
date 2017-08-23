@@ -65,19 +65,19 @@ namespace KerasSharp
     public class Dense : Layer
     {
 
-        private Tensor kernel;
-        private Tensor bias;
+        public Tensor kernel;
+        public Tensor bias;
 
-        private int units;
+        public int units;
         public int input_dim;
-        private IActivationFunction activation;
-        private bool use_bias;
-        private IWeightInitializer kernel_initializer;
-        private IWeightInitializer bias_initializer;
-        private IWeightRegularizer kernel_regularizer;
-        private IWeightRegularizer bias_regularizer;
-        private IWeightConstraint kernel_constraint;
-        private IWeightConstraint bias_constraint;
+        public IActivationFunction activation;
+        public bool use_bias;
+        public IWeightInitializer kernel_initializer;
+        public IWeightInitializer bias_initializer;
+        public IWeightRegularizer kernel_regularizer;
+        public IWeightRegularizer bias_regularizer;
+        public IWeightConstraint kernel_constraint;
+        public IWeightConstraint bias_constraint;
 
 
         /// <summary>

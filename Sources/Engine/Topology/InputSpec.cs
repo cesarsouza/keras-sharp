@@ -34,6 +34,8 @@ namespace KerasSharp
     using System.Threading.Tasks;
     using TensorFlow;
 
+    using static KerasSharp.Python;
+
     [DataContract]
     public class InputSpec
     {
@@ -75,6 +77,11 @@ namespace KerasSharp
             this.max_ndim = max_ndim;
             this.min_ndim = min_ndim;
             this.axes = axes ?? new Dictionary<int, int>();
+        }
+
+        public override string ToString()
+        {
+            return $"dtype={dtype}, shape={str(shape)}, ndim={ndim}, max_ndim={max_ndim}, min_ndim={min_ndim}, axes={str(axes)}";
         }
     }
 }

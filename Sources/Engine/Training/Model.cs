@@ -71,7 +71,6 @@ namespace KerasSharp.Models
     /// 
     public partial class Model : Container
     {
-        public bool Trainable { get; set; }
 
         protected internal Sequential callback_model;
         public IOptimizer optimizer;
@@ -709,12 +708,12 @@ namespace KerasSharp.Models
                 if (this.uses_learning_phase && !(K.learning_phase() is int))
                     inputs.Add((Tensor)K.learning_phase());
 
-                List<List<Tensor>> training_updates = this.optimizer.get_updates(this._collected_trainable_weights, this.constraints, this.total_loss);
+                List<Tensor> training_updates = this.optimizer.get_updates(this._collected_trainable_weights, this.constraints, this.total_loss);
                 var updates = Enumerable.Concat(this.updates, training_updates).ToList();
 
                 // Gets loss and metrics. Updates weights at each call.	
                 this.train_function = K.function(inputs, ((new[] { this.total_loss }).Concat(this.metrics_tensors)).ToList(),
-                    updates: updates, name: "train_function"); //, **this._function_kwargs)
+                    updates: () => updates, name: "train_function"); //, **this._function_kwargs)
             }
         }
 

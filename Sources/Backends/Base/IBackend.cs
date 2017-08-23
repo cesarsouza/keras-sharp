@@ -223,9 +223,9 @@ namespace KerasSharp.Backends
 
         object learning_phase();
 
-        Function function(object inputs, List<Tensor> list, Func<List<List<Tensor>>> updates, string name);
+        Function function(object inputs, List<Tensor> list, Func<List<Tensor>> updates, string name);
 
-        Function function(object inputs, List<Tensor> list, List<List<Tensor>> updates, string name);
+        Function function(object inputs, List<Tensor> list, List<Tensor> updates, string name);
 
 
         Function function<TSource>(List<Tensor> inputs, List<object> list, List<TSource> updates, string name);
