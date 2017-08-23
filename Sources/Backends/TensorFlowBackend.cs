@@ -876,6 +876,36 @@ namespace KerasSharp.Backends
             // TODO: uncomment the following line if the finalizer is overridden above.
             // GC.SuppressFinalize(this);
         }
+
+        /// <summary>
+        ///   Element-wise equality between two tensors.
+        /// </summary>
+        /// 
+        /// <param name="x">Tensor or variable.</param>
+        /// <param name="y">Tensor or variable.</param>
+        /// 
+        /// <returns>A bool tensor.</returns>
+        /// 
+        public Tensor equal(Tensor x, Tensor y)
+        {
+            return tensor(tf.Equal(x, y));
+        }
+
+        /// <summary>
+        ///   Returns the index of the maximum value along an axis.
+        /// </summary>
+        /// 
+        /// <param name="x">Tensor or variable.</param>
+        /// <param name="axis">The axis along which to perform the reduction.</param>
+        /// 
+        /// <returns>A tensor.</returns>
+        /// 
+        public Tensor argmax(Tensor x, int axis = -1)
+        {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L1332
+            //axis = _normalize_axis(axis, ndim(x));
+            return tensor(tf.ArgMax(x, tf.Const(axis)));
+        }
         #endregion
     }
 }

@@ -335,5 +335,33 @@ namespace Tests
             }
         }
 
+
+        [Test]
+        public void equal_test()
+        {
+            using (var K = new TensorFlowBackend())
+            {
+                var x = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
+                var y = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
+                Assert.AreEqual(new bool[,] { { true, true, true }, { true, true, true } }, (bool[,])K.equal(x, y).eval());
+
+                x = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
+                y = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 0 } });
+                Assert.AreEqual(new bool[,] { { true, true, true }, { true, true, false } }, (bool[,])K.equal(x, y).eval());
+            }
+        }
+
+        [Test]
+        public void argmax_test()
+        {
+            using (var K = new TensorFlowBackend())
+            {
+                var x = K.variable(array: new double[,] { { 1, 9, 3 }, { 9, 5, 6 } });
+                Assert.AreEqual(new double[] { 1, 0, 1 }, K.argmax(x, axis: 0).eval());
+                Assert.AreEqual(new double[] { 1, 0 }, K.argmax(x, axis: 1).eval());
+                Assert.AreEqual(new double[] { 1, 0 }, K.argmax(x).eval());
+            }
+        }
+
     }
 }

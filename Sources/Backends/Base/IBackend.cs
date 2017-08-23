@@ -43,9 +43,9 @@ namespace KerasSharp.Backends
         Tensor sqrt(object p);
 
         Tensor square(Tensor w);
-
+        Tensor equal(Tensor x, Tensor y);
         Tensor sum(Tensor x, int[] axis = null, bool keepdims = false, string name = null);
-
+        Tensor argmax(Tensor x, int axis=-1);
         Tensor sum(Tensor x, int axis, bool keepdims = false, string name = null);
 
 

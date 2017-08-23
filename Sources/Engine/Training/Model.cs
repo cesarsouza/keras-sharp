@@ -483,57 +483,57 @@ namespace KerasSharp.Models
 
                 this.metrics_names.Add(metric_name);
                 this.metrics_tensors.Add(metric_tensor);
+            }
 
-                for (int i = 0; i < this.outputs.Count; i++)
+            for (int i = 0; i < this.outputs.Count; i++)
+            {
+                if (skip_indices.Contains(i))
+                    continue;
+
+                Tensor y_true = this.targets[i];
+                Tensor y_pred = this.outputs[i];
+                List<IMetric> output_metrics = nested_metrics[i];
+
+                foreach (IMetric metric in output_metrics)
                 {
-                    if (skip_indices.Contains(i))
-                        continue;
+                    IMetric acc_fn;
 
-                    Tensor y_true = this.targets[i];
-                    Tensor y_pred = this.outputs[i];
-                    List<IMetric> output_metrics = nested_metrics[i];
-
-                    foreach (IMetric metric in output_metrics)
+                    if (metric is Accuracy)
                     {
-                        IMetric acc_fn;
+                        // custom handling of accuracy
+                        // (because of class mode duality)
+                        int?[] output_shape = this.internal_output_shapes[i];
+                        acc_fn = null;
 
-                        if (metric is Accuracy)
+                        if (output_shape.Get(-1) == 1 || this.loss_functions[i] is BinaryCrossEntropy)
                         {
-                            // custom handling of accuracy
-                            // (because of class mode duality)
-                            int?[] output_shape = this.internal_output_shapes[i];
-                            acc_fn = null;
-
-                            if (output_shape.Get(-1) == 1 || this.loss_functions[i] is BinaryCrossEntropy)
-                            {
-                                // case: binary accuracy
-                                acc_fn = new BinaryAccuracy();
-                            }
-                            else if (this.loss_functions[i] is SparseCategoricalCrossEntropy)
-                            {
-                                // case: categorical accuracy with sparse targets
-                                acc_fn = new SparseCategoricalAccuracy();
-                            }
-                            else
-                            {
-                                acc_fn = new CategoricalAccuracy();
-                            }
-
-                            var masked_fn = _masked_objective(acc_fn);
-                            append_metric(i, "acc", masked_fn.Call(y_true, y_pred, mask: masks[i]));
+                            // case: binary accuracy
+                            acc_fn = new BinaryAccuracy();
+                        }
+                        else if (this.loss_functions[i] is SparseCategoricalCrossEntropy)
+                        {
+                            // case: categorical accuracy with sparse targets
+                            acc_fn = new SparseCategoricalAccuracy();
                         }
                         else
                         {
-                            //metric_fn = metrics_module.get(metric)
-                            //masked_metric_fn = _masked_objective(metric_fn)
-                            //metric_result = masked_metric_fn(y_true, y_pred, mask = masks[i])
-                            //metric_result = {
-                            //            metric_fn.__name__: metric_result
-                            //}
-                            //for name, tensor in six.iteritems(metric_result):
-                            //    append_metric(i, name, tensor)
-                            throw new NotImplementedException();
+                            acc_fn = new CategoricalAccuracy();
                         }
+
+                        var masked_fn = _masked_objective(acc_fn);
+                        append_metric(i, "acc", masked_fn.Call(y_true, y_pred, mask: masks[i]));
+                    }
+                    else
+                    {
+                        //metric_fn = metrics_module.get(metric)
+                        //masked_metric_fn = _masked_objective(metric_fn)
+                        //metric_result = masked_metric_fn(y_true, y_pred, mask = masks[i])
+                        //metric_result = {
+                        //            metric_fn.__name__: metric_result
+                        //}
+                        //for name, tensor in six.iteritems(metric_result):
+                        //    append_metric(i, name, tensor)
+                        throw new NotImplementedException();
                     }
                 }
             }
