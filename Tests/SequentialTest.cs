@@ -350,13 +350,84 @@ model.compile(optimizer = 'rmsprop',
             // --- verified until here ---
 
             Assert.AreEqual(1, model.metrics_tensors.Count);
-            Assert.AreEqual("Mean3", model.metrics_tensors[0]);
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'Mean0_0' shape=[] dtype=Float", model.metrics_tensors[0].ToString());
 
             Assert.AreEqual(2, model.metrics_names.Count);
             Assert.AreEqual("loss", model.metrics_names[0]);
             Assert.AreEqual("acc", model.metrics_names[1]);
 
-            Assert.AreEqual(42, model.model);
+            Assert.AreEqual(model.activity_regularizer, model.model.activity_regularizer);
+            Assert.AreEqual(model.batch_input_shape, model.model.batch_input_shape);
+            Assert.AreEqual(model.built, model.model.built);
+            Assert.AreEqual(model.constraints, model.model.constraints);
+            Assert.AreEqual(model.container_nodes, model.model.container_nodes);
+            Assert.AreEqual(model.dtype, model.model.dtype);
+            Assert.AreEqual(model.input, model.model.input);
+            Assert.AreEqual(model.input_dtype, model.model.input_dtype);
+            Assert.AreEqual(model.input_layers, model.model.input_layers);
+            Assert.AreEqual(model.input_layers_node_indices, model.model.input_layers_node_indices);
+            Assert.AreEqual(model.input_layers_tensor_indices, model.model.input_layers_tensor_indices);
+            Assert.AreEqual(model.input_mask, model.model.input_mask);
+            Assert.AreEqual(model.input_names, model.model.input_names);
+            Assert.AreEqual(model.input_shape, model.model.input_shape);
+            Assert.AreEqual(model.input_spec, model.model.input_spec);
+            Assert.AreEqual(model.is_placeholder, model.model.is_placeholder);
+            Assert.AreEqual(model.loss, model.model.loss);
+            Assert.AreEqual(model.losses, model.model.losses);
+            Assert.AreEqual(model.loss_weights, model.model.loss_weights);
+            Assert.AreEqual(model.metrics, model.model.metrics);
+            Assert.AreEqual(model.metrics_names, model.model.metrics_names);
+            Assert.AreEqual(model.metrics_tensors, model.model.metrics_tensors);
+            Assert.AreEqual(model.nodes_by_depth, model.model.nodes_by_depth);
+            Assert.AreEqual(model.non_trainable_weights, model.model.non_trainable_weights);
+            Assert.AreEqual(model.optimizer, model.model.optimizer);
+            Assert.AreEqual(model.outbound_nodes, model.model.outbound_nodes);
+            Assert.AreEqual(model.output, model.model.output);
+            Assert.AreEqual(model.output_layers, model.model.output_layers);
+            Assert.AreEqual(model.output_layers_node_indices, model.model.output_layers_node_indices);
+            Assert.AreEqual(model.output_layers_tensor_indices, model.model.output_layers_tensor_indices);
+            Assert.AreEqual(model.output_mask, model.model.output_mask);
+            Assert.AreEqual(model.output_names, model.model.output_names);
+            Assert.AreEqual(model.output_shape, model.model.output_shape);
+            Assert.AreEqual(model.regularizers, model.model.regularizers);
+            Assert.AreEqual(model.sample_weights, model.model.sample_weights);
+            Assert.AreEqual(model.sample_weight_mode, model.model.sample_weight_mode);
+            Assert.AreEqual(model.stateful, model.model.stateful);
+            Assert.AreEqual(model.supports_masking, model.model.supports_masking);
+            Assert.AreEqual(model.targets, model.model.targets);
+            Assert.AreEqual(model.total_loss, model.model.total_loss);
+            Assert.AreEqual(model.trainable, model.model.trainable);
+            Assert.AreEqual(model.trainable_weights, model.model.trainable_weights);
+            Assert.AreEqual(model.updates, model.model.updates);
+            Assert.AreEqual(model.uses_learning_phase, model.model.uses_learning_phase);
+            Assert.AreEqual(model.weights, model.model.weights);
+            Assert.AreEqual(model._built, model.model._built);
+            Assert.AreEqual(model._constraints, model.model._constraints);
+            Assert.AreEqual(model._feed_inputs, model.model._feed_inputs);
+            Assert.AreEqual(model._feed_input_names, model.model._feed_input_names);
+            Assert.AreEqual(model._feed_sample_weight_modes, model.model._feed_sample_weight_modes);
+            Assert.AreEqual(model._initial_weights, model.model._initial_weights);
+            Assert.AreEqual(model._losses, model.model._losses);
+            Assert.AreEqual(model._non_trainable_weights, model.model._non_trainable_weights);
+            Assert.AreEqual(model._output_mask_cache, model.model._output_mask_cache);
+            Assert.AreEqual(model._output_shape_cache, model.model._output_shape_cache);
+            Assert.AreEqual(model._output_tensor_cache, model.model._output_tensor_cache);
+            Assert.AreEqual(model._per_input_losses, model.model._per_input_losses);
+            Assert.AreEqual(model._per_input_updates, model.model._per_input_updates);
+            Assert.AreEqual(model._trainable, model.model._trainable);
+            Assert.AreEqual(model._updates, model.model._updates);
+
+
+            Assert.AreEqual("sequential_1_model", model.model.name);
+
+            // The following assertions might need to be changed as development progresses:
+            Assert.AreNotEqual(model._trainable_weights, model.model._trainable_weights);
+            Assert.AreNotEqual(model._flattened_layers, model.model._flattened_layers);
+            Assert.AreNotEqual(model._feed_input_shapes, model.model._feed_input_shapes);
+            Assert.AreNotEqual(model.layers_by_depth, model.model.layers_by_depth);
+            Assert.AreNotEqual(model.layers, model.model.layers);
+            Assert.AreNotEqual(model.inbound_nodes, model.model.inbound_nodes);
+            Assert.AreNotEqual(model.callback_model, model.model.callback_model);
         }
 
         [Test]

@@ -370,6 +370,7 @@ namespace KerasSharp.Models
             }
         }
 
+        
 
 
         public override List<Tensor> trainable_weights

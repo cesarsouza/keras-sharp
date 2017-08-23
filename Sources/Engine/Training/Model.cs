@@ -72,7 +72,7 @@ namespace KerasSharp.Models
     public partial class Model : Container
     {
 
-        protected internal Sequential callback_model;
+        protected internal virtual Sequential callback_model { get; set; }
         public IOptimizer optimizer;
         public Dictionary<string, string> sample_weight_mode;
         public Dictionary<string, ILoss> loss;
