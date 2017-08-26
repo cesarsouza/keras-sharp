@@ -172,9 +172,31 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor binary_crossentropy(Tensor expected, Tensor actual)
+        /// <summary>
+        ///   Binary crossentropy between an output tensor and a target tensor.
+        /// </summary>
+        /// 
+        /// <param name="output">A tensor.</param>
+        /// <param name="target">A tensor of the same shape as `output`.</param>
+        /// <param name="from_logits">Whether `output` is expected to be a logits tensor. By default, we consider that `output` encodes a probability distribution.</param>
+        /// 
+        /// <returns>Output tensor.</returns>
+        /// 
+        public Tensor binary_crossentropy(Tensor output, Tensor target, bool from_logits = false)
         {
-            throw new NotImplementedException();
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L2792
+            // Note: tf.nn.sigmoid_cross_entropy_with_logits
+            // expects logits, Keras expects probabilities.
+            if (!from_logits)
+            {
+                // transform back to logits
+                TFOutput _epsilon = constant(epsilon(), dtype: output.dtype);
+                TFOutput o = output.output;
+                o = tf.ClipByValue(o, _epsilon, tf.Sub(constant(1f), _epsilon));
+                o = tf.Log(tf.Div(output, (tf.Sub(tf.Const(1f), output))));
+            }
+
+            return tensor(tf.sigmoid_cross_entropy_with_logits(labels: target, logits: output));
         }
 
         public Tensor cast(Tensor x, TFDataType dataType)
@@ -381,9 +403,76 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor in_train_phase(Func<Tensor> dropped_inputs, Tensor inputs, bool? training)
+        /// <summary>
+        ///   Selects `x` in train phase, and `alt` otherwise.
+        /// </summary>
+        /// 
+        /// <param name="x">What to return in train phase.</param>
+        /// <param name="alt">What to return otherwise.</param>
+        /// <param name="training">Optional scalar tensor specifying the learning phase.</param>
+        /// 
+        /// <returns>Either 'x' or 'alt' based on the 'training' flag. The 'training' flag defaults to 'K.learning_phase()'.</returns>
+        /// 
+        public Tensor in_train_phase(Func<Tensor> x, Func<Tensor> alt, bool? training)
         {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L2583
+
+            bool uses_learning_phase;
+
+            if (training == null)
+            {
+                training = (bool)learning_phase();
+                uses_learning_phase = true;
+            }
+            else
+            {
+                uses_learning_phase = false;
+            }
+
+            if (training == true)
+            {
+                return x();
+            }
+            else if (training == false)
+            {
+                return alt();
+            }
+            else
+            {
+                //else: assume learning phase is a placeholder tensor.
+                throw new NotImplementedException();
+            }
+
+            // Tensor xx = @switch(training, x, alt);
+
+            if (uses_learning_phase)
+                x()._uses_learning_phase = true;
+            return x();
+        }
+
+        /// <summary>
+        ///   Switches between two operations depending on a scalar value. Note that both `then_expression` and `else_expression`
+        ///   should be symbolic tensors of the *same shape
+        /// </summary>
+        /// 
+        /// <param name="condition">The condition: scalar tensor(`int` or `bool`).</param>
+        /// <param name="then_expression">Either a tensor, or a callable that returns a tensor.</param>
+        /// <param name="else_expression">Either a tensor, or a callable that returns a tensor.</param>
+        /// 
+        /// <returns>The selected tensor.</returns>
+        /// 
+        public Tensor @switch(Tensor condition, Func<Tensor> then_expression, Func<Tensor> else_expression)
+        {
+
+            if (condition.dtype != TFDataType.Bool)
+                condition = tensor(tf.Cast(condition, TFDataType.Bool));
+
             throw new NotImplementedException();
+
+            //TFOutput x = tf.cond(condition,
+            //            () => then_expression().output,
+            //            () => else_expression().output);
+            //return tensor(x);
         }
 
         public bool is_sparse(Tensor tensor)
@@ -643,7 +732,8 @@ namespace KerasSharp.Backends
 
         public Tensor sigmoid(Tensor x)
         {
-            throw new NotImplementedException();
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L2817
+            return tensor(tf.Sigmoid(x));
         }
 
         public Tensor softmax(Tensor x)
@@ -668,7 +758,7 @@ namespace KerasSharp.Backends
 
         public Tensor square(Tensor w)
         {
-            throw new NotImplementedException();
+            return tensor(tf.Square(w));
         }
 
         public Tensor sum(Tensor x, int[] axis, bool keepdims = false, string name = null)
@@ -905,6 +995,11 @@ namespace KerasSharp.Backends
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L1332
             //axis = _normalize_axis(axis, ndim(x));
             return tensor(tf.ArgMax(x, tf.Const(axis)));
+        }
+
+        public Tensor round(Tensor x)
+        {
+            return tensor(tf.Round(x));
         }
         #endregion
     }

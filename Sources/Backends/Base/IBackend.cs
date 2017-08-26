@@ -45,6 +45,7 @@ namespace KerasSharp.Backends
         Tensor square(Tensor w);
         Tensor equal(Tensor x, Tensor y);
         Tensor sum(Tensor x, int[] axis = null, bool keepdims = false, string name = null);
+        Tensor round(Tensor x);
         Tensor argmax(Tensor x, int axis=-1);
         Tensor sum(Tensor x, int axis, bool keepdims = false, string name = null);
 
@@ -162,7 +163,7 @@ namespace KerasSharp.Backends
 
         Tensor elu(object x);
 
-        Tensor binary_crossentropy(Tensor expected, Tensor actual);
+        Tensor binary_crossentropy(Tensor output, Tensor target, bool from_logits = false);
 
 
 
@@ -173,7 +174,7 @@ namespace KerasSharp.Backends
 
         Tensor variable(Tensor tensor, TFDataType dtype = Utils.DEFAULT_DTYPE, string name = null);
 
-        Tensor in_train_phase(Func<Tensor> dropped_inputs, Tensor inputs, bool? training);
+        Tensor in_train_phase(Func<Tensor> x, Func<Tensor> alt, bool? training);
 
         TFDataType? dtype(Tensor input_tensor);
 
