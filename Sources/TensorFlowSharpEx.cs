@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -93,11 +94,207 @@ namespace KerasSharp
         /// If axis has no entries, all dimensions are reduced, and a
         /// tensor with a single element is returned.</para>
         /// </remarks>
-        public static TFOutput ReduceMean(this  TFGraph g, TFOutput input, TFOutput? axis = null, bool? keep_dims = false, string operName = null)
+        public static TFOutput ReduceMean(this TFGraph g, TFOutput input, TFOutput? axis = null, bool? keep_dims = false, string operName = null)
         {
+            if (input.OutputType == TFDataType.Bool)
+                input = g.Cast(input, TFDataType.Int8);
             return g.Mean(input, g.ReduceDims(input, axis), keep_dims, operName);
         }
 
+
+        /// <summary>
+        ///   Computes sigmoid cross entropy given `logits`.
+        /// </summary>
+        /// 
+        /// <remarks>
+        ///    Measures the probability error in discrete classification tasks in which each
+        ///    class is independent and not mutually exclusive.For instance, one could
+        ///    perform multilabel classification where a picture can contain both an elephant
+        ///    and a dog at the same time.
+        /// </remarks>
+        /// 
+        public static TFOutput sigmoid_cross_entropy_with_logits(this TFGraph g, TFOutput labels, TFOutput logits, string operName = null)
+        {
+            // https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/python/ops/nn_impl.py#L100
+
+            var scopeName = g.MakeName("logistic_loss", operName);
+            using (var newScope = g.WithScope(scopeName))
+            {
+                //logits = ops.convert_to_tensor(logits, name: "logits");
+                //labels = ops.convert_to_tensor(labels, name: "labels");
+                //try
+                //{
+                //    labels.get_shape().merge_with(logits.get_shape())
+                //}
+                //catch
+                //{
+                //    throw new ArgumentException("logits and labels must have the same shape ({logits.get_shape()} vs {labels.get_shape()})");
+                //}
+
+                // The logistic loss formula from above is
+                // x - x * z + log(1 + exp(-x))
+                // For x < 0, a more numerically stable formula is
+                //   -x * z + log(1 + exp(x))
+                // Note that these two expressions can be combined into the following:
+                // max(x, 0) - x * z + log(1 + exp(-abs(x)))
+                // To allow computing gradients at zero, we define custom versions of max and
+                // abs functions.
+                TFOutput zeros = g.ZerosLike(logits);
+                TFOutput cond = g.GreaterEqual(logits, zeros);
+                TFOutput relu_logits = g.Where(cond, logits, zeros);
+                TFOutput neg_abs_logits = g.Where(cond, g.Neg(logits), logits);
+                return g.Add(
+                    g.Sub(relu_logits, g.Mul(logits, labels)),
+                    g.Log1p(g.Exp(neg_abs_logits)),
+                    operName: operName);
+            }
+        }
+
+        /// <summary>
+        ///   Return elements from x or y depending on condition.
+        /// </summary>
+        /// 
+        /// <param name="condition">LabeledTensor of type `bool`.</param>
+        /// <param name="x">LabeledTensor for values where condition is true.</param>
+        /// <param name="y">LabeledTensor for values where condition is false.</param>
+        /// <param name="name">Optional op name.</param>
+        /// 
+        /// <returns>The labeled tensor with values according to condition.</returns>
+        /// 
+        public static TFOutput Where(this TFGraph g, TFOutput condition, TFOutput? x, TFOutput? y, string name= null)
+        {
+            // https://github.com/tensorflow/tensorflow/blob/d4ce3b4681b3a550c095b2cd18a79494d1cc4039/tensorflow/python/ops/array_ops.py#L2342
+            if (x == null && y == null)
+                return g.Where(input: condition, operName: name);
+            else if (x != null && y != null)
+                return g.Select(condition: condition, t: x.Value, e: y.Value, operName: name);
+            throw new ArgumentException("x and y must both be non-None or both be None.");
+        }
+
+        /*
+        public static TFOutput cond(this TFGraph g, TFOutput pred, Func<TFOutput> true_fn = null, Func<TFOutput> false_fn = null, bool strict = false, string operName = null)
+        {
+            using (var name = g.WithScope(g.MakeName("cond", operName)))
+            {
+                // Add the Switch to the graph.
+                (TFOutput p_2, TFOutput p_1) = g.Switch(pred, pred);
+                TFOutput pivot_1 = g.Identity(p_1, operName: "switch_t");
+                TFOutput pivot_2 = g.Identity(p_2, operName: "switch_f");
+                pred = g.Identity(pred, operName: "pred_id");
+
+                // Disable the fetching of tensors that are only on one branch of cond.
+                foreach (TFOutput tensor in new[] { p_1, p_2, pivot_1, pivot_2, pred })
+                    g.PreventFetching(tensor.Operation);
+
+                // Build the graph for the true branch in a new context.
+                CondContext context_t = new CondContext(pred, pivot_1, branch: 1);
+                context_t.Enter();
+                (TFTensor orig_res_t, TFTensor res_t) = context_t.BuildCondBranch(true_fn);
+                if (orig_res_t == null)
+                    throw new ArgumentException("true_fn must have a return value.");
+                context_t.ExitResult(res_t);
+                context_t.Exit();
+
+                // Build the graph for the false branch in a new context.
+                CondContext context_f = new CondContext(pred, pivot_2, branch: 0);
+                context_f.Enter();
+                (TFTensor orig_res_f, TFTensor res_f) = context_f.BuildCondBranch(false_fn);
+                if (orig_res_f == null)
+                    throw new ArgumentException("false_fn must have a return value.");
+                context_f.ExitResult(res_f);
+                context_f.Exit();
+
+                if (!strict)
+                {
+                    orig_res_t = _UnpackIfSingleton(orig_res_t);
+                    orig_res_f = _UnpackIfSingleton(orig_res_f);
+                }
+
+                // Check that the return values of the two branches have the same structure.
+                try
+                {
+                    nest.assert_same_structure(orig_res_t, orig_res_f);
+                }
+                catch (InvalidOperationException e)
+                {
+                    throw new InvalidOperationException("Incompatible return values of true_fn and false_fn", e);
+                }
+
+                // Add the final merge to the graph.
+                if (res_t == null)
+                    throw new ArgumentException("true_fn and false_fn must return at least one result.");
+
+                TFTensor res_t_flat = nest.flatten(res_t);
+                TFTensor res_f_flat = nest.flatten(res_f);
+
+                foreach (var (x, y) in Enumerable.Zip(res_t_flat, res_f_flat, (a, b) => (a, b)))
+                {
+                    Trace.Assert((isinstance(x, ops.IndexedSlices) &&
+                             isinstance(y, ops.IndexedSlices)) ||
+                            (isinstance(x, sparse_tensor.SparseTensor) &&
+                             isinstance(y, sparse_tensor.SparseTensor)) ||
+                            (isinstance(x, ops.Tensor) && isinstance(y, ops.Tensor)));
+                    val_x = isinstance(x, ops.Tensor) ? x : x.values;
+                    val_y = isinstance(y, ops.Tensor) ? y : y.values;
+                    if (val_x.dtype.base_dtype != val_y.dtype.base_dtype)
+                        throw new ArgumentException("Outputs of true_fn and false_fn must have the same type: %s, %s" % (val_x.dtype.name, val_y.dtype.name));
+                }
+
+                merges = [merge(pair)[0] for pair in zip(res_f_flat, res_t_flat)];
+                merges = _convert_flows_to_tensorarrays(nest.flatten(orig_res_t), merges);
+
+                // Add to collections
+                ops.add_to_collection(ops.GraphKeys.COND_CONTEXT, context_t);
+                ops.add_to_collection(ops.GraphKeys.COND_CONTEXT, context_f);
+
+                merges = nest.pack_sequence_as(structure: orig_res_t, flat_sequence: merges);
+
+                // Singleton lists and tuples are automatically unpacked if strict == False.
+                if (!strict)
+                    merges = _UnpackIfSingleton(merges);
+                return merges;
+            }
+        }
+        */
+
+        public static void PreventFetching(this TFGraph g, TFOperation op)
+        {
+
+        }
+
+        private class CondContext
+        {
+            private TFOutput pred;
+            private TFOutput pivot_1;
+            private int branch;
+
+            public CondContext(TFOutput pred, TFOutput pivot_1, int branch)
+            {
+                this.pred = pred;
+                this.pivot_1 = pivot_1;
+                this.branch = branch;
+            }
+
+            internal (TFTensor, TFTensor) BuildCondBranch(Func<TFOutput> true_fn)
+            {
+                throw new NotImplementedException();
+            }
+
+            internal void Enter()
+            {
+                throw new NotImplementedException();
+            }
+
+            internal void Exit()
+            {
+                throw new NotImplementedException();
+            }
+
+            internal void ExitResult(object res_t)
+            {
+                throw new NotImplementedException();
+            }
+        }
         #endregion
     }
 }
