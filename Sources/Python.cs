@@ -27,6 +27,8 @@
 namespace KerasSharp
 {
     using Accord.Statistics.Kernels;
+    using KerasSharp.Engine.Topology;
+    using KerasSharp.Metrics;
     using System;
     using System.Collections;
     using System.Collections.Generic;
@@ -171,5 +173,61 @@ namespace KerasSharp
         }
 
 
+
+        public static List<T> Get<T>(IList<string> name)
+        {
+            if (name == null)
+                return null;
+            return name.Select(s => Get<T>(s)).ToList();
+        }
+
+        public static T Get<T>(string name)
+        {
+            Type baseType = typeof(T);
+            Type foundType = get(name, baseType);
+
+            if (foundType == null)
+                foundType = get(name.Replace("_", ""), baseType); // try again after normalizing the name
+
+            if (foundType == null)
+                throw new ArgumentOutOfRangeException("name", $"Could not find {baseType.Name} '{name}'.");
+
+            return (T)Activator.CreateInstance(foundType);
+        }
+
+        private static Type get(string name, Type type)
+        {
+            return AppDomain.CurrentDomain.GetAssemblies()
+                                        .SelectMany(s => s.GetTypes())
+                                        .Where(p => type.IsAssignableFrom(p) && !p.IsInterface)
+                                        .Where(p => p.Name.ToUpperInvariant() == name.ToUpperInvariant())
+                                        .FirstOrDefault();
+        }
+
+        public static List<T> Get<T>(IEnumerable<object> name)
+            where T : class
+        {
+            return name.Select(s => Get<T>(s)).ToList();
+        }
+
+        public static T Get<T>(object obj)
+            where T : class
+        {
+            if (obj is String)
+                return Get<T>(obj as string);
+
+            if (typeof(T) == typeof(IMetric))
+            {
+                var f2 = obj as Func<Tensor, Tensor, Tensor>;
+                if (f2 != null)
+                    return new CustomMetric(f2) as T;
+
+                var f3 = obj as Func<Tensor, Tensor, Tensor, Tensor>;
+                if (f3 != null)
+                    return new CustomMetric(f3) as T;
+            }
+
+            throw new NotImplementedException();
+        }
     }
 }
