@@ -125,6 +125,9 @@ namespace KerasSharp.Engine.Topology
             Dictionary<Tensor, IWeightConstraint> constraints = null, int?[] batch_input_shape = null,
             int? batch_size = null, int? input_dim = null)
         {
+            if (input_shape == null && input_dim != null)
+                input_shape = new int?[] { input_dim };
+
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/topology.py#L247
 
             this.input_spec = null;
@@ -710,7 +713,7 @@ namespace KerasSharp.Engine.Topology
         {
             if (!this.supports_masking)
             {
-                if (mask != null)
+                if (mask != null && !(mask.Count == 1 && mask[0] == null))
                 {
                     foreach (Tensor m in mask)
                         throw new Exception("Layer {this.name} does not support masking, but was passed an input_mask: " + m);

@@ -27,14 +27,21 @@
 namespace KerasSharp.Metrics
 {
     using KerasSharp.Engine.Topology;
+    using System;
     using System.Collections.Generic;
     using TensorFlow;
 
+    using static KerasSharp.Backends.Current;
+
     public class BinaryAccuracy : IMetric
     {
-        public Tensor Call(Tensor expected, Tensor actual, Tensor mask = null)
+        public Tensor Call(Tensor y_true, Tensor y_pred, Tensor mask = null)
         {
-            throw new System.NotImplementedException();
+            if (mask != null)
+                throw new NotSupportedException();
+
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/metrics.py#L20
+            return K.mean(K.equal(y_true, K.round(y_pred)), axis: -1);
         }
     }
 }

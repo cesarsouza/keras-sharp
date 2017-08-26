@@ -156,7 +156,7 @@
     <Compile Include="Optimizers\Base\IOptimizer.cs" />
     <Compile Include="Optimizers\Base\Optimizer.cs" />
     <Compile Include="Optimizers\Nadam.cs" />
-    <Compile Include="Optimizers\RootMeanSquareProp.cs" />
+    <Compile Include="Optimizers\RMSProp.cs" />
     <Compile Include="Optimizers\SGD.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Regularizers\Base\IWeightRegularizer.cs" />

@@ -124,9 +124,28 @@ namespace KerasSharp
             this.supports_masking = true;
         }
 
-        public Dense(int units, string activation, int? input_dim = null)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Dense"/> class.
+        /// </summary>
+        /// 
+        /// <param name="units">Positive integer, dimensionality of the output space.</param>
+        /// <param name="input_dim">The input dim.</param>
+        /// <param name="batch_input_shape">The batch input shape.</param>
+        /// <param name="input_shape">The input shape.</param>
+        /// <param name="activation">The activation function to use.</param>
+        /// <param name="use_bias">Whether the layer uses a bias vector.</param>
+        /// 
+        public Dense(int units, string activation, bool use_bias = true,
+            IWeightInitializer kernel_initializer = null, IWeightInitializer bias_initializer = null,
+            IWeightRegularizer kernel_regularizer = null, IWeightRegularizer bias_regularizer = null, IWeightRegularizer activity_regularizer = null,
+            IWeightConstraint kernel_constraint = null, IWeightConstraint bias_constraint = null,
+            int? input_dim = null, int?[] input_shape = null, int?[] batch_input_shape = null)
+            : this(units: units, activation: Activation.Create(activation), use_bias: use_bias,
+            kernel_initializer: kernel_initializer, bias_initializer: bias_initializer,
+            kernel_regularizer: kernel_regularizer, bias_regularizer: bias_regularizer, activity_regularizer: activity_regularizer,
+            kernel_constraint: kernel_constraint, bias_constraint: bias_constraint,
+             input_dim: input_dim, input_shape: input_shape, batch_input_shape: batch_input_shape)
         {
-            throw new NotImplementedException();
         }
 
         protected override void build(List<int?[]> input_shape)

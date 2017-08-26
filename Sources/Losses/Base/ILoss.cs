@@ -46,4 +46,11 @@ namespace KerasSharp.Losses
         /// 
         Tensor Call(Tensor expected, Tensor actual, Tensor sample_weight = null, Tensor mask = null);
     }
+
+    // Aliases
+    public sealed class MSE : MeanSquaredError { }
+    public sealed class MAE : MeanAbsoluteError { }
+    public sealed class MAPE : MeanAbsolutePercentageError { }
+    public sealed class MSLE : MeanSquaredLogarithmicError { }
+    public sealed class Cosine : CosineProximity { }
 }

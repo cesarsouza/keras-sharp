@@ -42,6 +42,7 @@ namespace KerasSharp.Models
 
     using Accord.Math;
     using System.Collections;
+    using KerasSharp.Optimizers;
 
     public static class ExtensionMethods
     {
@@ -147,20 +148,17 @@ namespace KerasSharp.Models
 
         public void Compile(string optimizer, string loss, string[] metrics = null)
         {
-            // TODO: Translate strings into actual classes and instantiate them
-            throw new NotImplementedException();
+            Compile(Get<IOptimizer>(optimizer), Get<ILoss>(loss), Get<IMetric>(metrics));
         }
 
         public void Compile(IOptimizer optimizer, string loss, string[] metrics = null)
         {
-            // TODO: Translate strings into actual classes and instantiate them
-            throw new NotImplementedException();
+            Compile(optimizer, Get<ILoss>(loss), Get<IMetric>(metrics));
         }
 
         public void Compile(string optimizer, string loss, object[] metrics)
         {
-            // TODO: Translate strings into actual classes and instantiate them
-            throw new NotImplementedException();
+            Compile(Get<IOptimizer>(optimizer), Get<ILoss>(loss), Get<IMetric>(metrics));
         }
 
         /// <summary>
@@ -496,14 +494,13 @@ namespace KerasSharp.Models
 
                 foreach (IMetric metric in output_metrics)
                 {
-                    IMetric acc_fn;
-
                     if (metric is Accuracy)
                     {
+                        IMetric acc_fn;
+
                         // custom handling of accuracy
                         // (because of class mode duality)
                         int?[] output_shape = this.internal_output_shapes[i];
-                        acc_fn = null;
 
                         if (output_shape.Get(-1) == 1 || this.loss_functions[i] is BinaryCrossEntropy)
                         {
@@ -525,15 +522,10 @@ namespace KerasSharp.Models
                     }
                     else
                     {
-                        //metric_fn = metrics_module.get(metric)
-                        //masked_metric_fn = _masked_objective(metric_fn)
-                        //metric_result = masked_metric_fn(y_true, y_pred, mask = masks[i])
-                        //metric_result = {
-                        //            metric_fn.__name__: metric_result
-                        //}
-                        //for name, tensor in six.iteritems(metric_result):
-                        //    append_metric(i, name, tensor)
-                        throw new NotImplementedException();
+                        // Different from the original Keras implementation:
+                        var masked_metric_fn = _masked_objective(metric);
+                        var metric_result = masked_metric_fn.Call(y_true, y_pred, mask: masks[i]); 
+                        append_metric(i, metrics_names[i], metric_result);
                     }
                 }
             }
@@ -583,7 +575,7 @@ namespace KerasSharp.Models
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L293
 
-            if (metrics == null)
+            if (metrics == null || (metrics.Count == 1 && metrics.Values.First() == null))
                 return output_names.Select(x => new List<IMetric>()).ToList();
 
             if (metrics.is_single())

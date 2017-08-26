@@ -35,6 +35,11 @@ namespace KerasSharp.Metrics
     {
         private Func<Tensor, Tensor, Tensor, Tensor> func;
 
+        public CustomMetric(Func<Tensor, Tensor, Tensor> func)
+        {
+            this.func = (Tensor expected, Tensor actual, Tensor mask) => func(expected, actual);
+        }
+
         public CustomMetric(Func<Tensor, Tensor, Tensor, Tensor> func)
         {
             this.func = func;

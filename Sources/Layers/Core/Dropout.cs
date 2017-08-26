@@ -84,7 +84,7 @@ namespace KerasSharp.Activations
             {
                 var noise_shape = this._get_noise_shape(inputs);
                 Func<Tensor> dropped_inputs = () => K.dropout(inputs, this.rate, noise_shape, seed: this.seed);
-                return K.in_train_phase(dropped_inputs, inputs, training: training);
+                return K.in_train_phase(dropped_inputs, () => inputs, training: training);
             }
 
             return inputs;

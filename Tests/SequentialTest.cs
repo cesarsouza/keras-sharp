@@ -49,7 +49,7 @@ model.compile(optimizer = 'rmsprop',
             var model = new Sequential();
             model.Add(new Dense(32, input_shape: new int?[] { 500 }));
             model.Add(new Dense(10, activation: new Softmax()));
-            model.Compile(optimizer: new RootMeanSquareProp(),
+            model.Compile(optimizer: new RMSProp(),
                   loss: new CategoricalCrossEntropy(),
                   metrics: new Accuracy());
 
@@ -239,7 +239,7 @@ model.compile(optimizer = 'rmsprop',
             Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/Const3_0' shape=[] dtype=Float", model.trainable_weights[1].ToString());
             Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Add0_0' shape=[32, 10] dtype=Float", model.trainable_weights[2].ToString());
             Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Const3_0' shape=[] dtype=Float", model.trainable_weights[3].ToString());
-            Assert.AreEqual(true, model.optimizer is RootMeanSquareProp);
+            Assert.AreEqual(true, model.optimizer is RMSProp);
             Assert.AreEqual(0, model.outbound_nodes.Count);
             Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Softmax0_0' shape=[null, 10] dtype=Float", model.output[0].ToString());
             Assert.AreEqual(1, model.output_layers.Count);
@@ -433,14 +433,20 @@ model.compile(optimizer = 'rmsprop',
         [Test]
         public void sequential_guide_1()
         {
+/*
+model = Sequential([
+    Dense(32, input_shape=(784,)),
+    Activation('relu'),
+    Dense(10),
+    Activation('softmax'),
+])
+*/
             var model = new Sequential(new List<Layer> {
                 new Dense(32, input_shape: new int?[] { 784 }),
                 new Activation("relu"),
                 new Dense(10),
                 new Activation("softmax"),
             });
-
-            Assert.Fail();
         }
 
         [Test]
@@ -449,8 +455,6 @@ model.compile(optimizer = 'rmsprop',
             var model = new Sequential();
             model.Add(new Dense(32, input_dim: 784));
             model.Add(new Activation("relu"));
-
-            Assert.Fail();
         }
 
         [Test]
@@ -460,8 +464,6 @@ model.compile(optimizer = 'rmsprop',
             model.Add(new Dense(32, input_shape: new int?[] { 784 }));
             model = new Sequential();
             model.Add(new Dense(32, input_dim: 784));
-
-            Assert.Fail();
         }
 
         [Test]
@@ -469,34 +471,53 @@ model.compile(optimizer = 'rmsprop',
         {
             var K = KerasSharp.Backends.Current.K;
 
-            var model = new Sequential();
-            model.Add(new Dense(32, input_shape: new int?[] { 784 }));
-
-            // For a multi-class classification problem
-            model.Compile(optimizer: "rmsprop",
-                          loss: "categorical_crossentropy",
-                          metrics: new[] { "accuracy" });
-
-            // For a binary classification problem
-            model.Compile(optimizer: "rmsprop",
-                          loss: "binary_crossentropy",
-                          metrics: new[] { "accuracy" });
-
-            // For a mean squared error regression problem
-            model.Compile(optimizer: "rmsprop",
-                          loss: "mse");
-
-            // For custom metrics
-            Func<Tensor, Tensor, Tensor> mean_pred = (Tensor y_true, Tensor y_pred) =>
             {
-                return K.mean(y_pred);
-            };
+                var model = new Sequential();
+                model.Add(new Dense(32, input_shape: new int?[] { 784 }));
 
-            model.Compile(optimizer: "rmsprop",
-                          loss: "binary_crossentropy",
-                          metrics: new object[] { "accuracy", mean_pred });
+                // For a multi-class classification problem
+                model.Compile(optimizer: "rmsprop",
+                              loss: "categorical_crossentropy",
+                              metrics: new[] { "accuracy" });
+                K.clear_session();
+            }
 
-            Assert.Fail();
+            {
+                var model = new Sequential();
+                model.Add(new Dense(32, input_shape: new int?[] { 784 }));
+
+                // For a binary classification problem
+                model.Compile(optimizer: "rmsprop",
+                              loss: "binary_crossentropy",
+                              metrics: new[] { "accuracy" });
+                K.clear_session();
+            }
+
+            {
+                var model = new Sequential();
+                model.Add(new Dense(32, input_shape: new int?[] { 784 }));
+
+                // For a mean squared error regression problem
+                model.Compile(optimizer: "rmsprop",
+                          loss: "mse");
+                K.clear_session();
+            }
+
+            {
+                var model = new Sequential();
+                model.Add(new Dense(32, input_shape: new int?[] { 784 }));
+
+                // For custom metrics
+                Func<Tensor, Tensor, Tensor> mean_pred = (Tensor y_true, Tensor y_pred) =>
+                {
+                    return K.mean(y_pred);
+                };
+
+                model.Compile(optimizer: "rmsprop",
+                              loss: "binary_crossentropy",
+                              metrics: new object[] { "accuracy", mean_pred });
+                K.clear_session();
+            }
         }
 
         [Test]
@@ -535,8 +556,6 @@ model.compile(optimizer = 'rmsprop',
 
             // Train the model, iterating on the data in batches of 32 samples
             model.fit(data, one_hot_labels, epochs: 10, batch_size: 32);
-
-            Assert.Fail();
         }
 
         [Test]
@@ -569,8 +588,6 @@ model.compile(optimizer = 'rmsprop',
                       batch_size: 128);
 
             var score = model.evaluate(x_test, y_test, batch_size: 128);
-
-            Assert.Fail();
         }
 
         [Test]
@@ -598,8 +615,6 @@ model.compile(optimizer = 'rmsprop',
                       batch_size: 128);
 
             var score = model.evaluate(x_test, y_test, batch_size: 128);
-
-            Assert.Fail();
         }
 
         [Test]
@@ -634,8 +649,6 @@ model.compile(optimizer = 'rmsprop',
 
             model.fit(x_train, y_train, batch_size: 32, epochs: 10);
             var score = model.evaluate(x_test, y_test, batch_size: 32);
-
-            Assert.Fail();
         }
 
         [Test]
@@ -661,8 +674,6 @@ model.compile(optimizer = 'rmsprop',
 
             model.fit(x_train, y_train, batch_size: 16, epochs: 10);
             var score = model.evaluate(x_test, y_test, batch_size: 16);
-
-            Assert.Fail();
         }
 
         [Test]
@@ -695,8 +706,6 @@ model.compile(optimizer = 'rmsprop',
             model.fit(x_train, y_train,
                       batch_size: 64, epochs: 5,
                       validation_data: new object[] { x_val, y_val });
-
-            Assert.Fail();
         }
 
         [Test]
@@ -732,8 +741,6 @@ model.compile(optimizer = 'rmsprop',
             model.fit(x_train, y_train,
                       batch_size: batch_size, epochs: 5, shuffle: false,
                       validation_data: new object[] { x_val, y_val });
-
-            Assert.Fail();
         }
 
 
