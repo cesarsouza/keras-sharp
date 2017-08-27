@@ -26,11 +26,12 @@
 
 using System.Collections.Generic;
 using KerasSharp.Engine.Topology;
+using System;
 
 namespace KerasSharp.Models
 {
     public class Callback
     {
-        internal List<Tensor> validation_data;
+        internal List<Array> validation_data;
     }
 }

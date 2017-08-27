@@ -43,6 +43,14 @@ namespace KerasSharp.Models
     using Accord.Math;
     using System.Collections;
     using KerasSharp.Optimizers;
+    using TensorFlow;
+
+    public enum Shuffle
+    {
+        True,
+        False,
+        Batch // This looks a lot like https://thedailywtf.com/articles/What_Is_Truth_0x3f_...
+    }
 
     public static class ExtensionMethods
     {
@@ -84,7 +92,7 @@ namespace KerasSharp.Models
         protected List<Tensor> _feed_outputs;
         protected List<string> _feed_output_names;
         protected List<int?[]> _feed_output_shapes;
-        protected List<object> _feed_loss_fns;
+        protected List<ILoss> _feed_loss_fns;
         public List<Tensor> targets;
         protected List<Tensor> _feed_targets;
         public Dictionary<string, List<IMetric>> metrics;
@@ -97,7 +105,8 @@ namespace KerasSharp.Models
         protected Function predict_function;
         protected bool stop_training;
         protected History history;
-        public List<object> _feed_sample_weight_modes;
+        private List<string> sample_weight_modes;
+        public List<string> _feed_sample_weight_modes;
 
 
 
@@ -235,7 +244,7 @@ namespace KerasSharp.Models
             this._feed_outputs = new List<Tensor>();
             this._feed_output_names = new List<string>();
             this._feed_output_shapes = new List<int?[]>();
-            this._feed_loss_fns = new List<object>();
+            this._feed_loss_fns = new List<ILoss>();
             for (int i = 0; i < weighted_losses.Count; i++)
             {
                 if (weighted_losses[i] == null)
@@ -394,6 +403,12 @@ namespace KerasSharp.Models
                 }
             }
 
+            this.sample_weight_modes = sample_weight_modes;
+            this._feed_sample_weight_modes = new List<string>();
+            for (int i = 0; i < this.outputs.Count; i++)
+                if (!skip_indices.Contains(i))
+                    this._feed_sample_weight_modes.Add(this.sample_weight_modes[i]);
+
             // Prepare targets of model.
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L882
             this.targets = new List<Tensor>();
@@ -524,7 +539,7 @@ namespace KerasSharp.Models
                     {
                         // Different from the original Keras implementation:
                         var masked_metric_fn = _masked_objective(metric);
-                        var metric_result = masked_metric_fn.Call(y_true, y_pred, mask: masks[i]); 
+                        var metric_result = masked_metric_fn.Call(y_true, y_pred, mask: masks[i]);
                         append_metric(i, metrics_names[i], metric_result);
                     }
                 }
@@ -691,9 +706,6 @@ namespace KerasSharp.Models
         public void _make_train_function()
         {
             if (this.train_function == null)
-                throw new Exception("You must compile your model before using it.");
-
-            if (this.train_function == null)
             {
                 var inputs = (Enumerable.Concat(this._feed_inputs, this._feed_targets).Concat(this._feed_sample_weights)).ToList();
 
@@ -754,9 +766,9 @@ namespace KerasSharp.Models
 
 
 
-        public History _fit_loop(Function f, List<Tensor> ins, List<string> out_labels = null,
+        public History _fit_loop(Function f, List<Array> ins, List<string> out_labels = null,
             int batch_size = 32, int epochs = 100, int verbose = 1, CallbackList callbacks = null,
-                      Function val_f = null, List<Tensor> val_ins = null, string shuffle = "true",
+                      Function val_f = null, List<Array> val_ins = null, Shuffle shuffle = Shuffle.True,
                       List<String> callback_metrics = null, int initial_epoch = 0)
         {
             // """Abstract fit function for `f(ins)`.
@@ -790,9 +802,9 @@ namespace KerasSharp.Models
                 Trace.Write("Train on {ins[0].shape[0]} samples, validate on val_ins[0].shape[0] samples");
 
             int num_train_samples;
-            if (ins != null && ((Tensor)ins[0]).shape != null)
+            if (ins != null)
             {
-                num_train_samples = ((Tensor)ins[0]).shape[0].Value;
+                num_train_samples = ins[0].GetLength(0);
             }
             else
             {
@@ -846,10 +858,10 @@ namespace KerasSharp.Models
             {
                 callbacks.on_epoch_begin(epoch);
 
-                if (shuffle == "batch")
+                if (shuffle == Shuffle.Batch)
                     index_array = _batch_shuffle(index_array, batch_size);
 
-                else if (shuffle == "true")
+                else if (shuffle == Shuffle.True)
                     Vector.Shuffle(index_array);
 
                 List<(int, int)> batches = _make_batches(num_train_samples, batch_size);
@@ -922,7 +934,12 @@ namespace KerasSharp.Models
             return this.history;
         }
 
-        private List<Tensor> _slice_arrays(Array ins, params int[] batch_ids)
+        private List<T> _slice_arrays<T>(List<T> ins, params int[] batch_ids)
+        {
+            throw new NotImplementedException();
+        }
+
+        private List<Array> _slice_arrays(List<Array> ins, params int[] batch_ids)
         {
             throw new NotImplementedException();
         }
@@ -940,7 +957,7 @@ namespace KerasSharp.Models
 
 
 
-        public Array[] _predict_loop(Function f, List<Tensor> ins, int batch_size = 32, int verbose = 0)
+        public Array[] _predict_loop(Function f, List<Array> ins, int batch_size = 32, int verbose = 0)
         {
             // """Abstract method to loop over some data in batches.
             // // Arguments
@@ -954,9 +971,9 @@ namespace KerasSharp.Models
             // (if the model has multiple outputs).
             // """
             int samples;
-            if (ins != null && ((Tensor)ins[0]).shape != null)
+            if (ins != null)
             {
-                samples = ((Tensor)ins[0]).shape[0].Value;
+                samples = ins[0].GetLength(0);
             }
             else
             {
@@ -1033,12 +1050,12 @@ namespace KerasSharp.Models
         ///    the display labels for the scalar outputs.
         /// </returns>
         /// 
-        public List<Tensor> _test_loop(Function f, List<Tensor> ins, int batch_size = 32, int verbose = 0)
+        public List<Tensor> _test_loop(Function f, List<Array> ins, int batch_size = 32, int verbose = 0)
         {
             int samples;
             if (ins != null)
             {
-                samples = ins[0].shape[0].Value;
+                samples = ins[0].GetLength(0);
             }
             else
             {
@@ -1109,8 +1126,8 @@ namespace KerasSharp.Models
             throw new NotImplementedException();
         }
 
-        public (List<Tensor>, List<Tensor>, List<Tensor>) _standardize_user_data(Array[] x, Array[] y,
-                                   List<double> sample_weight = null, Dictionary<int, double> class_weight = null,
+        public (List<Array>, List<Array>, List<Array>) _standardize_user_data(Dictionary<string, Array> x, Dictionary<string, Array> y,
+                                   Dictionary<string, Array> sample_weight = null, Dictionary<string, Dictionary<string, double?>> class_weight = null,
                                    bool check_batch_axis = true, int? batch_size = null)
         {
             if (this.optimizer == null)
@@ -1131,46 +1148,133 @@ namespace KerasSharp.Models
             var xx = _standardize_input_data(x, this._feed_input_names, this._feed_input_shapes, check_batch_axis: false, exception_prefix: "input");
             var yy = _standardize_input_data(y, this._feed_output_names, output_shapes, check_batch_axis: false, exception_prefix: "target");
 
-            List<Tensor> sample_weights = _standardize_sample_weights(sample_weight, this._feed_output_names);
+            List<Array> sample_weights = _standardize_sample_weights(sample_weight, this._feed_output_names).to_list();
+            List<Dictionary<string, double?>> class_weights = _standardize_class_weights(class_weight, this._feed_output_names).to_list();
 
-            List<Tensor> class_weightsx = _standardize_class_weights(class_weight, this._feed_output_names);
+            sample_weights = Vector.Range(_feed_sample_weight_modes.Count).Select(i =>
+                (Array)_standardize_weights(yy[i], sample_weights[i], class_weights[i], this._feed_sample_weight_modes[i])).ToList();
 
-            for (int i = 0; i < this._feed_sample_weight_modes.Count; i++)
-            {
-                Tensor yi = yy[i];
-                Tensor sw = sample_weights[i];
-                Tensor cw = class_weightsx[i];
-                object mode = this._feed_sample_weight_modes[i];
-                sample_weight.Add(_standardize_weights(yi, sw, cw, mode));
-            }
-
-            _check_array_lengths(x, y, sample_weights);
-            _check_loss_and_target_compatibility(y, this._feed_loss_fns, this._feed_output_shapes);
+            _check_array_lengths(xx, yy, sample_weights);
+            _check_loss_and_target_compatibility(yy, this._feed_loss_fns, this._feed_output_shapes);
             if (this.stateful && batch_size > 0)
             {
-                if (x[0].GetLength(0) % batch_size != 0)
-                    throw new Exception($"In a stateful network, you should only pass inputs with a number of samples that can be divided by the batch size. Found: {x[0].GetLength(0)} samples");
+                if (xx[0].GetLength(0) % batch_size != 0)
+                    throw new Exception($"In a stateful network, you should only pass inputs with a number of samples that can be divided by the batch size. Found: {xx[0].GetLength(0)} samples");
             }
 
             return (xx, yy, sample_weights);
         }
 
-        private List<Tensor> _standardize_class_weights(Dictionary<int, double> class_weight, List<string> feed_output_names)
+        private Dictionary<string, Dictionary<string, double?>> _standardize_class_weights(Dictionary<string, Dictionary<string, double?>> class_weight, List<string> feed_output_names)
         {
-            throw new NotImplementedException();
+            //https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L190
+            return _standardize_sample_or_class_weights(class_weight, output_names, "class_weight");
         }
 
-        private double _standardize_weights(Tensor yi, Tensor sw, Tensor cw, object mode)
+        private double?[] _standardize_weights(Array y, Array sample_weight, Dictionary<string, double?> class_weight, string sample_weight_mode)
         {
-            throw new NotImplementedException();
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L499
+            if (sample_weight_mode != null)
+            {
+                if (sample_weight_mode != "temporal")
+                    throw new ArgumentException($"sample_weight_mode should be None or 'temporal'. Found: {str(sample_weight_mode)}");
+                if (y.Rank < 3)
+                    throw new ArgumentException("Found a sample_weight array for an input with shape {str(y.shape)}. Timestep-wise sample weighting (use of sample_weight_mode='temporal') is restricted to outputs that are at least 3D, i.e. that have a time dimension.");
+                if (sample_weight != null && sample_weight.Rank != 2)
+                    throw new ArgumentException($"Found a sample_weight array with shape {str(sample_weight.GetLength())}. In order to use timestep-wise sample weighting, you should pass a 2D sample_weight array.");
+            }
+            else
+            {
+                if (sample_weight != null && sample_weight.Rank != 1)
+                    throw new ArgumentException($"Found a sample_weight array with shape {str(sample_weight.GetLength())}. In order to use timestep - wise sample weights, you should specify sample_weight_mode = 'temporal' in compile().If you just mean to use sample - wise weights, make sure your sample_weight array is 1D.");
+            }
+
+            if (sample_weight != null)
+            {
+                if (sample_weight.Rank > y.Rank)
+                    throw new ArgumentException($"Found a sample_weight with shape {str(sample_weight.GetLength())}. Expected sample_weight with rank less than or equal to {y.Rank}.");
+
+                if (!y.GetLength().Get(0, sample_weight.Rank).IsEqual(sample_weight.GetLength()))
+                    throw new ArgumentException($"Found a sample_weight array with shape {str(sample_weight.GetLength())} for an input with shape {str(y.GetLength())}. sample_weight cannot be broadcast.");
+                return (double?[])sample_weight;
+            }
+
+            else if (class_weight.is_dict())
+            {
+                if (y.Rank > 2)
+                    throw new ArgumentException($"class_weight not supported for 3+ dimensional targets.");
+
+                int[] y_classes;
+                if (y.GetLength(1) > 1)
+                    y_classes = (y as double[,]).ArgMax(dimension: 1);
+                else if (y.GetLength(1) == 1)
+                    y_classes = (int[])y.Squeeze();
+                else
+                    y_classes = (y as int[]);
+                double?[] weights = y_classes.Select(cls => class_weight[cls.ToString()]).ToArray();
+                return weights;
+            }
+            else
+            {
+                if (sample_weight_mode == null)
+                {
+                    // TODO: Should use Vector.Ones
+                    return Vector.Create(y.GetLength(0), (double?)1);
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                    //return Matrix.Ones<double?>(y.GetLength(0), y.GetLength(1)));
+                }
+            }
         }
 
-        private List<Tensor> _standardize_sample_weights(List<double> sample_weight, List<string> feed_output_names)
+        private Dictionary<string, Array> _standardize_sample_weights(Dictionary<string, Array> sample_weight, List<string> output_names)
         {
-            throw new NotImplementedException();
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L196
+            return _standardize_sample_or_class_weights(sample_weight, output_names, "sample_weight");
         }
 
-        private Tensor _standardize_weights(Array yy, Tensor sw, Tensor cw, object mode)
+        private Dictionary<string, T> _standardize_sample_or_class_weights<T>(Dictionary<string, T> x_weight, List<string> output_names, string weight_type)
+            where T : class
+        {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L143
+            if (x_weight == null || x_weight.Count == 0)
+                return output_names.Select(x => (T)null).ToList().dict_from_list();
+
+            if (output_names.Count == 1)
+            {
+                if (x_weight.is_list() && x_weight.Values.Count == 1)
+                    return x_weight.to_list().dict_from_list();
+                if (x_weight.is_dict() && x_weight.ContainsKey(output_names[0]))
+                    return new List<T>() { x_weight[output_names[0]] }.dict_from_list();
+                return new List<T>() { x_weight.to_single() }.dict_from_list();
+            }
+
+            if (x_weight.is_list())
+            {
+                List<T> lx_weight = x_weight.to_list();
+                if (lx_weight.Count != output_names.Count())
+                {
+                    throw new ArgumentException($"Provided {weight_type} was a list of {str(x_weight.Count)} elements, but the model has {str(output_names.Count)} outputs. You should provide one {weight_type} array per model output.");
+                }
+                return lx_weight.dict_from_list();
+            }
+
+            if (x_weight.is_dict())
+            {
+                var x_weights = new List<T>();
+                foreach (string name in output_names)
+                    x_weights.Add(x_weight[name]);
+                return x_weights.dict_from_list();
+            }
+            else
+            {
+                throw new ArgumentException($"The model has multiple outputs, so {weight_type} should be either a list of a dict. Provided {weight_type} type not understood: {str(x_weight)}.");
+            }
+        }
+
+        private double _standardize_weights(Array yy, Tensor sw, Tensor cw, object mode)
         {
             throw new NotImplementedException();
         }
@@ -1185,19 +1289,183 @@ namespace KerasSharp.Models
             throw new NotImplementedException();
         }
 
-        private List<Tensor> _standardize_input_data(Array[] x, object feed_input_names, List<int?[]> feed_input_shapes, bool check_batch_axis = false, string exception_prefix = null)
+        private List<Array> _standardize_input_data(Dictionary<string, Array> data, List<string> names, List<int?[]> shapes, bool check_batch_axis = true, string exception_prefix = "")
         {
-            throw new NotImplementedException();
+            if (data == null)
+                return names.Select(x => (Array)null).ToList();
+
+            List<Array> arrays;
+
+            if (data.is_dict())
+            {
+                arrays = new List<Array>();
+                foreach (string name in names)
+                {
+                    if (!data.ContainsKey(name))
+                        throw new ArgumentException($"No data provided for {name}. Need data for each key in: {str(names)}");
+
+                    arrays.Add(data[name]);
+                }
+            }
+            else if (data.is_list())
+            {
+                List<Array> ldata = data.to_list();
+
+                if (ldata.Count != names.Count)
+                {
+                    if (data != null)
+                    {
+                        throw new ArgumentException($"Error when checking model {exception_prefix}: the list of Numpy arrays that you are passing to your model " +
+                            $"is not the size the model expected. Expected to see {str(names.Count)} array(s), but instead got the following list of ' + {str(ldata.Count)} " +
+                            $"arrays: {str(data).Substring(0, 200)} ...");
+                    }
+                    else
+                    {
+                        if (names.Count != 1)
+                        {
+                            throw new ArgumentException($"Error when checking model {exception_prefix}: you are passing a list as input to your model, but the model " +
+                                $"expects a list of {str(names.Count)} arrays instead. The list you passed was: {str(ldata).Substring(0, 200)} ...");
+                        }
+                    }
+                }
+                arrays = new List<Array>();
+                arrays.AddRange(ldata);
+            }
+            else
+            {
+                Array sdata = data.to_single();
+
+                if (names.Count > 1)
+                {
+                    // Case: model expects multiple inputs but only received
+                    // a single Numpy array.
+                    throw new ArgumentException($"The model expects {str(names.Count)} {exception_prefix} arrays, but only received one array. Found: array with shape {str(sdata.GetLength())}");
+                }
+                arrays = new List<Array>() { sdata };
+            }
+
+            // Make arrays at least 2D.
+            for (int i = 0; i < names.Count; i++)
+            {
+                Array array = arrays[i];
+                if (array.Rank == 1)
+                {
+                    array = array.ExpandDimensions(axis: 1);
+                    arrays[i] = array;
+                }
+            }
+
+            // Check shapes compatibility.
+            if (shapes != null)
+            {
+                for (int i = 0; i < names.Count; i++)
+                {
+                    if (shapes[i] == null)
+                        continue;
+
+                    Array array = arrays[i];
+
+                    if (array.Rank != shapes[i].Length)
+                    {
+                        throw new ArgumentException($"Error when checking {exception_prefix}: expected {names[i]} to have {str(shapes[i].Length)} dimensions, but got array with shape {str(array.GetLength())}");
+                    }
+
+                    for (int j = 0; j < shapes.Count; j++)
+                    {
+                        int dim = array.GetLength(j);
+                        int? ref_dim = shapes[i][j];
+
+                        if (j == 0 && !check_batch_axis)
+                        {
+                            // skip the first axis
+                            continue;
+                        }
+
+                        if (ref_dim.HasValue)
+                        {
+                            if (ref_dim != dim)
+                            {
+                                throw new ArgumentException($"Error when checking {exception_prefix}: expected {names[i]} to have shape {str(shapes[i])} but got array with shape {str(array.GetLength())}.");
+                            }
+                        }
+                    }
+                }
+            }
+
+            return arrays;
         }
 
-        private void _check_loss_and_target_compatibility(object y, List<object> feed_loss_fns, List<int?[]> feed_output_shapes)
+        /// <summary>
+        ///   Does validation on the compatibility of targets and loss functions.
+        /// </summary>
+        /// 
+        private void _check_loss_and_target_compatibility(List<Array> targets, List<ILoss> loss_fns, List<int?[]> output_shapes)
         {
-            throw new NotImplementedException();
+            for (int i = 0; i < targets.Count; i++)
+            {
+                Array y = targets[i];
+                ILoss loss = loss_fns[i];
+                int?[] shape = output_shapes[i];
+
+                if (loss == null)
+                    continue;
+
+                if (loss is CategoricalCrossEntropy)
+                {
+                    if (y.GetLength().Get(-1) == 1)
+                    {
+                        throw new ArgumentException(
+                            $"You are passing a target array of shape {str(y.GetLength())} while using as loss `categorical_crossentropy`. `categorical_crossentropy` expects targets to be binary matrices (1s and 0s) of shape (samples, classes). If your targets are integer classes, you can convert them to the expected format via:" +
+@"
+```
+from keras.utils.np_utils import to_categorical
+y_binary = to_categorical(y_int)
+```
+" +
+                            "Alternatively, you can use the loss function `sparse_categorical_crossentropy` instead, which does expect integer targets.");
+                    }
+                }
+
+                if (loss is MeanSquareError || loss is BinaryCrossEntropy || loss is CategoricalCrossEntropy)
+                {
+                    for (int j = 1; j < shape.Length; j++)
+                    {
+                        int target_dim = y.GetLength(j);
+                        int? out_dim = shape[j];
+                        if (out_dim != null && target_dim != out_dim)
+                            throw new ArgumentException($"A target array with shape {str(y.GetLength())} was passed for an output of shape {str(shape)} while using as loss `{loss}`. This loss expects targets to have the same shape as the output.");
+                    }
+                }
+            }
         }
 
-        private void _check_array_lengths(object x, object y, object sample_weights)
+        /// <summary>
+        ///   Does user input validation for arrays.
+        /// </summary>
+        /// 
+        private void _check_array_lengths(List<Array> x, List<Array> y, List<Array> w)
         {
-            throw new NotImplementedException();
+            int[] x_lengths = x.Select(s => s.GetLength(0)).ToArray();
+            int[] y_lengths = y.Select(s => s.GetLength(0)).ToArray();
+            int[] w_lengths = w.Select(s => s.GetLength(0)).ToArray();
+
+            var set_x = set(x_lengths);
+            if (len(set_x) > 1)
+                throw new ArgumentException($"All input arrays (x) should have the same number of samples. Got array shapes: {str(x.Select(s => s.GetLength()))}");
+
+            var set_y = set(y_lengths);
+            if (len(set_y) > 1)
+                throw new ArgumentException($"All target arrays (y) should have the same number of samples. Got array shapes: {str(y.Select(s => s.GetLength()))}");
+
+            var set_w = set(w_lengths);
+            if (len(set_w) > 1)
+                throw new ArgumentException($"All sample_weight arrays should have the same number of samples. Got array shapes: {str(w.Select(s => s.GetLength()))}");
+
+            if (set_x.Count > 0 && set_y.Count > 0 && list(set_x)[0] != list(set_y)[0])
+                throw new ArgumentException($"Input arrays should have the same number of samples as target arrays. Found {str(list(set_x)[0])} input samples and {str(list(set_y)[0])} target samples.");
+
+            if (set_y.Count > 0 && set_w.Count > 0 && list(set_y)[0] != list(set_w)[0])
+                throw new ArgumentException($"Sample_weight arrays should have the same number of samples as target arrays. Got {str(list(set_y)[0])} input samples and {str(list(set_w)[0])} target samples.");
         }
 
         public List<String> _get_deduped_metrics_names()
@@ -1221,22 +1489,35 @@ namespace KerasSharp.Models
             return deduped_out_labels;
         }
 
-        public History fit(Array x = null,
+        public History fit(
+                       Array x = null,
                        Array y = null,
                        int batch_size = 32,
                        int epochs = 1,
                        int verbose = 1,
                        CallbackList callbacks = null,
                        double validation_split = 0.0,
-                       object[] validation_data = null,
+                       IList<Array> validation_data = null,
                        bool shuffle = true,
-                       Dictionary<int, double> class_weight = null,
-                       List<double> sample_weight = null,
+                       Dictionary<int, double?> class_weight = null,
+                       Array sample_weight = null,
                        int initial_epoch = 0,
                        object kwargs = null)
         {
-            // TODO: Adapt arguments to the fit method below
-            throw new NotImplementedException();
+            return fit(x: x.dict_from_single(),
+                       y: y.dict_from_single(),
+                       batch_size: batch_size,
+                       epochs: epochs,
+                       verbose: verbose,
+                       callbacks: callbacks,
+                       validation_split: validation_split,
+                       validation_data: validation_data.Select(a => a.dict_from_single()).ToList(),
+                       shuffle: shuffle ? Shuffle.True : Shuffle.False,
+                       class_weight: class_weight.Select(p => (p.Key.ToString(), p.Value)).ToDictionary(a => a.Item1, b => b.Item2).dict_from_single(),
+                       sample_weight: sample_weight.dict_from_single(),
+                       initial_epoch: initial_epoch,
+                       kwargs: kwargs);
+
         }
 
         /// <summary>
@@ -1270,34 +1551,35 @@ namespace KerasSharp.Models
         ///   A `History` instance. Its `history` attribute contains all information collected during training.
         /// </returns>
         /// 
-        public History fit(Array[] x = null,
-                    Array[] y = null,
+        public virtual History fit(
+                    Dictionary<string, Array> x = null,
+                    Dictionary<string, Array> y = null,
                     int batch_size = 32,
                     int epochs = 1,
                     int verbose = 1,
                     CallbackList callbacks = null,
                     double validation_split = 0.0,
-                    List<object> validation_data = null,
-                    string shuffle = "true",
-                    Dictionary<int, double> class_weight = null,
-                    List<double> sample_weight = null,
+                    IList<Dictionary<string, Array>> validation_data = null,
+                    Shuffle shuffle = Shuffle.True,
+                    Dictionary<string, Dictionary<string, double?>> class_weight = null,
+                    Dictionary<string, Array> sample_weight = null,
                     int initial_epoch = 0,
                     object kwargs = null)
         {
             // Validate user data.
-            var (xx, yy, sample_weightsx) = this._standardize_user_data(
+            (List<Array> xx, List<Array> yy, List<Array> sample_weightsx) = this._standardize_user_data(
                 x, y,
                 sample_weight: sample_weight,
                 class_weight: class_weight,
                 check_batch_axis: false,
                 batch_size: batch_size);
 
-            List<Array> val_x = null;
-            List<Array> val_y = null;
-            List<double> val_sample_weight;
+            Dictionary<string, Array> val_x = null;
+            Dictionary<string, Array> val_y = null;
+            Dictionary<string, Array> val_sample_weight;
 
             Function val_f;
-            List<Tensor> val_ins;
+            List<Array> val_ins;
 
             // Prepare validation data.
             bool do_validation = false;
@@ -1306,15 +1588,15 @@ namespace KerasSharp.Models
                 do_validation = true;
                 if (validation_data.Count == 2)
                 {
-                    val_x = (List<Array>)validation_data[0];
-                    val_y = (List<Array>)validation_data[1];
+                    val_x = validation_data[0];
+                    val_y = validation_data[1];
                     val_sample_weight = null;
                 }
                 else if (validation_data.Count == 3)
                 {
-                    val_x = (List<Array>)validation_data[0];
-                    val_y = (List<Array>)validation_data[1];
-                    val_sample_weight = new[] { (double)validation_data[2] }.ToList();
+                    val_x = validation_data[0];
+                    val_y = validation_data[1];
+                    val_sample_weight = validation_data[2];
                 }
                 else
                 {
@@ -1326,10 +1608,10 @@ namespace KerasSharp.Models
                 this._make_test_function();
                 val_f = this.test_function;
 
-                val_ins = new List<Tensor>();
+                val_ins = new List<Array>();
                 if (this.uses_learning_phase && !(K.learning_phase() is int))
                 {
-                    val_ins = (val_xx.Concat(val_yy).Concat(val_sample_weightsx).Concat(Tensor.Zero)).ToList();
+                    val_ins = (val_xx.Concat(val_yy).Concat(val_sample_weightsx).Concat(new List<Array>() { new[] { 0.0 } })).ToList();
                 }
                 else
                 {
@@ -1340,24 +1622,24 @@ namespace KerasSharp.Models
             {
                 do_validation = true;
                 int split_at;
-                if (x[0].GetLength() != null)
-                    split_at = (int)(x[0].GetLength(0) * (1.0 - validation_split));
+                if (xx[0].GetLength() != null)
+                    split_at = (int)(xx[0].GetLength(0) * (1.0 - validation_split));
                 else
-                    split_at = (int)(x[0].Length * (1.0 - validation_split));
+                    split_at = (int)(xx[0].Length * (1.0 - validation_split));
 
-                List<Tensor> val_xx, val_yy;
-                (xx, val_xx) = (_slice_arrays(x, 0, split_at), _slice_arrays(x, split_at));
-                (yy, val_yy) = (_slice_arrays(y, 0, split_at), _slice_arrays(y, split_at));
+                List<Array> val_xx, val_yy;
+                (xx, val_xx) = (_slice_arrays(xx, 0, split_at), _slice_arrays(xx, split_at));
+                (yy, val_yy) = (_slice_arrays(yy, 0, split_at), _slice_arrays(yy, split_at));
 
-                List<Tensor> sample_weights = _slice_arrays(sample_weightsx, 0, split_at);
-                List<Tensor> val_sample_weights = _slice_arrays(sample_weightsx, split_at);
+                List<Array> sample_weights = _slice_arrays(sample_weightsx, 0, split_at);
+                List<Array> val_sample_weights = _slice_arrays(sample_weightsx, split_at);
 
                 this._make_test_function();
                 val_f = this.test_function;
 
                 if (this.uses_learning_phase && !(K.learning_phase() is int))
                 {
-                    val_ins = val_xx.Concat(val_yy).Concat(val_sample_weights).Concat(Tensor.Zero).ToList();
+                    val_ins = val_xx.Concat(val_yy).Concat(val_sample_weights).Concat(new List<Array>() { new[] { 0.0 } }).ToList();
                 }
                 else
                 {
@@ -1371,12 +1653,12 @@ namespace KerasSharp.Models
                 val_ins = null;
             }
 
-            List<Tensor> ins;
+            List<Array> ins;
 
             // Prepare input arrays and training function.
             if (this.uses_learning_phase && !(K.learning_phase() is int))
             {
-                ins = xx.Concat(yy).Concat(sample_weightsx).Concat(new[] { Tensor.One }).ToList();
+                ins = xx.Concat(yy).Concat(sample_weightsx).Concat(new List<Array>() { new[] { 1.0 } }).ToList();
             }
             else
             {
@@ -1418,9 +1700,30 @@ namespace KerasSharp.Models
             throw new NotImplementedException();
         }
 
-        private ValueTuple<List<Tensor>, List<Tensor>, List<Tensor>> _standardize_user_data(List<Array> val_x, List<Array> val_y, List<double> sample_weight, bool check_batch_axis, int batch_size)
+        /// <summary>
+        ///   Returns the loss value & metrics values for the model in test mode.
+        /// </summary>
+        /// <remarks>
+        ///   Computation is done in batches.
+        /// </remarks>
+        /// <param name="x">The Numpy array of test data, or list of Numpy arrays if the model has multiple inputs.
+        ///   If all inputs in the model are named, you can also pass a dictionary mapping input names to Numpy arrays.</param>
+        /// <param name="y">The Numpy array of target data, or list of Numpy arrays if the model has multiple outputs. 
+        ///   If all outputs in the model are named, you can also pass a dictionary mapping output names to Numpy arrays.</param>
+        /// <param name="batch_size">The number of samples per gradient update.</param>
+        /// <param name="verbose">The verbosity mode, 0 or 1.</param>
+        /// <param name="sample_weights">The array of weights to weight the contribution of different samples to 
+        ///   the loss and metrics.</param>
+        ///   
+        /// <returns>
+        ///   Scalar test loss (if the model has a single output and no metrics) or list of scalars (if the model has 
+        ///   multiple outputs and/or metrics). The attribute `model.metrics_names` will give you the display labels for 
+        ///   the scalar outputs.
+        /// </returns>
+        /// 
+        public Array evaluate(Array x, Array y, int batch_size = 32, int verbose = 1, Array sample_weight = null)
         {
-            throw new NotImplementedException();
+            return evaluate(x.dict_from_single(), y.dict_from_single(), batch_size, verbose, sample_weight.dict_from_single())[0];
         }
 
         /// <summary>
@@ -1444,49 +1747,21 @@ namespace KerasSharp.Models
         ///   the scalar outputs.
         /// </returns>
         /// 
-        public Array evaluate(Array x, Array y, int batch_size = 32, int verbose = 1, List<double> sample_weight = null)
-        {
-            return evaluate(new[] { x }, new[] { y }, batch_size, verbose, sample_weight)[0];
-        }
-
-        /// <summary>
-        ///   Returns the loss value & metrics values for the model in test mode.
-        /// </summary>
-        /// <remarks>
-        ///   Computation is done in batches.
-        /// </remarks>
-        /// <param name="x">The Numpy array of test data, or list of Numpy arrays if the model has multiple inputs.
-        ///   If all inputs in the model are named, you can also pass a dictionary mapping input names to Numpy arrays.</param>
-        /// <param name="y">The Numpy array of target data, or list of Numpy arrays if the model has multiple outputs. 
-        ///   If all outputs in the model are named, you can also pass a dictionary mapping output names to Numpy arrays.</param>
-        /// <param name="batch_size">The number of samples per gradient update.</param>
-        /// <param name="verbose">The verbosity mode, 0 or 1.</param>
-        /// <param name="sample_weights">The array of weights to weight the contribution of different samples to 
-        ///   the loss and metrics.</param>
-        ///   
-        /// <returns>
-        ///   Scalar test loss (if the model has a single output and no metrics) or list of scalars (if the model has 
-        ///   multiple outputs and/or metrics). The attribute `model.metrics_names` will give you the display labels for 
-        ///   the scalar outputs.
-        /// </returns>
-        /// 
-        public virtual Array[] evaluate(Array[] x, Array[] y, int batch_size = 32, int verbose = 1, List<double> sample_weight = null)
+        public virtual Array[] evaluate(Dictionary<string, Array> x, Dictionary<string, Array> y, int batch_size = 32, int verbose = 1, Dictionary<string, Array> sample_weight = null)
         {
             // Validate user data.
-            var (xx, yy, sample_weightsx) = this._standardize_user_data(
-                x, y, sample_weight: sample_weight,
-                check_batch_axis: false,
-                batch_size: batch_size);
+            var (xx, yy, sample_weightsx) = this._standardize_user_data(x, y, sample_weight: sample_weight, check_batch_axis: false, batch_size: batch_size);
 
             return (Array[])evaluate(xx, yy, batch_size, verbose, sample_weightsx);
         }
 
-        public virtual Array evaluate(List<Tensor> x, List<Tensor> y, int batch_size = 32, int verbose = 1, List<Tensor> sample_weight = null)
+        public virtual Array evaluate(List<Array> x, List<Array> y, int batch_size = 32, int verbose = 1, List<Array> sample_weight = null)
         {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L1546
             // Prepare inputs, delegate logic to `_test_loop`.
-            var ins = new List<Tensor>();
+            var ins = new List<Array>();
             if (this.uses_learning_phase && !(K.learning_phase() is int))
-                ins = x.Concat(y).Concat(sample_weight.ToArray()).Concat(Tensor.Zero).ToList();
+                ins = x.Concat(y).Concat(sample_weight).Concat(new List<double[]> { new[] { 0.0 } }).ToList();
             else
                 ins = x.Concat(y).Concat(sample_weight.ToArray()).ToList();
 
@@ -1510,23 +1785,23 @@ namespace KerasSharp.Models
         /// 
         /// <returns>Numpy array(s) of predictions.</returns>
         /// 
-        public virtual Array[] predict(Array[] x, int batch_size = 32, int verbose = 0)
+        public virtual Array[] predict(Dictionary<string, Array> x, int batch_size = 32, int verbose = 0)
         {
             // Validate user data.
-            List<Tensor> xx = _standardize_input_data(x, this._feed_input_names, this._feed_input_shapes, check_batch_axis: false);
+            List<Array> xx = _standardize_input_data(x, this._feed_input_names, this._feed_input_shapes, check_batch_axis: false);
 
             if (this.stateful)
             {
                 var t = xx[0];
-                if (t.shape[0] > batch_size && t.shape[0] % batch_size != 0)
-                    throw new Exception($"In a stateful network, you should only pass inputs with a number of samples that can be divided by the batch size. Found: {x[0].GetLength(0)} samples. Batch size: {batch_size}.");
+                if (t.GetLength(0) > batch_size && t.GetLength(0) % batch_size != 0)
+                    throw new Exception($"In a stateful network, you should only pass inputs with a number of samples that can be divided by the batch size. Found: {t.GetLength(0)} samples. Batch size: {batch_size}.");
             }
 
-            List<Tensor> ins;
+            List<Array> ins;
 
             // Prepare inputs, delegate logic to `_predict_loop`.
             if (this.uses_learning_phase && !(K.learning_phase() is int))
-                ins = xx.Concat(Tensor.Zero).ToList();
+                ins = xx.Concat(new List<double[]> { new[] { 0.0 } }).ToList();
             else
                 ins = xx.ToList();
 
@@ -1546,19 +1821,18 @@ namespace KerasSharp.Models
         /// 
         /// <returns>Scalar training loss (if the model has a single output and no metrics) or list of scalars (if the model has multiple outputs and/or metrics). The attribute `model.metrics_names` will give you the display labels for the scalar outputs.</returns>
         /// 
-        public virtual List<Tensor> train_on_batch(Array[] x, Array[] y, List<double> sample_weight = null, Dictionary<int, double> class_weight = null)
+        public virtual List<Tensor> train_on_batch(Dictionary<string, Array> x, Dictionary<string, Array> y, Dictionary<string, Array> sample_weight = null, Dictionary<string, Dictionary<string, double?>> class_weight = null)
         {
-            var (xx, yy, sample_weightsx) = this._standardize_user_data(x, y, sample_weight: sample_weight,
-                class_weight: class_weight, check_batch_axis: true);
+            var (xx, yy, sample_weights) = this._standardize_user_data(x, y, sample_weight: sample_weight, class_weight: class_weight, check_batch_axis: true);
 
-            return train_on_batch(xx, yy, sample_weightsx);
+            return train_on_batch(xx, yy, sample_weights);
         }
 
-        public virtual List<Tensor> train_on_batch(List<Tensor> x, List<Tensor> y, List<Tensor> sample_weightsx, Dictionary<int, Tensor> class_weight = null)
+        public virtual List<Tensor> train_on_batch(List<Array> x, List<Array> y, List<Array> sample_weightsx, Dictionary<string, Tensor> class_weight = null)
         {
-            var ins = new List<Tensor>();
+            var ins = new List<Array>();
             if (this.uses_learning_phase && !(K.learning_phase() is int))
-                ins = x.Concat(y).Concat(sample_weightsx).Concat(new[] { Tensor.One }).ToList();
+                ins = x.Concat(y).Concat(sample_weightsx).Concat(new List<Array>() { new[] { 1.0 } }).ToList();
             else
                 ins = x.Concat(y).Concat(sample_weightsx).ToList();
 
@@ -1584,24 +1858,23 @@ namespace KerasSharp.Models
         //    and/or metrics). The attribute `model.metrics_names` will give you the display labels for the scalar outputs.
         /// </returns>
         ///   
-        public virtual List<Tensor> test_on_batch(Array[] x, Array[] y, List<double> sample_weight = null)
+        public virtual List<Tensor> test_on_batch(Dictionary<string, Array> x, Dictionary<string, Array> y, Dictionary<string, Array> sample_weight = null)
         {
-            var (xx, yy, sample_weightsx) = this._standardize_user_data(x, y,
-                sample_weight: sample_weight, check_batch_axis: true);
+            var (xx, yy, sample_weights) = this._standardize_user_data(x, y, sample_weight: sample_weight, check_batch_axis: true);
 
-            return test_on_batch(xx, yy, sample_weightsx);
+            return test_on_batch(xx, yy, sample_weights);
         }
 
-        private List<Tensor> test_on_batch(List<Tensor> xx, List<Tensor> yy, List<Tensor> sample_weight)
+        private List<Tensor> test_on_batch(List<Array> xx, List<Array> yy, List<Array> sample_weight)
         {
-            var ins = new List<Tensor>();
+            var ins = new List<Array>();
             if (this.uses_learning_phase && !(K.learning_phase() is int))
             {
-                ins = xx.Concat(yy).Concat(sample_weights).Concat(Tensor.Zero).ToList();
+                ins = xx.Concat(yy).Concat(sample_weight).Concat(new List<Array>() { new[] { 0.0 } }).ToList();
             }
             else
             {
-                ins = xx.Concat(yy).Concat(sample_weights).ToList();
+                ins = xx.Concat(yy).Concat(sample_weight).ToList();
             }
 
             this._make_test_function();
@@ -1609,7 +1882,7 @@ namespace KerasSharp.Models
             return outputs;
         }
 
-        public virtual List<Tensor> predict_on_batch(Array[] x)
+        public virtual List<Tensor> predict_on_batch(Dictionary<string, Array> x)
         {
             //"""Returns predictions for a single batch of samples.
             //// Arguments
@@ -1622,13 +1895,13 @@ namespace KerasSharp.Models
             return predict_on_batch(xx);
         }
 
-        private List<Tensor> predict_on_batch(List<Tensor> x)
+        private List<Tensor> predict_on_batch(List<Array> x)
         {
-            var ins = new List<Tensor>();
+            var ins = new List<Array>();
 
             if (this.uses_learning_phase && !(K.learning_phase() is int))
             {
-                ins = x.Concat(Tensor.Zero).ToList();
+                ins = x.Concat(new List<Array>() { new[] { 0.0 } }).ToList();
             }
             else
             {
@@ -1676,12 +1949,12 @@ namespace KerasSharp.Models
         ///        
         /// <returns>A `History` object.</returns>
         /// 
-        public History fit_generator(IEnumerator<List<Tensor>> generator,
+        public History fit_generator(IEnumerator<List<Dictionary<string, Array>>> generator,
                                   int steps_per_epoch,
                                   int epochs = 1,
                                   int verbose = 1,
                                   CallbackList callbacks = null,
-                                  List<List<Tensor>> validation_data = null,
+                                  IList<Dictionary<string, Array>> validation_data = null,
                                   int? validation_steps = null,
                                   Dictionary<int, Tensor> class_weight = null,
                                   int max_queue_size = 10,
@@ -1742,7 +2015,7 @@ namespace KerasSharp.Models
 
             if (do_validation && !val_gen)
             {
-                List<Tensor> val_x, val_y, val_sample_weight;
+                Dictionary<string, Array> val_x, val_y, val_sample_weight;
                 if (validation_data.Count == 2)
                 {
                     val_x = validation_data[0];
@@ -1760,13 +2033,13 @@ namespace KerasSharp.Models
                     throw new Exception($"`validation_data` should be a tuple `(val_x, val_y, val_sample_weight)` or `(val_x, val_y)`. Found: {validation_data}.");
                 }
 
-                //var (val_xx, val_yy, val_sample_weightsx) = this._standardize_user_data(val_x, val_y, val_sample_weight);
+                var (val_xx, val_yy, val_sample_weights) = this._standardize_user_data(val_x, val_y, val_sample_weight);
 
-                List<Tensor> val_data = val_x.Concat(val_y).Concat(val_sample_weight).ToList();
+                List<Array> val_data = val_xx.Concat(val_yy).Concat(val_sample_weights).ToList();
 
                 if (this.uses_learning_phase && !(K.learning_phase() is int))
                 {
-                    val_data.Add(Tensor.Zero.First());
+                    val_data.Add(new[] { 0.0 });
 
                     bool is_sequence = false;
                     foreach (var cbk in callbacks)
@@ -1918,7 +2191,8 @@ namespace KerasSharp.Models
                                int workers = 1,
                                bool use_multiprocessing = false)
         {
-
+            throw new NotImplementedException();
+            /*
             this._make_test_function();
 
             int steps_done = 0;
@@ -1928,7 +2202,7 @@ namespace KerasSharp.Models
             bool is_sequence = generator is Sequence;
 
             if (!is_sequence && use_multiprocessing)
-                Trace.TraceWarning("Using a generator with `use_multiprocessing=true` may duplicate your data.Please consider using the `keras.utils.Sequence` class.");
+                Trace.TraceWarning("Using a generator with `use_multiprocessing=true` may duplicate your data. Please consider using the `keras.utils.Sequence` class.");
 
             Enqueuer enqueuer = null;
 
@@ -1968,8 +2242,7 @@ namespace KerasSharp.Models
                     throw new Exception($"Output of generator should be a tuple (x, y, sample_weight) or (x, y). Found: {generator_output}.");
                 }
 
-                List<Tensor> outs = this.test_on_batch(x, y,
-                    sample_weight: sample_weight);
+                List<Tensor> outs = this.test_on_batch(x, y, sample_weight: sample_weight);
 
                 int batch_size;
 
@@ -2010,6 +2283,7 @@ namespace KerasSharp.Models
             //    averages.Add(weightedMean(all_outs.Select(o => o[i]).ToList(), batch_sizes: batch_sizes));
 
             //return averages;
+            */
         }
 
         private static List<Tensor> weightedMean(List<Tensor> all_outs, List<int> batch_sizes)
@@ -2017,7 +2291,7 @@ namespace KerasSharp.Models
             throw new NotImplementedException();
         }
 
-        public List<List<Tensor>> predict_generator(IEnumerator<List<List<Tensor>>> generator, int steps,
+        public List<List<Tensor>> predict_generator(IEnumerator<List<Dictionary<string, Array>>> generator, int steps,
                               int max_queue_size = 10,
                               int workers = 1,
                               bool use_multiprocessing = false,
@@ -2082,10 +2356,10 @@ namespace KerasSharp.Models
 
                 while (steps_done < steps)
                 {
-                    List<List<Tensor>> generator_output = generator.Current;
+                    List<Dictionary<string, Array>> generator_output = generator.Current;
                     generator.MoveNext();
 
-                    List<Tensor> x;
+                    Dictionary<string, Array> x;
 
                     // Compatibility with the generators
                     // used for training.
@@ -2104,6 +2378,7 @@ namespace KerasSharp.Models
                         x = generator_output[0];
                     }
 
+                    // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L2124
                     var outs = this.predict_on_batch(x);
 
                     if (all_outs.Count == 0)

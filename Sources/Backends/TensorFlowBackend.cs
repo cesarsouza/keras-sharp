@@ -485,9 +485,28 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        ///   Returns the learning phase flag.
+        /// </summary>
+        /// 
+        /// <remarks>
+        ///   The learning phase flag is a bool tensor(0 = test, 1 = train)
+        ///   to be passed as input to any Keras function
+        ///   that uses a different behavior at train time and test time.
+        /// </remarks>
+        /// 
+        /// <returns> Learning phase (scalar integer tensor or Python integer).</returns>
+        /// 
         public object learning_phase()
         {
-            throw new NotImplementedException();
+            TFGraph graph = tf;
+            if (!_GRAPH_LEARNING_PHASES.ContainsKey(graph))
+            {
+                TFOutput phase = tf.Placeholder(dtype: TFDataType.Bool, operName: "keras_learning_phase");
+                _GRAPH_LEARNING_PHASES[graph] = phase;
+            }
+
+            return tensor(_GRAPH_LEARNING_PHASES[graph]);
         }
 
         public Tensor max(Tensor x, int v, object p)

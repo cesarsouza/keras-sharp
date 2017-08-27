@@ -101,9 +101,28 @@ namespace KerasSharp
             return def;
         }
 
-        public static int len(this ICollection list)
+        public static HashSet<T> set<T>(IEnumerable<T> x)
+        {
+            if (x == null)
+                return null;
+            return new HashSet<T>(x);
+        }
+
+        public static List<T> list<T>(IEnumerable<T> x)
+        {
+            if (x == null)
+                return null;
+            return new List<T>(x);
+        }
+
+        public static int len(ICollection list)
         {
             return list.Count;
+        }
+
+        public static int len<T>(ISet<T> set)
+        {
+            return set.Count;
         }
 
         public static bool hasattr(object obj, string name)

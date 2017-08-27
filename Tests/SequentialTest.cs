@@ -539,8 +539,12 @@ model = Sequential([
             // Train the model, iterating on the data in batches of 32 samples
             model.fit(data, labels, epochs: 10, batch_size: 32);
             // For a single-input model with 10 classes (categorical classification):
+        }
 
-            model = new Sequential();
+        [Test]
+        public void sequential_guide_training_2()
+        {
+            var model = new Sequential();
             model.Add(new Dense(32, activation: "relu", input_dim: 100));
             model.Add(new Dense(10, activation: "softmax"));
             model.Compile(optimizer: "rmsprop",
@@ -548,11 +552,11 @@ model = Sequential([
                           metrics: new[] { "accuracy" });
 
             // Generate dummy data
-            data = Accord.Math.Matrix.Random(1000, 100);
-            labels = Accord.Math.Vector.Random(1000, min: 0, max: 10);
+            double[][] data = Accord.Math.Jagged.Random(1000, 100);
+            int[] labels = Accord.Math.Vector.Random(1000, min: 0, max: 10);
 
             // Convert labels to categorical one-hot encoding
-            double[,] one_hot_labels = Accord.Math.Matrix.OneHot(labels, columns: 10);
+            double[][] one_hot_labels = Accord.Math.Jagged.OneHot(labels, columns: 10);
 
             // Train the model, iterating on the data in batches of 32 samples
             model.fit(data, one_hot_labels, epochs: 10, batch_size: 32);
@@ -705,7 +709,7 @@ model = Sequential([
 
             model.fit(x_train, y_train,
                       batch_size: 64, epochs: 5,
-                      validation_data: new object[] { x_val, y_val });
+                      validation_data: new Array[] { x_val, y_val });
         }
 
         [Test]
@@ -739,8 +743,8 @@ model = Sequential([
             int[] y_val = Accord.Math.Vector.Random(1000, min: 0, max: num_classes);
 
             model.fit(x_train, y_train,
-                      batch_size: batch_size, epochs: 5, shuffle: false,
-                      validation_data: new object[] { x_val, y_val });
+                      batch_size: batch_size, epochs: 5, shuffle: Shuffle.False,
+                      validation_data: new Array[] { x_val, y_val });
         }
 
 

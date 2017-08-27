@@ -133,8 +133,8 @@
     <Compile Include="Losses\LogCosh.cs" />
     <Compile Include="Losses\MeanAbsoluteError.cs" />
     <Compile Include="Losses\MeanAbsolutePercentageError.cs" />
-    <Compile Include="Losses\MeanSquaredError.cs" />
-    <Compile Include="Losses\MeanSquaredLogarithmicError.cs" />
+    <Compile Include="Losses\MeanSquareError.cs" />
+    <Compile Include="Losses\MeanSquareLogarithmicError.cs" />
     <Compile Include="Losses\Poisson.cs" />
     <Compile Include="Losses\SparseCategoricalCrossEntropy.cs" />
     <Compile Include="Losses\CustomLoss.cs" />
@@ -162,6 +162,7 @@
     <Compile Include="Regularizers\Base\IWeightRegularizer.cs" />
     <Compile Include="Regularizers\L1L2Regularizer.cs" />
     <Compile Include="Python.cs" />
+    <Compile Include="AccordEx.cs" />
     <Compile Include="TensorFlowSharpEx.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>

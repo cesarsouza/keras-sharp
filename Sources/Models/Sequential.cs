@@ -370,7 +370,7 @@ namespace KerasSharp.Models
             }
         }
 
-        
+
 
 
         public override List<Tensor> trainable_weights
@@ -562,9 +562,37 @@ namespace KerasSharp.Models
             this.targets = this.model.targets;
         }
 
-        public object fit(Array x, Array y, int batch_size = 32, int epochs = 10, int verbose = 1, CallbackList callbacks = null,
-                double validation_split = 0.0, object[] validation_data = null, bool shuffle = true,
-                Dictionary<int, double> class_weight = null, List<double> sample_weight = null, int initial_epoch = 0, int? nb_epoch = null)
+
+        public History fit(Array x = null, Array y = null, int batch_size = 32, int epochs = 1, int verbose = 1,
+            CallbackList callbacks = null, double validation_split = 0, IList<Array> validation_data = null, Shuffle shuffle = Shuffle.True,
+            Dictionary<int, double?> class_weight = null, Array sample_weight = null, int initial_epoch = 0, object kwargs = null, int? nb_epoch = null)
+        {
+            // Legacy support
+            if (nb_epoch != null)
+            {
+                Trace.TraceWarning("The 'nb_epoch' argument in 'fit' has been renamed 'epochs'.");
+                epochs = nb_epoch.Value;
+            }
+
+            return this.fit(
+                x.dict_from_single(),
+                y.dict_from_single(),
+                batch_size,
+                epochs,
+                verbose,
+                callbacks,
+                validation_split,
+                validation_data?.Select(a => a.dict_from_single()).ToList(),
+                shuffle,
+                class_weight?.Select(p => (p.Key.ToString(), p.Value)).ToDictionary(a => a.Item1, b => b.Item2).dict_from_single(),
+                sample_weight.dict_from_single(),
+                initial_epoch,
+                kwargs);
+        }
+
+        public override History fit(Dictionary<string, Array> x = null, Dictionary<string, Array> y = null, int batch_size = 32, int epochs = 1, int verbose = 1,
+            CallbackList callbacks = null, double validation_split = 0, IList<Dictionary<string, Array>> validation_data = null, Shuffle shuffle = Shuffle.True,
+            Dictionary<string, Dictionary<string, double?>> class_weight = null, Dictionary<string, Array> sample_weight = null, int initial_epoch = 0, object kwargs = null)
         {
             //"""Trains the model for a fixed number of epochs.
             //# Arguments
@@ -610,30 +638,25 @@ namespace KerasSharp.Models
             //# Raises
             //    RuntimeError: if the model was never compiled.
             //"""
-            // Legacy support
-            if (nb_epoch != null)
-            {
-                Trace.TraceWarning("The 'nb_epoch' argument in 'fit' has been renamed 'epochs'.");
-                epochs = nb_epoch.Value;
-            }
+
 
             if (this.model == null)
                 throw new InvalidOperationException("The model needs to be compiled before being used.");
 
-            return this.model.fit(x, y,
-                                  batch_size: batch_size,
-                                  epochs: epochs,
-                                  verbose: verbose,
-                                  callbacks: callbacks,
-                                  validation_split: validation_split,
-                                  validation_data: validation_data,
-                                  shuffle: shuffle,
-                                  class_weight: class_weight,
-                                  sample_weight: sample_weight,
-                                  initial_epoch: initial_epoch);
+            return model.fit(x, y,
+                batch_size,
+                epochs, verbose,
+                callbacks,
+                validation_split,
+                validation_data,
+                shuffle,
+                class_weight,
+                sample_weight,
+                initial_epoch,
+                kwargs);
         }
 
-        public override Array[] evaluate(Array[] x, Array[] y, int batch_size = 32, int verbose = 1, List<double> sample_weight = null)
+        public override Array[] evaluate(Dictionary<string, Array> x, Dictionary<string, Array> y, int batch_size = 32, int verbose = 1, Dictionary<string, Array> sample_weight = null)
         {
             //"""Computes the loss on some input data, batch by batch.
             //# Arguments
@@ -660,7 +683,7 @@ namespace KerasSharp.Models
                                        sample_weight: sample_weight);
         }
 
-        public override Array[] predict(Array[] x, int batch_size = 32, int verbose = 0)
+        public override Array[] predict(Dictionary<string, Array> x, int batch_size = 32, int verbose = 0)
         {
             //"""Generates output predictions for the input samples.
             //The input samples are processed batch by batch.
@@ -677,7 +700,7 @@ namespace KerasSharp.Models
             return this.model.predict(x, batch_size: batch_size, verbose: verbose);
         }
 
-        public override List<Tensor> predict_on_batch(Array[] x)
+        public override List<Tensor> predict_on_batch(Dictionary<string, Array> x)
         {
             //"""Returns predictions for a single batch of samples.
             //# Arguments
@@ -691,7 +714,7 @@ namespace KerasSharp.Models
             return this.model.predict_on_batch(x);
         }
 
-        public override List<Tensor> train_on_batch(Array[] x, Array[] y, List<double> sample_weight = null, Dictionary<int, double> class_weight = null)
+        public override List<Tensor> train_on_batch(Dictionary<string, Array> x, Dictionary<string, Array> y, Dictionary<string, Array> sample_weight = null, Dictionary<string, Dictionary<string, double?>> class_weight = null)
         {
             //"""Single gradient update over one batch of samples.
             //# Arguments
@@ -717,7 +740,7 @@ namespace KerasSharp.Models
                                              class_weight: class_weight);
         }
 
-        public override List<Tensor> test_on_batch(Array[] x, Array[] y, List<double> sample_weight = null)
+        public override List<Tensor> test_on_batch(Dictionary<string, Array> x, Dictionary<string, Array> y, Dictionary<string, Array> sample_weight = null)
         {
             //"""Evaluates the model over a single batch of samples.
             //# Arguments
@@ -738,7 +761,7 @@ namespace KerasSharp.Models
             return this.model.test_on_batch(x, y, sample_weight: sample_weight);
         }
 
-        public Array predict_proba(Array[] x, int batch_size = 32, int verbose = 1)
+        public Array predict_proba(Dictionary<String, Array> x, int batch_size = 32, int verbose = 1)
         {
             //"""Generates class probability predictions for the input samples.
             //The input samples are processed batch by batch.
@@ -760,7 +783,7 @@ namespace KerasSharp.Models
             return preds;
         }
 
-        public Array predict_classes(Array[] x, int batch_size = 32, int verbose = 1)
+        public Array predict_classes(Dictionary<string, Array> x, int batch_size = 32, int verbose = 1)
         {
             //"""Generate class predictions for the input samples.
             //The input samples are processed batch by batch.
@@ -780,9 +803,9 @@ namespace KerasSharp.Models
             return (proba as double[][]).ArgMax(dimension: -1);
         }
 
-        public History fit_generator(IEnumerator<List<Tensor>> generator, int steps_per_epoch,
+        public History fit_generator(IEnumerator<List<Dictionary<string, Array>>> generator, int steps_per_epoch,
                           int epochs = 1, int verbose = 1, CallbackList callbacks = null,
-                          List<List<Tensor>> validation_data = null, int? validation_steps = null, 
+                          List<Dictionary<string, Array>> validation_data = null, int? validation_steps = null,
                           Dictionary<int, Tensor> class_weight = null,
                           int max_q_size = 10, int workers = 1, int initial_epoch = 0)
         {
@@ -904,7 +927,7 @@ namespace KerasSharp.Models
                                              );
         }
 
-        public List<List<Tensor>> predict_generator(IEnumerator<List<List<Tensor>>> generator,
+        public List<List<Tensor>> predict_generator(IEnumerator<List<Dictionary<string, Array>>> generator,
             int steps, int max_q_size = 10, int workers = 1, int verbose = 0)
         {
             //"""Generates predictions for the input samples from a data generator.

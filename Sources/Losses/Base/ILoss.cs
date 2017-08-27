@@ -48,9 +48,9 @@ namespace KerasSharp.Losses
     }
 
     // Aliases
-    public sealed class MSE : MeanSquaredError { }
+    public sealed class MSE : MeanSquareError { }
     public sealed class MAE : MeanAbsoluteError { }
     public sealed class MAPE : MeanAbsolutePercentageError { }
-    public sealed class MSLE : MeanSquaredLogarithmicError { }
+    public sealed class MSLE : MeanSquareLogarithmicError { }
     public sealed class Cosine : CosineProximity { }
 }
