@@ -405,7 +405,9 @@ model.compile(optimizer = 'rmsprop',
             Assert.AreEqual(model._constraints, model.model._constraints);
             Assert.AreEqual(model._feed_inputs, model.model._feed_inputs);
             Assert.AreEqual(model._feed_input_names, model.model._feed_input_names);
-            Assert.AreEqual(model._feed_sample_weight_modes, model.model._feed_sample_weight_modes);
+            Assert.AreEqual(null, model._feed_sample_weight_modes);
+            Assert.AreEqual(1, model.model._feed_sample_weight_modes.Count);
+            Assert.AreEqual(null, model.model._feed_sample_weight_modes[0]);
             Assert.AreEqual(model._initial_weights, model.model._initial_weights);
             Assert.AreEqual(model._losses, model.model._losses);
             Assert.AreEqual(model._non_trainable_weights, model.model._non_trainable_weights);

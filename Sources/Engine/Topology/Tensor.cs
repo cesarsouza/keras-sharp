@@ -139,6 +139,11 @@ namespace KerasSharp.Engine.Topology
             return b.K.add(a, b);
         }
 
+        public static Tensor operator +(Tensor a, double b)
+        {
+            return a.K.add(a, b);
+        }
+
         public static Tensor operator -(double a, Tensor b)
         {
             return b.K.subtract(a, b);

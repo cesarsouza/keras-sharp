@@ -326,15 +326,14 @@ namespace KerasSharp.Backends
 
 
 
-
-        public object get_variable_shape(Tensor p)
+        /// <summary>
+        ///   Returns the shape of a variable.
+        /// </summary>
+        /// 
+        public int?[] get_variable_shape(Tensor x)
         {
-            throw new NotImplementedException();
-        }
-
-        public Tensor get_variable_shape(object s)
-        {
-            throw new NotImplementedException();
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L2192
+            return int_shape(x);
         }
 
         public List<Tensor> gradients(ILoss loss, object param)
@@ -918,6 +917,18 @@ namespace KerasSharp.Backends
             return new Tensor(this) { output = output };
         }
 
+
+        /// <summary>
+        ///   Instantiates an all-zeros variable and returns it.
+        /// </summary>
+        /// <param name="shape">Tuple of integers, shape of returned Keras variable.</param>
+        /// <param name="dtype">Data type of returned Keras variable.</param>
+        /// <param name="name">String, name of returned Keras variable.</param>
+        /// <returns>A variable(including Keras metadata), filled with <c>0.0</c>.</returns>
+        public Tensor zeros(int?[] shape, TFDataType dtype = Utils.DEFAULT_DTYPE, string name = null)
+        {
+            return zeros(shape.Select(i => i.Value).ToArray(), dtype, name);
+        }
 
         /// <summary>
         ///   Instantiates an all-zeros variable and returns it.

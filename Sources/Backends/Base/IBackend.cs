@@ -53,6 +53,10 @@ namespace KerasSharp.Backends
 
         Tensor clip(Tensor norms, int v, int maxValue);
 
+        Tensor zeros(int[] shape, TFDataType dtype = Utils.DEFAULT_DTYPE, string name = null);
+
+        Tensor zeros(int?[] shape, TFDataType dtype = Utils.DEFAULT_DTYPE, string name = null);
+
         float epsilon();
 
         TFDataType floatx();
@@ -112,6 +116,7 @@ namespace KerasSharp.Backends
         Tensor subtract(Tensor a, Tensor b);
 
         Tensor subtract<T>(Tensor a, T b);
+
 
         Tensor subtract<T>(T a, Tensor b);
 
@@ -213,9 +218,7 @@ namespace KerasSharp.Backends
         Tensor update_add(Tensor iterations, int v);
 
 
-        object get_variable_shape(Tensor p);
-
-        Tensor get_variable_shape(object s);
+        int?[] get_variable_shape(Tensor x);
 
         Tensor sum(double v, Tensor tensor);
 

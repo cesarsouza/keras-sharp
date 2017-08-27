@@ -95,8 +95,8 @@ namespace KerasSharp.Optimizers
             }
 
             // momentum
-            var shapes = param.Select(p => K.get_variable_shape(p)).ToList();
-            List<Tensor> moments = shapes.Select(s => K.get_variable_shape(s)).ToList();
+            List<int?[]> shapes = param.Select(p => K.get_variable_shape(p)).ToList();
+            List<Tensor> moments = shapes.Select(s => K.zeros(s)).ToList();
 
             this.weights = new[] { this.iterations }.Concat(moments).ToList();
 

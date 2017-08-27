@@ -50,8 +50,8 @@ namespace KerasSharp.Optimizers
     [DataContract]
     public abstract class OptimizerBase 
     {
-        private List<Tensor> updates;
-        private List<Tensor> weights;
+        protected List<Tensor> updates;
+        protected List<Tensor> weights;
         public double clipnorm;
         public double clipvalue;
 
