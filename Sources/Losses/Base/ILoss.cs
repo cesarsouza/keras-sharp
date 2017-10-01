@@ -27,7 +27,7 @@
 namespace KerasSharp.Losses
 {
     using KerasSharp.Engine.Topology;
-    using TensorFlow;
+    
 
     /// <summary>
     ///   Common interface for loss functions.

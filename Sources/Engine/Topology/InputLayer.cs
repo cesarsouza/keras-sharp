@@ -33,7 +33,7 @@ namespace KerasSharp.Layers
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
-    using TensorFlow;
+    
 
     using static KerasSharp.Backends.Current;
 
@@ -69,7 +69,7 @@ namespace KerasSharp.Layers
         /// <param name="input_tensor">The optional tensor to use as layer input.</param>
         /// 
         public InputLayer(int?[] input_shape = null, int? batch_size = null, int?[] batch_input_shape = null, string name = null,
-            TFDataType? dtype = null, bool sparse = false, Tensor input_tensor = null)
+            DataType? dtype = null, bool sparse = false, Tensor input_tensor = null)
             : base(dtype: GetType(dtype, input_tensor), name: GetName(name))
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/topology.py#L1291
@@ -148,12 +148,7 @@ namespace KerasSharp.Layers
                 output_shapes: new List<int?[]> { batch_input_shape });
         }
 
-        private static TFDataType? GetType(TFDataType? dtype, TFTensor input_tensor)
-        {
-            throw new NotImplementedException();
-        }
-
-        private static TFDataType GetType(TFDataType? dtype, Tensor input_tensor)
+        private static DataType? GetType(DataType? dtype, Tensor input_tensor)
         {
             if (dtype == null)
             {

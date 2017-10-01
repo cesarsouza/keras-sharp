@@ -33,16 +33,60 @@ namespace KerasSharp.Backends
     using System.Threading.Tasks;
     using KerasSharp.Engine.Topology;
     using System.Threading;
+    using System.Reflection;
 
     public static class Current
     {
+        private static ThreadLocal<IBackend> backend;
 
-        private static ThreadLocal<IBackend> backend = new ThreadLocal<IBackend>(() => new TensorFlowBackend());
+        private static string[] assemblyNames =
+        {
+            "KerasSharp.Backends.TensorFlow",
+            "KerasSharp.Backends.CNTK.CPUOnly",
+        };
 
         public static IBackend K
         {
             get { return backend.Value; }
             set { backend.Value = value; }
         }
+
+        static Current()
+        {
+            backend = new ThreadLocal<IBackend>(() => load("KerasSharp.Backends.TensorFlowBackend"));
+        }
+
+
+
+
+
+        private static IBackend load(string typeName)
+        {
+            Type type = find(typeName);
+
+            IBackend obj = (IBackend)Activator.CreateInstance(type);
+
+            return obj;
+        }
+
+        private static Type find(string typeName)
+        {
+            foreach (string assemblyName in assemblyNames)
+            {
+                Assembly assembly = Assembly.Load(assemblyName);
+
+                var types = assembly.GetExportedTypes();
+
+                foreach (var type in types)
+                {
+                    string currentTypeName = type.FullName;
+                    if (currentTypeName == typeName)
+                        return type;
+                }
+            }
+
+            throw new ArgumentException("typeName");
+        }
+
     }
 }

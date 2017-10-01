@@ -32,7 +32,6 @@ namespace KerasSharp.Regularizers
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
-    using TensorFlow;
 
     using static KerasSharp.Backends.Current;
 

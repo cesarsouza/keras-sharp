@@ -28,7 +28,7 @@ namespace KerasSharp.Constraints
 {
     using System.Runtime.Serialization;
     using static KerasSharp.Backends.Current;
-    using TensorFlow;
+    
     using KerasSharp.Engine.Topology;
 
     /// <summary>

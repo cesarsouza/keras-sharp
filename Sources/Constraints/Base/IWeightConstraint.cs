@@ -27,7 +27,7 @@
 namespace KerasSharp.Constraints
 {
     using KerasSharp.Engine.Topology;
-    using TensorFlow;
+    
 
     /// <summary>
     ///   Common interface for weight constraints.

@@ -29,7 +29,6 @@ namespace KerasSharp.Regularizers
     using KerasSharp.Engine.Topology;
     using System.Collections.Generic;
     using System.Linq;
-    using TensorFlow;
 
     /// <summary>
     ///   Common interface for weight regularizers.

@@ -39,7 +39,6 @@ namespace KerasSharp.Models
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
-    using TensorFlow;
 
     using static KerasSharp.Backends.Current;
     using static KerasSharp.Python;

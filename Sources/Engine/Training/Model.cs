@@ -43,7 +43,7 @@ namespace KerasSharp.Models
     using Accord.Math;
     using System.Collections;
     using KerasSharp.Optimizers;
-    using TensorFlow;
+    
 
     public enum Shuffle
     {

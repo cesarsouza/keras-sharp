@@ -36,7 +36,7 @@ namespace KerasSharp.Engine.Topology
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
-    using TensorFlow;
+    
 
     using static KerasSharp.Backends.Current;
     using static KerasSharp.Python;
@@ -76,11 +76,12 @@ namespace KerasSharp.Engine.Topology
         public List<Node> outbound_nodes;
         public List<Node> inbound_nodes;
         protected internal int?[] batch_input_shape;
-        protected internal TFDataType? input_dtype;
+        protected internal DataType? input_dtype;
         public bool is_placeholder;
 
 
-        protected internal TFDataType dtype;
+        protected internal DataType dtype;
+
         public virtual List<Layer> _flattened_layers { get; set; }
 
         public virtual bool stateful { get; set; }
@@ -121,7 +122,7 @@ namespace KerasSharp.Engine.Topology
             bool uses_learning_phase = true, int?[] input_shape = null, int[] output_shape = null,
             List<Node> inbound_nodes = null, List<Node> outbound_nodes = null, Tensor input = null,
             Tensor output = null, Tensor input_mask = null, Tensor output_mask = null, List<Tensor> trainable_weights = null,
-            List<Array> non_trainable_weights = null, Tensor weights = null, TFDataType? dtype = null,
+            List<Array> non_trainable_weights = null, Tensor weights = null, DataType? dtype = null,
             Dictionary<Tensor, IWeightConstraint> constraints = null, int?[] batch_input_shape = null,
             int? batch_size = null, int? input_dim = null)
         {
@@ -278,7 +279,7 @@ namespace KerasSharp.Engine.Topology
         /// 
         /// <return>The created weight variable.</return>
         /// 
-        public Tensor add_weight(string name, int?[] shape, TFDataType dtype = Utils.DEFAULT_DTYPE,
+        public Tensor add_weight(string name, int?[] shape, DataType dtype = DataType.DEFAULT_DTYPE,
             IWeightInitializer initializer = null, IWeightRegularizer regularizer = null,
                    bool trainable = true, IWeightConstraint constraint = null)
         {

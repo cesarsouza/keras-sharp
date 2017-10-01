@@ -34,7 +34,6 @@ namespace KerasSharp.Backends
     using KerasSharp.Engine.Topology;
     using KerasSharp.Losses;
     using KerasSharp.Models;
-    using TensorFlow;
     using Accord.Math;
     using static KerasSharp.Python;
 

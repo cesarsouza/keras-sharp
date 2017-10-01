@@ -32,14 +32,14 @@ namespace KerasSharp
     using System.Runtime.Serialization;
     using System.Text;
     using System.Threading.Tasks;
-    using TensorFlow;
+    
 
     using static KerasSharp.Python;
 
     [DataContract]
     public class InputSpec
     {
-        public TFDataType? dtype;
+        public DataType? dtype;
         public int[] shape;
         public int? ndim;
         public int? max_ndim;
@@ -65,7 +65,7 @@ namespace KerasSharp
         /// <param name="min_ndim">The minimum rank of the input.</param>
         /// <param name="axes">Dictionary mapping integer axes to
         ///    a specific dimension value.</param>
-        public InputSpec(TFDataType dtype = Utils.DEFAULT_DTYPE, int[] shape = null, int? ndim = null,
+        public InputSpec(DataType dtype = DataType.DEFAULT_DTYPE, int[] shape = null, int? ndim = null,
                          int? max_ndim = null, int? min_ndim = null, Dictionary<int, int> axes = null)
         {
             this.dtype = dtype;

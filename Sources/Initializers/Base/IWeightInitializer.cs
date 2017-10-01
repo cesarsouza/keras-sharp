@@ -27,7 +27,6 @@
 namespace KerasSharp.Initializers
 {
     using KerasSharp.Engine.Topology;
-    using TensorFlow;
 
     /// <summary>
     ///   Common interface for weight initialization strategies.
@@ -46,6 +45,6 @@ namespace KerasSharp.Initializers
         ///   and element data type <paramref name="dtype"/> that has been initialized using this
         ///   strategy.</returns>
         /// 
-        Tensor Call(int?[] shape, TFDataType dtype = Utils.DEFAULT_DTYPE);
+        Tensor Call(int?[] shape, DataType dtype = DataType.DEFAULT_DTYPE);
     }
 }

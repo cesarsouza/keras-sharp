@@ -99,7 +99,7 @@ model.compile(optimizer = 'rmsprop',
             Assert.AreEqual(new int?[] { null, 500 }, model.input_layers[0].batch_input_shape);
             Assert.AreEqual(true, model.input_layers[0].built);
             //Assert.AreEqual(1, model.input_layers[0].constraints);
-            Assert.AreEqual(TFDataType.Float, model.input_layers[0].dtype);
+            Assert.AreEqual(DataType.Float, model.input_layers[0].dtype);
             Assert.AreEqual(1, model.input_layers[0].inbound_nodes.Count);
             Assert.AreEqual(1, model.input_layers[0].inbound_nodes.Count);
             var layer_node = model.input_layers[0].inbound_nodes[0];
@@ -249,7 +249,7 @@ model.compile(optimizer = 'rmsprop',
             //Assert.AreEqual(0, outputLayer.batch_input_shape);
             Assert.AreEqual(true, outputLayer.built);
             Assert.AreEqual(0, outputLayer.constraints.Count);
-            Assert.AreEqual(TFDataType.Float, outputLayer.dtype);
+            Assert.AreEqual(DataType.Float, outputLayer.dtype);
             Assert.AreEqual(1, outputLayer.inbound_nodes.Count);
             Assert.AreEqual("{ dense_1 ([[null, 500]] -> [[null, 32]]) } => dense_2 ([[null, 32]] -> [[null, 10]])", outputLayer.inbound_nodes[0].ToString());
             Assert.AreEqual(1, outputLayer.input.Count);

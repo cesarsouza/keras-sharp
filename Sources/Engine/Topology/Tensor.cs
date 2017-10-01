@@ -36,16 +36,13 @@ namespace KerasSharp.Engine.Topology
     using System.Text;
     using System.Threading.Tasks;
     using static KerasSharp.Python;
-    using TensorFlow;
     using System.Diagnostics;
 
     [DataContract]
     [DebuggerDisplay("{ToString()}")]
-    public class Tensor
+    public abstract class Tensor
     {
         public IBackend K;
-        public TFTensor tensor;
-        public TFOutput output;
         public int?[] _keras_shape;
         public bool _uses_learning_phase;
         public int?[] int_shape;
@@ -56,16 +53,6 @@ namespace KerasSharp.Engine.Topology
         }
 
         public string name;
-
-        public TFDataType dtype
-        {
-            get
-            {
-                if (tensor != null)
-                    return tensor.TensorType;
-                return output.OutputType;
-            }
-        }
 
         public Tensor(IBackend backend)
         {
@@ -85,25 +72,9 @@ namespace KerasSharp.Engine.Topology
             get { return K.int_shape(this); }
         }
 
-        internal long[] TF_Shape
-        {
-            get
-            {
-                var tf = (K as TensorFlowBackend).tf;
-                return tf.GetShape(output);
-            }
-        }
-
-
         public object eval()
         {
             return K.eval(this);
-        }
-
-
-        public static implicit operator TFOutput(Tensor t)
-        {
-            return t.output;
         }
 
 
@@ -154,17 +125,5 @@ namespace KerasSharp.Engine.Topology
             return b.K.subtract(a, b);
         }
 
-
-
-
-        public override string ToString()
-        {
-            string n = output.Operation.Name;
-            long i = output.Index;
-            string s = str(shape);
-            string r = $"KerasSharp.Engine.Topology.Tensor '{n}_{i}' shape={s} dtype={output.OutputType}";
-            return r;
-        }
     }
-
 }

@@ -28,7 +28,6 @@ namespace KerasSharp.Metrics
 {
     using KerasSharp.Engine.Topology;
     using System.Collections.Generic;
-    using TensorFlow;
 
     public class SparseTopKCategoricalAccuracy : IMetric
     {

@@ -28,7 +28,6 @@ namespace KerasSharp.Losses
 {
     using KerasSharp.Engine.Topology;
     using System.Runtime.Serialization;
-    using TensorFlow;
 
     using static KerasSharp.Backends.Current;
 

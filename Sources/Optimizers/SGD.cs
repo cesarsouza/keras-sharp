@@ -34,7 +34,6 @@ namespace KerasSharp.Optimizers
     using System.Collections.Generic;
     using System.Linq;
     using System.Runtime.Serialization;
-    using TensorFlow;
 
     using static KerasSharp.Backends.Current;
 

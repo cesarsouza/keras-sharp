@@ -33,7 +33,7 @@ namespace KerasSharp.Activations
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
-    using TensorFlow;
+    
     using System.Runtime.Serialization;
     using KerasSharp.Engine.Topology;
 

@@ -32,7 +32,7 @@ namespace KerasSharp
                 return axis.Value;
 
             // Fast path: avoid creating Rank and Range ops if ndims is known.
-            var shape = g.GetTensorShape(input);
+            long[] shape = g.GetTensorShape(input).ToArray();
             if (shape.Length >= 0)
             {
                 // The python code distinguishes between tensor and sparsetensor

@@ -32,7 +32,7 @@ namespace KerasSharp.Engine.Topology
     using System.Runtime.Serialization;
     using System.Text;
     using System.Threading.Tasks;
-    using TensorFlow;
+    
     using static KerasSharp.Backends.Current;
 
     using static KerasSharp.Python;

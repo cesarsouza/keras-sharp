@@ -29,7 +29,6 @@ namespace KerasSharp.Metrics
     using KerasSharp.Engine.Topology;
     using System;
     using System.Collections.Generic;
-    using TensorFlow;
 
     using static KerasSharp.Backends.Current;
 

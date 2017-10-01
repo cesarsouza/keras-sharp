@@ -33,7 +33,7 @@ namespace KerasSharp.Engine.Topology
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
-    using TensorFlow;
+    
 
     public static class TensorFlowSharp
     {
@@ -61,7 +61,7 @@ namespace KerasSharp.Engine.Topology
         ///   If set, the layer will not create a placeholder tensor.</param>
         ///   
         public static List<Tensor> Input(int?[] shape = null, int?[] batch_shape = null, string name = null,
-            TFDataType dtype = KerasSharp.Utils.DEFAULT_DTYPE, bool sparse = false, Tensor tensor = null)
+            DataType dtype = DataType.DEFAULT_DTYPE, bool sparse = false, Tensor tensor = null)
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/topology.py#L1416
 

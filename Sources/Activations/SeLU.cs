@@ -35,7 +35,7 @@ namespace KerasSharp.Activations
     using System.Runtime.Serialization;
     using System.Text;
     using System.Threading.Tasks;
-    using TensorFlow;
+    
 
     /// <summary>
     ///   Scaled Exponential Linear Unit (SeLU) activation function.

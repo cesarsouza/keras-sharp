@@ -96,9 +96,9 @@ namespace Tests
                 int?[] shape_b = K.int_shape(b);
                 int?[] shape_ab = K.int_shape(ab);
 
-                long[] tf_shape_a = a.TF_Shape;
-                long[] tf_shape_b = b.TF_Shape;
-                long[] tf_shape_ab = ab.TF_Shape;
+                long[] tf_shape_a = K.TF(a).TF_Shape;
+                long[] tf_shape_b = K.TF(b).TF_Shape;
+                long[] tf_shape_ab = K.TF(ab).TF_Shape;
 
                 AssertEx.AreEqual(new int?[] { null, 2 }, shape_a);
                 AssertEx.AreEqual(new int?[] { 2, 3 }, shape_b);
@@ -142,7 +142,7 @@ namespace Tests
                 var b = kvar.eval(); // { { 1, 2 }, { 3, 4 } }
                 #endregion
 
-                Assert.AreEqual(TFDataType.Double, a);
+                Assert.AreEqual(DataType.Double, a);
                 Assert.AreEqual(new double[,] { { 1, 2 }, { 3, 4 } }, b);
             }
         }
@@ -153,7 +153,7 @@ namespace Tests
             using (var K = new TensorFlowBackend())
             {
                 #region doc_random_uniform
-                var kvar = K.random_uniform(new int?[] { 100, 2000 }, minval: -4, maxval: 2, dtype: TFDataType.Double, seed: 1337, name: "uni");
+                var kvar = K.random_uniform(new int?[] { 100, 2000 }, minval: -4, maxval: 2, dtype: DataType.Double, seed: 1337, name: "uni");
                 var a = K.dtype(kvar); // float64 (Double)
                 var b = kvar.eval();
                 #endregion

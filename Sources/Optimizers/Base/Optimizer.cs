@@ -36,7 +36,6 @@ namespace KerasSharp.Optimizers
     using System.Collections.Generic;
     using System.Linq;
     using System.Runtime.Serialization;
-    using TensorFlow;
 
     using static KerasSharp.Backends.Current;
 
@@ -73,7 +72,7 @@ namespace KerasSharp.Optimizers
             throw new NotImplementedException();
         }
 
-        public List<Tensor> get_gradients(Tensor loss, object param)
+        public List<Tensor> get_gradients(Tensor loss, List<Tensor> param)
         {
             List<Tensor> grads = K.gradients(loss, param);
             if (this.clipnorm > 0 && this.clipnorm > 0)
