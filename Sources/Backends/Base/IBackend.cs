@@ -74,6 +74,8 @@ namespace KerasSharp.Backends
 
         Tensor max(Tensor x, int v, object p);
 
+        Tensor reshape(Tensor x, int[] shape);
+
         int? ndim(Tensor x);
 
         Tensor max(Tensor x, int axis, bool keepdims);
@@ -145,7 +147,7 @@ namespace KerasSharp.Backends
 
 
 
-        Tensor random_uniform(int?[] shape, double minvalue = 0.0, double maxvalue = 1.0, DataType dtype = DataType.DEFAULT_DTYPE, int? seed = null, string name = null);
+        Tensor random_uniform(int?[] shape, double minval = 0.0, double maxval = 1.0, DataType dtype = DataType.DEFAULT_DTYPE, int? seed = null, string name = null);
 
         Tensor l2_normalize(Tensor expected, int axis);
 
@@ -237,5 +239,7 @@ namespace KerasSharp.Backends
         Tensor truncated_normal(int?[] shape, double v, double stddev, DataType dtype, int? seed);
 
         Tensor not_equal(Tensor weights, double v);
+
+        Tensor bias_add(Tensor output, Tensor bias);
     }
 }

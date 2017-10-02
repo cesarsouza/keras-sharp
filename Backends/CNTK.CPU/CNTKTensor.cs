@@ -24,33 +24,60 @@
 //    SOFTWARE.
 //
 
-namespace KerasSharp.Backends
+namespace KerasSharp.Engine.Topology
 {
+    using KerasSharp.Backends;
+    using KerasSharp.Layers;
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.Serialization;
     using System.Text;
     using System.Threading.Tasks;
-    using KerasSharp.Engine.Topology;
-    using KerasSharp.Losses;
-    using KerasSharp.Models;
-    using Accord.Math;
     using static KerasSharp.Python;
+    using System.Diagnostics;
+    using CNTK;
 
-    public abstract class BackendBase
+    [DataContract]
+    public class CNTKTensor : Tensor
     {
-        /// <summary>
-        ///   Returns the value of the fuzz factor used in numeric expressions.
-        /// </summary>
-        /// 
-        public float epsilon()
+        public Function output;
+
+        public new CNTKBackend K
         {
-            return 1e-8f;
+            get { return base.K as CNTKBackend; }
         }
 
-        public KerasSharp.DataType floatx()
+        public CNTKTensor(IBackend backend)
+            : base(backend)
         {
-            return DataType.DEFAULT_DTYPE;
+        }
+
+
+        public NDShape CNTK_Shape
+        {
+            get { return output.Output.Shape; }
+        }
+
+
+        public static implicit operator CNTK.Variable(CNTKTensor t)
+        {
+            return t.output;
+        }
+
+        public static implicit operator CNTK.Function(CNTKTensor t)
+        {
+            return t.output;
+        }
+
+
+
+        public override string ToString()
+        {
+            string uid = output.Uid;
+            string s = str(shape);
+            string r = $"KerasSharp.Engine.Topology.Tensor '{uid}' shape={s} dtype={output.Output.DataType}";
+            return r;
         }
     }
 }

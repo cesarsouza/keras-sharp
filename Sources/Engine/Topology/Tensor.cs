@@ -37,6 +37,7 @@ namespace KerasSharp.Engine.Topology
     using System.Threading.Tasks;
     using static KerasSharp.Python;
     using System.Diagnostics;
+    using Accord;
 
     [DataContract]
     [DebuggerDisplay("{ToString()}")]
@@ -75,6 +76,15 @@ namespace KerasSharp.Engine.Topology
         public object eval()
         {
             return K.eval(this);
+        }
+
+        public object eval<T>()
+        {
+            object r = eval();
+            Array arr = r as Array;
+            if (arr != null)
+                return arr.Convert<T>();
+            return r.To<T>();
         }
 
 

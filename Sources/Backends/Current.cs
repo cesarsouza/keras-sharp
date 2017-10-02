@@ -45,6 +45,8 @@ namespace KerasSharp.Backends
             "KerasSharp.Backends.CNTK.CPUOnly",
         };
 
+        public static string Name = "KerasSharp.Backends.TensorFlowBackend";
+
         public static IBackend K
         {
             get { return backend.Value; }
@@ -53,10 +55,14 @@ namespace KerasSharp.Backends
 
         static Current()
         {
-            backend = new ThreadLocal<IBackend>(() => load("KerasSharp.Backends.TensorFlowBackend"));
+            backend = new ThreadLocal<IBackend>(() => load(Name));
         }
 
-
+        public static void Switch(string backendName)
+        {
+            Name = backendName;
+            backend.Value = load(Name);
+        }
 
 
 

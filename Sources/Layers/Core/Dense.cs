@@ -187,7 +187,7 @@ namespace KerasSharp
             Tensor output = K.dot(inputs, this.kernel);
 
             if (this.use_bias)
-                output = K.add(output, this.bias);
+                output = K.bias_add(output, this.bias);
             if (this.activation != null)
                 output = this.activation.Call(output, mask);
             return output;

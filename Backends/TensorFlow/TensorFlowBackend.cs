@@ -303,11 +303,6 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public DataType floatx()
-        {
-            return DataType.Float;
-        }
-
         public Function function(object inputs, List<Tensor> list, Func<List<object>> updates, string name)
         {
             throw new NotImplementedException();
@@ -651,6 +646,11 @@ namespace KerasSharp.Backends
         public Tensor add(Tensor a, Tensor b)
         {
             return tensor(tf.Add(TF(a).output, TF(b).output));
+        }
+
+        public Tensor bias_add(Tensor a, Tensor b)
+        {
+            return add(a, b);
         }
 
         public Tensor add<T>(T a, Tensor b)
@@ -1002,7 +1002,7 @@ namespace KerasSharp.Backends
 
 
 
-        #region convertion
+        #region conversion
 
         public TFShape shape(int?[] shape)
         {

@@ -26,6 +26,10 @@ namespace Tests
     [TestFixture]
     public class SequentialTest
     {
+        public const string TENSORFLOW = "KerasSharp.Backends.TensorFlowBackend";
+        public const string CNTK = "KerasSharp.Backends.CNTKBackend";
+
+
         [Test]
         public void sequential_example_1()
         {
@@ -432,16 +436,18 @@ model.compile(optimizer = 'rmsprop',
             Assert.AreNotEqual(model.callback_model, model.model.callback_model);
         }
 
-        [Test]
-        public void sequential_guide_1()
+        [TestCase(TENSORFLOW)]
+        [TestCase(CNTK)]
+        public void sequential_guide_1(string backend)
         {
+            KerasSharp.Backends.Current.Switch(backend);
 /*
-model = Sequential([
-    Dense(32, input_shape=(784,)),
-    Activation('relu'),
-    Dense(10),
-    Activation('softmax'),
-])
+            model = Sequential([
+                Dense(32, input_shape=(784,)),
+                Activation('relu'),
+                Dense(10),
+                Activation('softmax'),
+            ])
 */
             var model = new Sequential(new List<Layer> {
                 new Dense(32, input_shape: new int?[] { 784 }),

@@ -28,29 +28,22 @@ namespace KerasSharp.Backends
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using KerasSharp.Engine.Topology;
-    using KerasSharp.Losses;
-    using KerasSharp.Models;
-    using Accord.Math;
-    using static KerasSharp.Python;
 
-    public abstract class BackendBase
+    class NameScope : IDisposable
     {
-        /// <summary>
-        ///   Returns the value of the fuzz factor used in numeric expressions.
-        /// </summary>
-        /// 
-        public float epsilon()
+        Stack<string> s;
+
+        public NameScope(Stack<string> s, string name)
         {
-            return 1e-8f;
+            s.Push(name);
+            this.s = s;
         }
 
-        public KerasSharp.DataType floatx()
+        void IDisposable.Dispose()
         {
-            return DataType.DEFAULT_DTYPE;
+            if (s != null)
+                s.Pop();
+            s = null;
         }
     }
 }
