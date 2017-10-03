@@ -39,11 +39,12 @@ namespace KerasSharp.Backends
     {
         // TODO: Rename all methods to PascalCase
 
-        Tensor sqrt(object p);
+        Tensor sqrt(Tensor x);
 
         Tensor square(Tensor w);
         Tensor equal(Tensor x, Tensor y);
         Tensor sum(Tensor x, int[] axis = null, bool keepdims = false, string name = null);
+        Tensor sum(List<Tensor> x, int[] axis = null, bool keepdims = false, string name = null);
         Tensor round(Tensor x);
         Tensor argmax(Tensor x, int axis=-1);
         Tensor sum(Tensor x, int axis, bool keepdims = false, string name = null);
@@ -136,7 +137,7 @@ namespace KerasSharp.Backends
 
         Tensor tanh(Tensor x);
 
-        Tensor exp(object v);
+        Tensor exp(Tensor x);
 
         object eval(Tensor tensor);
 
@@ -165,8 +166,6 @@ namespace KerasSharp.Backends
 
         Tensor maximum(double v, Tensor tensor);
 
-        Tensor elu(object x);
-
         Tensor binary_crossentropy(Tensor output, Tensor target, bool from_logits = false);
 
 
@@ -186,12 +185,10 @@ namespace KerasSharp.Backends
 
         int get_uid(string prefix);
 
-        List<Tensor> gradients(Tensor loss, object param);
+        List<Tensor> gradients(Tensor loss, List<Tensor> param);
 
         int?[] int_shape(Tensor tensor);
 
-
-        object sum(object[] v);
 
         IDisposable name_scope(string name);
 
@@ -232,7 +229,7 @@ namespace KerasSharp.Backends
 
         Function function(List<Tensor> inputs, List<object> list, Func<List<object>> updates, string name);
 
-        Tensor update(object m, object v);
+        Tensor update(Tensor x, Tensor new_x);
 
         Tensor truncated_normal(int[] shape, double v, double stddev, DataType dtype, int? seed);
 

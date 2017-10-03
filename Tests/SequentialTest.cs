@@ -528,7 +528,8 @@ model.compile(optimizer = 'rmsprop',
             }
         }
 
-        [Test]
+        [TestCase(TENSORFLOW)]
+        [TestCase(CNTK)]
         public void sequential_guide_training_1()
         {
             // For a single-input model with 2 classes (binary classification):

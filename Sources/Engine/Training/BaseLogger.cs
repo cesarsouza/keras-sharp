@@ -24,12 +24,61 @@
 //    SOFTWARE.
 //
 
+using System.Collections.Generic;
+
 namespace KerasSharp.Models
 {
     public class BaseLogger : Callback
     {
+        public int seen;
+        private Dictionary<string, double> totals;
+        private Dictionary<string, List<string>> parameters;
+
         public BaseLogger()
         {
         }
+
+        public override void on_batch_end(Dictionary<string, object> logs)
+        {
+            if (logs == null)
+                logs = new Dictionary<string, object>();
+
+            int batch_size = (int)logs.get("size", 0);
+            this.seen += batch_size;
+
+            foreach (var item in logs)
+            {
+                var k = item.Key;
+                var v = (int)item.Value;
+
+                if (this.totals.ContainsKey(k))
+                    this.totals[k] = totals[k] = v * batch_size;
+                else
+                    this.totals[k] = v * batch_size;
+            }
+        }
+
+        public override void on_epoch_begin(int epoch, Dictionary<string, object> logs)
+        {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/callbacks.py#L207
+            this.seen = 0;
+            this.totals = new Dictionary<string, double>();
+        }
+
+        public override void on_epoch_end(int epoch, Dictionary<string, object> logs)
+        {
+            if (logs != null)
+            {
+                foreach (var k in this.parameters["metrics"])
+                {
+                    if (this.totals.ContainsKey(k))
+                    {
+                        // Make value available to next callbacks.
+                        logs[k] = this.totals[k] / (double)this.seen;
+                    }
+                }
+            }
+        }
+
     }
 }

@@ -31,34 +31,64 @@ namespace KerasSharp.Models
 {
     public class CallbackList : List<Callback>
     {
-        internal void on_train_begin()
+        /// <summary>
+        ///   Called at the beginning of training.
+        /// </summary>
+        /// 
+        /// <param name="logs">Dictionary of logs.</param>
+        /// 
+        internal void on_train_begin(Dictionary<string, object> logs = null)
         {
-            throw new NotImplementedException();
+            if (logs == null)
+                logs = new Dictionary<string, object>();
+
+            foreach (Callback callback in this)
+                callback.on_train_begin(logs);
         }
 
-        internal void on_epoch_begin(int epoch)
+        internal void on_epoch_begin(int epoch, Dictionary<string, object> logs = null)
         {
-            throw new NotImplementedException();
+            if (logs == null)
+                logs = new Dictionary<string, object>();
+
+            foreach (Callback callback in this)
+                callback.on_epoch_begin(epoch, logs);
         }
 
-        internal void on_batch_begin(int batch_index, Dictionary<string, object> batch_logs)
+        internal void on_batch_begin(int batch_index, Dictionary<string, object> logs)
         {
-            throw new NotImplementedException();
+            if (logs == null)
+                logs = new Dictionary<string, object>();
+
+            foreach (Callback callback in this)
+                callback.on_batch_begin(logs);
         }
 
-        internal void on_batch_end(int batch_index, Dictionary<string, object> batch_logs)
+        internal void on_batch_end(int batch_index, Dictionary<string, object> logs)
         {
-            throw new NotImplementedException();
+            if (logs == null)
+                logs = new Dictionary<string, object>();
+
+            foreach (Callback callback in this)
+                callback.on_batch_end(logs);
         }
 
-        internal void on_epoch_end(int epoch, object epoch_logs)
+        internal void on_epoch_end(int epoch, Dictionary<string, object> logs)
         {
-            throw new NotImplementedException();
+            if (logs == null)
+                logs = new Dictionary<string, object>();
+
+            foreach (Callback callback in this)
+                callback.on_epoch_end(epoch, logs);
         }
 
-        internal void on_train_end()
+        internal void on_train_end(Dictionary<string, object> logs = null)
         {
-            throw new NotImplementedException();
+            if (logs == null)
+                logs = new Dictionary<string, object>();
+
+            foreach (Callback callback in this)
+                callback.on_train_end(logs);
         }
 
         internal void set_model(object callback_model)

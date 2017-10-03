@@ -63,6 +63,19 @@ namespace KerasSharp.Models
 
     public class Function
     {
+        private object inputs;
+        private List<Tensor> list;
+        private Func<List<Tensor>> updates;
+        private string name;
+
+        public Function(object inputs, List<Tensor> list, Func<List<Tensor>> updates, string name)
+        {
+            this.inputs = inputs;
+            this.list = list;
+            this.updates = updates;
+            this.name = name;
+        }
+
         public List<Tensor> Call(object ins_batch)
         {
             throw new NotImplementedException();
@@ -820,6 +833,8 @@ namespace KerasSharp.Models
 
             this.history = new History();
 
+            if (callbacks == null)
+                callbacks = new CallbackList();
             callbacks.Add(new BaseLogger());
             callbacks.Add(this.history);
 

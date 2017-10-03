@@ -24,16 +24,99 @@
 //    SOFTWARE.
 //
 
+using System;
+using System.Collections.Generic;
+
 namespace KerasSharp.Models
 {
     public class ProgbarLogger : Callback
     {
+        private bool verbose;
+        private object epochs;
+        private bool use_steps;
+        private int target;
+        private Progbar progbar;
+        private int seen;
+        private List<object> log_values;
+
         public ProgbarLogger()
         {
         }
 
-        public ProgbarLogger(string count_mode)
+        public ProgbarLogger(string count_mode = "samples")
         {
+            if (count_mode == "samples")
+                this.use_steps = false;
+            else if (count_mode == "steps")
+                this.use_steps = true;
+            else
+                throw new ArgumentException("Unknown 'count_mode': " + count_mode);
         }
+
+        public override void on_train_begin(Dictionary<string, object> logs = null)
+        {
+            this.verbose = (bool)base.parameters["verbose"];
+            this.epochs = base.parameters["epochs"];
+        }
+
+        public override void on_batch_begin(Dictionary<string, object> logs)
+        {
+            if (this.seen < this.target)
+                this.log_values = new List<object>();
+        }
+
+        public override void on_batch_end(Dictionary<string, object> logs)
+        {
+            if (logs == null)
+                logs = new Dictionary<string, object>();
+            int batch_size = (int)logs.get("size", 0);
+            if (this.use_steps)
+                this.seen += 1;
+            else
+                this.seen += batch_size;
+
+            foreach (var k in (string[])this.parameters["metrics"])
+            {
+                if (logs.ContainsKey(k))
+                    this.log_values.Add((k, logs[k]));
+            }
+
+            // Skip progbar update for the last batch;
+            // will be handled by on_epoch_end.
+            if (this.verbose && this.seen < this.target)
+                this.progbar.update(this.seen, this.log_values);
+        }
+
+        public override void on_epoch_begin(int epoch, Dictionary<string, object> logs)
+        {
+            if (this.verbose)
+            {
+                Console.WriteLine($"Epoch {epoch + 1} / {this.epochs}");
+
+                if (this.use_steps)
+                    this.target = (int)this.parameters["steps"];
+                else
+                    this.target = (int)this.parameters["samples"];
+
+                this.progbar = new Progbar(target: this.target, verbose: this.verbose);
+            }
+
+            this.seen = 0;
+        }
+
+        public override void on_epoch_end(int epoch, Dictionary<string, object> logs)
+        {
+            if (logs == null)
+                logs = new Dictionary<string, object>();
+            foreach (object k in (List<object>)this.parameters["metrics"])
+            {
+                if (logs.ContainsKey((string)k))
+                    this.log_values.Add((k, logs[(string)k]));
+            }
+
+            if (this.verbose)
+                this.progbar.update(seen, this.log_values, force: true);
+        }
+
     }
 }

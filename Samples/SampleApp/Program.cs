@@ -1,5 +1,7 @@
 ﻿using CNTK;
+using KerasSharp;
 using KerasSharp.Backends;
+using KerasSharp.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,14 +14,24 @@ namespace SampleApp
     {
         static void Main(string[] args)
         {
-            using (var K = new CNTKBackend())
-            {
-                var input = K.placeholder(shape: new int?[] { 2, 4, 5 });
-                double[,] val = new double[,] { { 1, 2 }, { 3, 4 } };
-                var kvar = K.variable(array: (Array)val);
-                int? a = K.ndim(input); // 3
-                int? b = K.ndim(kvar); // 2
-            }
+            KerasSharp.Backends.Current.Switch<CNTKBackend>();
+
+            // For a single-input model with 2 classes (binary classification):
+
+            var model = new Sequential();
+            model.Add(new Dense(32, activation: "relu", input_dim: 100));
+            model.Add(new Dense(1, activation: "sigmoid"));
+            model.Compile(optimizer: "rmsprop",
+                          loss: "binary_crossentropy",
+                          metrics: new[] { "accuracy" });
+
+            // Generate dummy data
+            double[,] data = Accord.Math.Matrix.Random(1000, 100);
+            int[] labels = Accord.Math.Vector.Random(1000, min: 0, max: 10);
+
+            // Train the model, iterating on the data in batches of 32 samples
+            model.fit(data, labels, epochs: 10, batch_size: 32);
+            // For a single-input model with 10 classes (categorical classification):
         }
     }
 }

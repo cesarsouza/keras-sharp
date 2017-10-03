@@ -58,6 +58,11 @@ namespace KerasSharp.Backends
             backend = new ThreadLocal<IBackend>(() => load(Name));
         }
 
+        public static void Switch<T>()
+        {
+            Switch(typeof(T).FullName);
+        }
+
         public static void Switch(string backendName)
         {
             Name = backendName;
@@ -79,15 +84,22 @@ namespace KerasSharp.Backends
         {
             foreach (string assemblyName in assemblyNames)
             {
-                Assembly assembly = Assembly.Load(assemblyName);
-
-                var types = assembly.GetExportedTypes();
-
-                foreach (var type in types)
+                try
                 {
-                    string currentTypeName = type.FullName;
-                    if (currentTypeName == typeName)
-                        return type;
+                    Assembly assembly = Assembly.Load(assemblyName);
+
+                    var types = assembly.GetExportedTypes();
+
+                    foreach (var type in types)
+                    {
+                        string currentTypeName = type.FullName;
+                        if (currentTypeName == typeName)
+                            return type;
+                    }
+                }
+                catch
+                {
+                    // Yes, using try-catch is a horrible way to do this - will come back here afterwards
                 }
             }
 

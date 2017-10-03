@@ -47,20 +47,25 @@ namespace KerasSharp.Backends
         Stack<string> NAME_SCOPE_STACK;
         Dictionary<string, int> _UID_PREFIXES;
 
+        // cntk doesn't support gradient as symbolic op, to hook up with keras model,
+        // we will create gradient as a constant placeholder, here use this global
+        // map to keep the mapping from grad placeholder to parameter
+        Dictionary<Constant, Variable> grad_parameter_dict;
 
 
         public CNTKBackend()
         {
             this.NAME_SCOPE_STACK = new Stack<string>();
             this._UID_PREFIXES = new Dictionary<string, int>();
+            this.grad_parameter_dict = new Dictionary<Constant, Variable>();
         }
 
 
 
 
-        public Tensor sqrt(object p)
+        public Tensor sqrt(Tensor x)
         {
-            throw new NotImplementedException();
+            return Out(C.Sqrt(In(x)));
         }
 
         public Tensor square(Tensor w)
@@ -71,6 +76,11 @@ namespace KerasSharp.Backends
         public Tensor equal(Tensor x, Tensor y)
         {
             return Out(C.Equal(In(x), In(y)));
+        }
+
+        public Tensor sum(List<Tensor> x, int[] axis = null, bool keepdims = false, string name = null)
+        {
+            throw new NotImplementedException();
         }
 
         public Tensor sum(Tensor x, int[] axis = null, bool keepdims = false, string name = null)
@@ -158,7 +168,7 @@ namespace KerasSharp.Backends
 
         public Tensor zeros(int?[] shape, KerasSharp.DataType dtype = KerasSharp.DataType.DEFAULT_DTYPE, string name = null)
         {
-            throw new NotImplementedException();
+            return zeros(shape.Select(x => x.Value).ToArray(), dtype, name);
         }
 
         public Tensor greater_equal(Tensor w, double v)
@@ -326,9 +336,9 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor exp(object v)
+        public Tensor exp(Tensor x)
         {
-            throw new NotImplementedException();
+            return Out(C.Exp(In(x)));
         }
 
         public object eval(Tensor tensor)
@@ -574,9 +584,23 @@ namespace KerasSharp.Backends
             return _UID_PREFIXES[prefix];
         }
 
-        public List<Tensor> gradients(Tensor loss, object param)
+        public List<Tensor> gradients(Tensor loss, List<Tensor> variables)
         {
-            throw new NotImplementedException();
+            // cntk does not support gradients as symbolic op,
+            // to hook up with keras model
+            // we will return a constant as place holder, the cntk learner will apply
+            // the gradient during training.
+
+            var grads = new List<Variable>();
+            foreach (Tensor t in variables)
+            {
+                var v = (Variable)In(t).output;
+                Constant g = new Constant(shape: v.Shape, dataType: DataType.Double, initValue: 0.0, device: DeviceDescriptor.CPUDevice, name: "keras_grad_placeholder");
+                grads.Add(g);
+                grad_parameter_dict[g] = v;
+            };
+
+            return grads.Select(g => Out(g)).ToList();
         }
 
         public int?[] int_shape(Tensor tensor)
@@ -674,7 +698,7 @@ namespace KerasSharp.Backends
 
         public int?[] get_variable_shape(Tensor x)
         {
-            throw new NotImplementedException();
+            return Out(In(x).CNTK_Shape);
         }
 
         public Tensor sum(double v, Tensor tensor)
@@ -694,7 +718,7 @@ namespace KerasSharp.Backends
 
         public Models.Function function(object inputs, List<Tensor> list, Func<List<Tensor>> updates, string name)
         {
-            throw new NotImplementedException();
+            return new Models.Function(inputs, list, updates, name);
         }
 
         public Models.Function function(object inputs, List<Tensor> list, List<Tensor> updates, string name)
@@ -712,9 +736,9 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor update(object m, object v)
+        public Tensor update(Tensor x, Tensor new_x)
         {
-            throw new NotImplementedException();
+            return Out(C.Assign(In(x), In(new_x)));
         }
 
         public Tensor truncated_normal(int[] shape, double v, double stddev, KerasSharp.DataType dtype, int? seed)
@@ -818,6 +842,18 @@ namespace KerasSharp.Backends
         public NDShape InShape(int[] shape)
         {
             return NDShape.CreateNDShape(shape);
+        }
+
+        public int?[] Out(NDShape shape)
+        {
+            int?[] s = new int?[shape.Rank];
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (shape[i] >= 0)
+                    s[i] = shape[i];
+            }
+
+            return s;
         }
 
         public Tensor Out(CNTK.Function output, int?[] keras_shape = null)

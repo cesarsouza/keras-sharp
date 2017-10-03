@@ -24,9 +24,43 @@
 //    SOFTWARE.
 //
 
+using System.Collections.Generic;
+
 namespace KerasSharp.Models
 {
+    /// <summary>
+    ///   Callback that records events into a `History` object. This callback 
+    ///   is automatically applied to every Keras model.The `History` object 
+    ///   gets returned by the `fit` method of models.
+    /// </summary>
+    /// 
+    /// <seealso cref="KerasSharp.Models.Callback" />
+    /// 
     public class History : Callback
     {
+        private List<int> epoch;
+        private Dictionary<string, List<object>> history;
+
+        public override void on_batch_begin(Dictionary<string, object> logs)
+        {
+            this.epoch = new List<int>();
+            this.history = new Dictionary<string, List<object>>();
+        }
+
+        public override void on_epoch_end(int epoch, Dictionary<string, object> logs)
+        {
+            if (logs == null)
+                logs = new Dictionary<string, object>();
+
+            this.epoch.Add(epoch);
+
+            foreach (var item in logs)
+            {
+                if (!this.history.ContainsKey(item.Key))
+                    this.history[item.Key] = new List<object>();
+                this.history[item.Key].Add(item.Value);
+            }
+        }
+
     }
 }

@@ -77,7 +77,7 @@ namespace KerasSharp.Optimizers
             List<Tensor> grads = K.gradients(loss, param);
             if (this.clipnorm > 0 && this.clipnorm > 0)
             {
-                var norm = K.sqrt(K.sum(grads.Select(g => K.sum(K.square(g))).ToArray()));
+                var norm = K.sqrt(K.sum(grads.Select(g => K.sum(K.square(g))).ToList()));
                 grads = grads.Select(g => K.clip_norm(g, this.clipnorm, norm)).ToList();
             }
 

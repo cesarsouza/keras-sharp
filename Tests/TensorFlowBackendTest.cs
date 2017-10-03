@@ -96,9 +96,9 @@ namespace Tests
                 int?[] shape_b = K.int_shape(b);
                 int?[] shape_ab = K.int_shape(ab);
 
-                long[] tf_shape_a = K.TF(a).TF_Shape;
-                long[] tf_shape_b = K.TF(b).TF_Shape;
-                long[] tf_shape_ab = K.TF(ab).TF_Shape;
+                long[] tf_shape_a = K.In(a).TF_Shape;
+                long[] tf_shape_b = K.In(b).TF_Shape;
+                long[] tf_shape_ab = K.In(ab).TF_Shape;
 
                 AssertEx.AreEqual(new int?[] { null, 2 }, shape_a);
                 AssertEx.AreEqual(new int?[] { 2, 3 }, shape_b);

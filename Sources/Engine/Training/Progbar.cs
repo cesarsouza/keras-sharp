@@ -25,6 +25,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 
 namespace KerasSharp.Models
 {
@@ -33,7 +34,7 @@ namespace KerasSharp.Models
         private object p;
         private int target;
 
-        public Progbar(object p)
+        public Progbar(object target, bool verbose)
         {
             this.p = p;
         }
@@ -44,6 +45,21 @@ namespace KerasSharp.Models
         }
 
         internal void update(object batch_end)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void update(int seen, List<int> log_values, bool force)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void update(int seen, List<object> log_values)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void update(int seen, List<object> log_values, bool force)
         {
             throw new NotImplementedException();
         }

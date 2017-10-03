@@ -30,8 +30,56 @@ using System;
 
 namespace KerasSharp.Models
 {
-    public class Callback
+    public abstract class Callback
     {
-        internal List<Array> validation_data;
+        public List<Array> validation_data;
+        private object model;
+        protected Dictionary<string, object> parameters;
+
+        public Callback()
+        {
+            this.validation_data = null;
+            this.parameters = new Dictionary<string, object>();
+        }
+
+        void set_params(Dictionary<string, object> parameters)
+        {
+            this.parameters = parameters;
+        }
+
+        void set_model(object model)
+        {
+            this.model = model;
+        }
+
+        public virtual void on_epoch_begin(int epoch, Dictionary<string, object> logs = null)
+        {
+
+        }
+
+        public virtual void on_batch_begin(Dictionary<string, object> logs = null)
+        {
+
+        }
+
+        public virtual void on_batch_end(Dictionary<string, object> logs = null)
+        {
+
+        }
+
+        public virtual void on_epoch_end(int epoch, Dictionary<string, object> logs = null)
+        {
+
+        }
+
+        public virtual void on_train_begin(Dictionary<string, object> logs = null)
+        {
+
+        }
+
+        public virtual void on_train_end(Dictionary<string, object> logs = null)
+        {
+
+        }
     }
 }

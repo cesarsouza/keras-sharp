@@ -11,7 +11,7 @@ namespace KerasSharp
 {
     public enum DataType : uint
     {
-        DEFAULT_DTYPE = Float,
+        DEFAULT_DTYPE = Double,
 
         Float = 1,
         Double = 2,
