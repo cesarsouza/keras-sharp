@@ -82,6 +82,7 @@
     <Compile Include="TensorFlowBackend.cs" />
     <Compile Include="TensorFlowSharpEx.cs" />
     <Compile Include="TensorFlowTensor.cs" />
+    <Compile Include="TFFunction.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

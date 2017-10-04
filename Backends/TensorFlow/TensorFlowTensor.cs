@@ -50,7 +50,7 @@ namespace KerasSharp.Engine.Topology
         public TFTensor tensor;
         public TFOutput output;
 
-        public TFDataType dtype
+        public new TFDataType dtype
         {
             get
             {

@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DataType = KerasSharp.DataType;
 
@@ -244,8 +245,8 @@ namespace Tests
                 string a = input.ToString();
                 string b = kvar.ToString();
 
-                Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'CompositeFunction2' shape=[2, 4, 5] dtype=Float", a);
-                Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'CompositeFunction5' shape=[2, 2] dtype=Double", b);
+                Assert.IsTrue(Regex.Match(a, "KerasSharp\\.Engine.Topology\\.Tensor 'CompositeFunction\\d+' shape=\\[2, 4, 5\\] dtype=Float").Success);
+                Assert.IsTrue(Regex.Match(b, "KerasSharp\\.Engine.Topology\\.Tensor 'CompositeFunction\\d+' shape=\\[2, 2\\] dtype=Double").Success);
             }
         }
 

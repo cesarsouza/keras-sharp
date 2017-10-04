@@ -41,7 +41,8 @@ namespace KerasSharp.Engine.Topology
     [DataContract]
     public class CNTKTensor : Tensor
     {
-        public Function output;
+        public Function function;
+        public Parameter parameter;
 
         public new CNTKBackend K
         {
@@ -53,30 +54,35 @@ namespace KerasSharp.Engine.Topology
         {
         }
 
+        public new DataType dtype
+        {
+            get { return function.Output.DataType; }
+        }
+
 
         public NDShape CNTK_Shape
         {
-            get { return output.Output.Shape; }
+            get { return function.Output.Shape; }
         }
 
 
         public static implicit operator CNTK.Variable(CNTKTensor t)
         {
-            return t.output;
+            return t.function;
         }
 
         public static implicit operator CNTK.Function(CNTKTensor t)
         {
-            return t.output;
+            return t.function;
         }
 
 
 
         public override string ToString()
         {
-            string uid = output.Uid;
+            string uid = function.Uid;
             string s = str(shape);
-            string r = $"KerasSharp.Engine.Topology.Tensor '{uid}' shape={s} dtype={output.Output.DataType}";
+            string r = $"KerasSharp.Engine.Topology.Tensor '{uid}' shape={s} dtype={function.Output.DataType}";
             return r;
         }
     }

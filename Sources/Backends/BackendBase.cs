@@ -48,9 +48,5 @@ namespace KerasSharp.Backends
             return 1e-8f;
         }
 
-        public KerasSharp.DataType floatx()
-        {
-            return DataType.DEFAULT_DTYPE;
-        }
     }
 }

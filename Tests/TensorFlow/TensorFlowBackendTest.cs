@@ -21,7 +21,7 @@ namespace Tests
     public class TensorFlowBackendTest
     {
         [Test]
-        public void ndim_test()
+        public void tf_ndim_test()
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L508
             using (var K = new TensorFlowBackend())
@@ -40,7 +40,7 @@ namespace Tests
         }
 
         [Test]
-        public void reshape_test()
+        public void tf_reshape_test()
         {
             using (var K = new TensorFlowBackend())
             {
@@ -54,7 +54,7 @@ namespace Tests
         }
 
         [Test]
-        public void partial_shape_test()
+        public void tf_partial_shape_test()
         {
             // Note: Keras/TensorFlow represent unknown dimensions 
             // as None, whereas TensorFlowSharp represents as -1:
@@ -111,7 +111,7 @@ namespace Tests
         }
 
         [Test]
-        public void softmax_test()
+        public void tf_softmax_test()
         {
             using (var K = new TensorFlowBackend())
             {
@@ -131,7 +131,7 @@ namespace Tests
         }
 
         [Test]
-        public void variable_test()
+        public void tf_variable_test()
         {
             using (var K = new TensorFlowBackend())
             {
@@ -148,7 +148,7 @@ namespace Tests
         }
 
         [Test]
-        public void random_uniform()
+        public void tf_random_uniform()
         {
             using (var K = new TensorFlowBackend())
             {
@@ -170,7 +170,7 @@ namespace Tests
         }
 
         [Test]
-        public void random_normal_test()
+        public void tf_random_normal_test()
         {
             using (var graph = new TFGraph())
             using (var session = new TFSession(graph))
@@ -192,7 +192,7 @@ namespace Tests
         }
 
         [Test]
-        public void int_shape()
+        public void tf_int_shape()
         {
             using (var K = new TensorFlowBackend())
             {
@@ -210,7 +210,7 @@ namespace Tests
         }
 
         [Test]
-        public void zeros()
+        public void tf_zeros()
         {
             using (var K = new TensorFlowBackend())
             {
@@ -234,14 +234,14 @@ namespace Tests
         }
 
         [Test]
-        public void elementwise_multiplication()
+        public void tf_elementwise_multiplication()
         {
             using (var K = new TensorFlowBackend())
             {
                 #region doc_mul
                 double[,] a = Matrix.Magic(5);
                 double[,] b = Matrix.Identity(5);
-                Tensor tb = K.constant(b);
+                Tensor tb = K.constant(b, dtype: DataType.Double);
                 var kvar = K.mul(a, tb);
                 #endregion
 
@@ -253,7 +253,7 @@ namespace Tests
         }
 
         [Test]
-        public void toString()
+        public void tf_toString()
         {
             using (var K = new TensorFlowBackend())
             {
@@ -270,7 +270,7 @@ namespace Tests
         }
 
         [Test]
-        public void sum_test()
+        public void tf_sum_test()
         {
             using (var K = new TensorFlowBackend())
             {
@@ -303,7 +303,7 @@ namespace Tests
         }
 
         [Test]
-        public void mean_test()
+        public void tf_mean_test()
         {
             using (var K = new TensorFlowBackend())
             {
@@ -337,7 +337,7 @@ namespace Tests
 
 
         [Test]
-        public void equal_test()
+        public void tf_equal_test()
         {
             using (var K = new TensorFlowBackend())
             {
@@ -352,7 +352,7 @@ namespace Tests
         }
 
         [Test]
-        public void argmax_test()
+        public void tf_argmax_test()
         {
             using (var K = new TensorFlowBackend())
             {

@@ -26,29 +26,26 @@ namespace Tests
     [TestFixture]
     public class SequentialTest
     {
-        public const string TENSORFLOW = "KerasSharp.Backends.TensorFlowBackend";
-        public const string CNTK = "KerasSharp.Backends.CNTKBackend";
-
-
+        
         [Test]
         public void sequential_example_1()
         {
 
             /* Python:
-import keras
+            import keras
 
-from keras.models import Sequential
-from keras.layers import Dense
-from keras import backend as K
-import numpy as np
+            from keras.models import Sequential
+            from keras.layers import Dense
+            from keras import backend as K
+            import numpy as np
 
-model = Sequential()
-model.add(Dense(32, input_shape = (500,)))
-model.add(Dense(10, activation = 'softmax'))
-model.compile(optimizer = 'rmsprop',
-      loss = 'categorical_crossentropy',
-      metrics =['accuracy'])
-*/
+            model = Sequential()
+            model.add(Dense(32, input_shape = (500,)))
+            model.add(Dense(10, activation = 'softmax'))
+            model.compile(optimizer = 'rmsprop',
+                  loss = 'categorical_crossentropy',
+                  metrics =['accuracy'])
+            */
             #region doc_sequential_example_1
             var model = new Sequential();
             model.Add(new Dense(32, input_shape: new int?[] { 500 }));
@@ -226,8 +223,8 @@ model.compile(optimizer = 'rmsprop',
             Assert.AreEqual(0, model.losses.Count);
             Assert.AreEqual(null, model.loss_weights);
             Assert.AreEqual(true, model.metrics["__K__single__"][0] is Accuracy);
-            
-            
+
+
             Assert.AreEqual("sequential_1", model.name);
             Assert.AreEqual(3, model.nodes_by_depth.Count);
             Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/Add1_0' shape=[null, 32] dtype=Float", model.nodes_by_depth[0][0].input_tensors[0].ToString());
@@ -436,19 +433,19 @@ model.compile(optimizer = 'rmsprop',
             Assert.AreNotEqual(model.callback_model, model.model.callback_model);
         }
 
-        [TestCase(TENSORFLOW)]
-        [TestCase(CNTK)]
+        [TestCase(Setup.TENSORFLOW)]
+        [TestCase(Setup.CNTK)]
         public void sequential_guide_1(string backend)
         {
             KerasSharp.Backends.Current.Switch(backend);
-/*
-            model = Sequential([
-                Dense(32, input_shape=(784,)),
-                Activation('relu'),
-                Dense(10),
-                Activation('softmax'),
-            ])
-*/
+            /*
+                        model = Sequential([
+                            Dense(32, input_shape=(784,)),
+                            Activation('relu'),
+                            Dense(10),
+                            Activation('softmax'),
+                        ])
+            */
             var model = new Sequential(new List<Layer> {
                 new Dense(32, input_shape: new int?[] { 784 }),
                 new Activation("relu"),
@@ -528,10 +525,12 @@ model.compile(optimizer = 'rmsprop',
             }
         }
 
-        [TestCase(TENSORFLOW)]
-        [TestCase(CNTK)]
-        public void sequential_guide_training_1()
+        [TestCase(Setup.TENSORFLOW)]
+        [TestCase(Setup.CNTK)]
+        public void sequential_guide_training_1(string backend)
         {
+            KerasSharp.Backends.Current.Switch(backend);
+
             // For a single-input model with 2 classes (binary classification):
 
             var model = new Sequential();

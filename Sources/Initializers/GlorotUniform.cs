@@ -74,7 +74,7 @@ namespace KerasSharp.Initializers
         /// and element data type <paramref name="dtype" /> that has been initialized using this
         /// strategy.</returns>
         /// 
-        public Tensor Call(int?[] shape, DataType dtype = DataType.DEFAULT_DTYPE)
+        public Tensor Call(int?[] shape, DataType? dtype = null)
         {
             return new VarianceScaling(scale: 1.0, mode: "fan_avg", distribution: "uniform", seed: seed).Call(shape, dtype);
         }

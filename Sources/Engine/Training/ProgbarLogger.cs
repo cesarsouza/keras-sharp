@@ -31,7 +31,7 @@ namespace KerasSharp.Models
 {
     public class ProgbarLogger : Callback
     {
-        private bool verbose;
+        private int verbose;
         private object epochs;
         private bool use_steps;
         private int target;
@@ -55,7 +55,7 @@ namespace KerasSharp.Models
 
         public override void on_train_begin(Dictionary<string, object> logs = null)
         {
-            this.verbose = (bool)base.parameters["verbose"];
+            this.verbose = (int)base.parameters["verbose"];
             this.epochs = base.parameters["epochs"];
         }
 
@@ -83,13 +83,13 @@ namespace KerasSharp.Models
 
             // Skip progbar update for the last batch;
             // will be handled by on_epoch_end.
-            if (this.verbose && this.seen < this.target)
+            if (this.verbose > 0 && this.seen < this.target)
                 this.progbar.update(this.seen, this.log_values);
         }
 
         public override void on_epoch_begin(int epoch, Dictionary<string, object> logs)
         {
-            if (this.verbose)
+            if (this.verbose > 0)
             {
                 Console.WriteLine($"Epoch {epoch + 1} / {this.epochs}");
 
@@ -98,7 +98,7 @@ namespace KerasSharp.Models
                 else
                     this.target = (int)this.parameters["samples"];
 
-                this.progbar = new Progbar(target: this.target, verbose: this.verbose);
+                this.progbar = new Progbar(target: this.target, verbose: this.verbose > 0);
             }
 
             this.seen = 0;
@@ -114,7 +114,7 @@ namespace KerasSharp.Models
                     this.log_values.Add((k, logs[(string)k]));
             }
 
-            if (this.verbose)
+            if (this.verbose > 0)
                 this.progbar.update(seen, this.log_values, force: true);
         }
 

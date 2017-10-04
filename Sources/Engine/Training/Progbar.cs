@@ -32,11 +32,13 @@ namespace KerasSharp.Models
     internal class Progbar
     {
         private object p;
+        private bool verbose;
         private int target;
 
         public Progbar(object target, bool verbose)
         {
-            this.p = p;
+            this.p = target;
+            this.verbose = verbose;
         }
 
         public Progbar(int target)

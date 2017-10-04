@@ -89,6 +89,10 @@
       <Project>{99befbbe-88c2-426a-b687-0d0928b54f05}</Project>
       <Name>CNTK %28CPU%29</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Backends\TensorFlow\TensorFlow %28CPU%29.csproj">
+      <Project>{31e970fd-4952-4a3a-9cc9-f9b519c3b20d}</Project>
+      <Name>TensorFlow %28CPU%29</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\sources\Keras Sharp.csproj">
       <Project>{1478e4e5-f4d5-4066-886b-544d1e172374}</Project>
       <Name>Keras Sharp</Name>

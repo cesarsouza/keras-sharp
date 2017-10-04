@@ -257,17 +257,49 @@ namespace KerasSharp.Backends
 
         public Tensor constant<T>(T value, int?[] shape = null, DataType? dtype = null, string name = null)
         {
-            return Out(_constant(value, In(dtype), name));
+            if (dtype == null)
+                dtype = floatx();
+
+            int[] _shape;
+            if (shape == null)
+            {
+                Array arr = value as Array;
+                if (arr != null)
+                    _shape = arr.GetLength();
+                else _shape = new int[0];
+                shape = _shape.Select(x => (int?)x).ToArray();
+            }
+            else
+            {
+                _shape = shape.Select(x => x.Value).ToArray();
+            }
+
+            TFOutput o;
+            if (shape != null && !(value is Array))
+            {
+                o = _constant(MatrixEx.Create(value.GetType(), _shape, value), In(dtype.Value), name);
+            }
+            else
+            {
+                o = _constant(value, In(dtype.Value), name);
+            }
+
+            if (!_int_shape(o).IsEqual(shape))
+                throw new Exception();
+
+            return Out(o);
         }
 
         private TFOutput _constant<T>(T value, TFDataType? dtype = null, string name = null)
         {
             TFTensor t = new TFTensor((dynamic)value);
 
-            TFOutput o = dtype == null ?
-                tf.Const(t, operName: name) :
-                tf.Const(t, dtype: dtype.Value, operName: name);
-            return o;
+            TFOutput o = tf.Const(t, operName: name);
+
+            if (dtype == null || o.OutputType == dtype.Value)
+                return o;
+
+            return tf.Cast(o, dtype.Value);
         }
 
 
@@ -298,29 +330,9 @@ namespace KerasSharp.Backends
             return Out(tf.Exp(In(x)));
         }
 
-        public Function function(object inputs, List<Tensor> list, Func<List<object>> updates, string name)
+        public Function function(List<Tensor> inputs, List<Tensor> outputs, List<List<Tensor>> updates, string name)
         {
-            throw new NotImplementedException();
-        }
-
-        public Function function<TSource>(List<Tensor> inputs, List<object> list, List<TSource> updates, string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Function function(List<Tensor> inputs, List<object> list, Func<List<object>> updates, string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Function function(object inputs, List<Tensor> list, Func<List<Tensor>> updates, string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Function function(object inputs, List<Tensor> list, List<Tensor> updates, string name)
-        {
-            throw new NotImplementedException();
+            return new TFFunction(this, inputs: inputs, outputs: outputs, updates: updates, name: name);
         }
 
 
@@ -389,9 +401,14 @@ namespace KerasSharp.Backends
             if (x._keras_shape != null)
                 return x._keras_shape;
 
+            return _int_shape(In(x).output);
+        }
+
+        private int?[] _int_shape(TFOutput _x)
+        {
             try
             {
-                long[] shape = tf.GetTensorShape(In(x).output).ToArray();
+                long[] shape = tf.GetTensorShape(_x).ToArray();
                 return shape.Select(i => i == -1 ? null : (int?)i).ToArray();
             }
             catch
@@ -704,7 +721,7 @@ namespace KerasSharp.Backends
             return tf.GetTensorNumDims(In(x).output);
         }
 
-        public Tensor placeholder(int?[] shape = null, int? ndim = null, DataType? dtype = DataType.DEFAULT_DTYPE, bool sparse = false, string name = null)
+        public Tensor placeholder(int?[] shape = null, int? ndim = null, DataType? dtype = null, bool sparse = false, string name = null)
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L397
 
@@ -739,19 +756,24 @@ namespace KerasSharp.Backends
         /// 
         /// <returns>A tensor.</returns>
         /// 
-        public Tensor random_uniform(int?[] shape, double minval = 0.0, double maxval = 1.0, DataType dtype = DataType.DEFAULT_DTYPE, int? seed = null, string name = null)
+        public Tensor random_uniform(int?[] shape, double minval = 0.0, double maxval = 1.0, DataType? dtype = null, int? seed = null, string name = null)
         {
-            var _dtype = In(dtype);
+            if (dtype == null)
+                dtype = floatx();
+
+            var _dtype = In(dtype.Value);
 
             if (seed == null)
                 seed = Accord.Math.Random.Generator.Random.Next(1_000_000);
 
-            var tf_shape = tf.Const(shape.Select(x => (long)x).ToArray());
-            TFOutput u = tf.RandomUniform(tf_shape, dtype: _dtype, seed: seed, operName: name);
+            using (var scope = name_scope("random_uniform"))
+            {
+                var _shape = tf.Const(shape.Select(x => (long)x).ToArray());
+                TFOutput u = tf.RandomUniform(_shape, dtype: _dtype, seed: seed, operName: name);
 
-
-            return Out(tf.Add(tf.Mul(u, tf.Const(new TFTensor(maxval - minval), dtype: _dtype)),
-                                        tf.Const(new TFTensor(minval), dtype: _dtype)));
+                return Out(tf.Add(tf.Mul(u, _constant(maxval - minval, dtype: _dtype)),
+                                            _constant(minval, dtype: _dtype)));
+            }
         }
 
         public Tensor relu(Tensor x)
@@ -820,22 +842,22 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor truncated_normal(int[] shape, double v, double stddev, DataType dtype, int? seed)
+        public Tensor truncated_normal(int[] shape, double v, double stddev, DataType? dtype, int? seed)
         {
             throw new NotImplementedException();
         }
 
-        public Tensor truncated_normal(int?[] shape, double v, double stddev, DataType dtype, int? seed)
+        public Tensor truncated_normal(int?[] shape, double v, double stddev, DataType? dtype, int? seed)
         {
             throw new NotImplementedException();
         }
 
-        public Tensor update(Tensor x, Tensor new_x)
+        public List<Tensor> update(Tensor x, Tensor new_x)
         {
-            return Out(tf.Assign(In(x), In(new_x)));
+            return new List<Tensor>() { Out(tf.Assign(In(x), In(new_x))) };
         }
 
-        public Tensor update_add(Tensor iterations, int v)
+        public List<Tensor> update_add(Tensor iterations, int v)
         {
             throw new NotImplementedException();
         }
@@ -890,8 +912,11 @@ namespace KerasSharp.Backends
         /// <param name="dtype">Tensor type.</param>
         /// <param name="name">Optional name string for the tensor.</param>
         /// 
-        public Tensor variable(Tensor tensor, DataType dtype = DataType.DEFAULT_DTYPE, string name = null)
+        public Tensor variable(Tensor tensor, DataType? dtype = null, string name = null)
         {
+            if (dtype == null)
+                dtype = floatx();
+
             var _tensor = In(tensor);
 
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L308
@@ -929,7 +954,7 @@ namespace KerasSharp.Backends
         /// <param name="dtype">Data type of returned Keras variable.</param>
         /// <param name="name">String, name of returned Keras variable.</param>
         /// <returns>A variable(including Keras metadata), filled with <c>0.0</c>.</returns>
-        public Tensor zeros(int?[] shape, DataType dtype = DataType.DEFAULT_DTYPE, string name = null)
+        public Tensor zeros(int?[] shape, DataType? dtype = null, string name = null)
         {
             return zeros(shape.Select(i => i.Value).ToArray(), dtype, name);
         }
@@ -941,16 +966,17 @@ namespace KerasSharp.Backends
         /// <param name="dtype">Data type of returned Keras variable.</param>
         /// <param name="name">String, name of returned Keras variable.</param>
         /// <returns>A variable(including Keras metadata), filled with <c>0.0</c>.</returns>
-        public Tensor zeros(int[] shape, DataType dtype = DataType.DEFAULT_DTYPE, string name = null)
+        public Tensor zeros(int[] shape, DataType? dtype = null, string name = null)
         {
+            if (dtype == null)
+                dtype = floatx();
+
             // The following is not necessary since C# is strongly typed:
-            // if dtype is None:
-            //     dtype = floatx()
             // shape = tuple(map(int, shape))
             // tf_dtype = _convert_string_dtype(dtype)
 
             // However, we might have to perform other conversions of our own:
-            Type type = TFTensor.TypeFromTensorType(In(dtype));
+            Type type = TFTensor.TypeFromTensorType(In(dtype.Value));
             Array zeros = Array.CreateInstance(type, shape);
 
             return this.variable(array: zeros, name: name);
@@ -991,6 +1017,10 @@ namespace KerasSharp.Backends
             return Out(tf.Round(In(x)));
         }
 
+        public DataType floatx()
+        {
+            return DataType.Float;
+        }
 
 
 
@@ -1009,6 +1039,11 @@ namespace KerasSharp.Backends
             return new TensorFlowTensor(this) { output = output };
         }
 
+        public Tensor Out(TFTensor output)
+        {
+            return Out(tf.Const(output));
+        }
+
         public TensorFlowTensor In(Tensor output)
         {
             return (TensorFlowTensor)output;
@@ -1019,26 +1054,26 @@ namespace KerasSharp.Backends
             return new TensorFlowTensor(this) { output = output };
         }
 
-        private static TFDataType In(DataType dataType)
+        public static TFDataType In(DataType dataType)
         {
             return (TFDataType)dataType;
         }
 
-        private static TFDataType? In(DataType? dataType)
+        public static TFDataType? In(DataType? dataType)
         {
             if (dataType == null)
                 return null;
             return (TFDataType)dataType.Value;
         }
 
-        private static DataType? Out(TFDataType? dataType)
+        public static DataType? Out(TFDataType? dataType)
         {
             if (dataType == null)
                 return null;
             return (DataType)dataType.Value;
         }
 
-        private static DataType Out(TFDataType dataType)
+        public static DataType Out(TFDataType dataType)
         {
             return (DataType)dataType;
         }

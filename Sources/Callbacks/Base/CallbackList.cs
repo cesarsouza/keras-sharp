@@ -91,14 +91,16 @@ namespace KerasSharp.Models
                 callback.on_train_end(logs);
         }
 
-        internal void set_model(object callback_model)
+        internal void set_model(object model)
         {
-            throw new NotImplementedException();
+            foreach (Callback callback in this)
+                callback.set_model(model);
         }
 
         internal void set_params(Dictionary<string, object> dictionary)
         {
-            throw new NotImplementedException();
+            foreach (Callback callback in this)
+                callback.set_params(dictionary);
         }
     }
 }

@@ -46,13 +46,13 @@ namespace KerasSharp.Initializers
     [DataContract]
     public class Constant : IWeightInitializer
     {
-        private double value;
+        private object value;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Constant"/> class.
         /// </summary>
         /// <param name="value">The value.</param>
-        public Constant(double value)
+        public Constant(object value)
         {
             this.value = value;
         }
@@ -67,9 +67,9 @@ namespace KerasSharp.Initializers
         /// and element data type <paramref name="dtype" /> that has been initialized using this
         /// strategy.</returns>
         /// 
-        public Tensor Call(int?[] shape, DataType dtype = DataType.DEFAULT_DTYPE)
+        public Tensor Call(int?[] shape, DataType? dtype = null)
         {
-            return K.constant(1, shape: shape, dtype: dtype);
+            return K.constant(value, shape: shape, dtype: dtype);
         }
     }
 }

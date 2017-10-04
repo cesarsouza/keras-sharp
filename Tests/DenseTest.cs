@@ -1,4 +1,6 @@
-﻿using KerasSharp;
+﻿using Accord.Math;
+using KerasSharp;
+using KerasSharp.Initializers;
 using KerasSharp.Losses;
 using KerasSharp.Models;
 using KerasSharp.Optimizers;
@@ -40,6 +42,43 @@ namespace Tests
             Assert.AreEqual("dense_2", model.layers[1].name);
             Assert.AreEqual(new int?[] { null, 32 }, model.layers[1].input_shape[0]);
         }
+
+        [TestCase(Setup.TENSORFLOW)]
+        [TestCase(Setup.CNTK)]
+        public void conv_pass_through(string backend)
+        {
+            KerasSharp.Backends.Current.Switch(backend);
+
+            var model = new Sequential();
+            var dense = new Dense(units: 5, input_dim: 5,
+                kernel_initializer: new Constant(Matrix.Identity(5)),
+                bias_initializer: new Constant(0));
+            model.Add(dense);
+
+            float[,] input = Vector.Range(25).Reshape(5, 5).ToSingle();
+            float[,] output = MatrixEx.To<float[,]>(model.predict(input)[0]);
+
+            Assert.IsTrue(input.IsEqual(output, 1e-8f));
+        }
+
+        [TestCase(Setup.TENSORFLOW)]
+        [TestCase(Setup.CNTK)]
+        public void conv_bias(string backend)
+        {
+            KerasSharp.Backends.Current.Switch(backend);
+
+            var model = new Sequential();
+            var dense = new Dense(units: 5, input_dim: 5,
+                kernel_initializer: new Constant(Matrix.Identity(5)),
+                bias_initializer: new Constant(42));
+            model.Add(dense);
+
+            float[,] input = Vector.Range(25).Reshape(5, 5).ToSingle();
+            float[,] output = MatrixEx.To<float[,]>(model.predict(input)[0]);
+
+            Assert.IsTrue(input.Add(42).IsEqual(output, 1e-8f));
+        }
+
 
         [TearDown]
         public void TearDown()

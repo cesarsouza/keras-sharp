@@ -43,7 +43,7 @@ namespace KerasSharp.Models
     using Accord.Math;
     using System.Collections;
     using KerasSharp.Optimizers;
-    
+
 
     public enum Shuffle
     {
@@ -61,30 +61,13 @@ namespace KerasSharp.Models
     }
 
 
-    public class Function
+    public abstract class Function
     {
-        private object inputs;
-        private List<Tensor> list;
-        private Func<List<Tensor>> updates;
-        private string name;
-
-        public Function(object inputs, List<Tensor> list, Func<List<Tensor>> updates, string name)
-        {
-            this.inputs = inputs;
-            this.list = list;
-            this.updates = updates;
-            this.name = name;
+        public Function()
+        { 
         }
 
-        public List<Tensor> Call(object ins_batch)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal List<Tensor> Call(List<Tensor> ins)
-        {
-            throw new NotImplementedException();
-        }
+        public abstract List<Tensor> Call(List<Array> ins);
     }
 
     /// <summary>
@@ -725,12 +708,12 @@ namespace KerasSharp.Models
                 if (this.uses_learning_phase && !(K.learning_phase() is int))
                     inputs.Add((Tensor)K.learning_phase());
 
-                List<Tensor> training_updates = this.optimizer.get_updates(this._collected_trainable_weights, this.constraints, this.total_loss);
-                var updates = Enumerable.Concat(this.updates, training_updates).ToList();
+                List<List<Tensor>> training_updates = this.optimizer.get_updates(this._collected_trainable_weights, this.constraints, this.total_loss);
+                List<List<Tensor>> updates = Enumerable.Concat(this.updates, training_updates).ToList();
 
                 // Gets loss and metrics. Updates weights at each call.	
                 this.train_function = K.function(inputs, ((new[] { this.total_loss }).Concat(this.metrics_tensors)).ToList(),
-                    updates: () => updates, name: "train_function"); //, **this._function_kwargs)
+                    updates: updates, name: "train_function"); //, **this._function_kwargs)
             }
         }
 
@@ -749,15 +732,12 @@ namespace KerasSharp.Models
                 // Return loss and metrics, no gradient updates.
                 // Does update the network states.
                 this.test_function = K.function(inputs, new[] { this.total_loss }.Concat(this.metrics_tensors).ToList(),
-                    updates: this.state_updates, name: "test_function"); //, **this._function_kwargs);
+                    updates: this.state_updates(), name: "test_function"); //, **this._function_kwargs);
             }
         }
 
         public void _make_predict_function()
         {
-            if (this.predict_function == null)
-                this.predict_function = null;
-
             if (this.predict_function == null)
             {
                 if (this.uses_learning_phase && !(K.learning_phase() is int))
@@ -773,7 +753,7 @@ namespace KerasSharp.Models
                 // kwargs = getattr( "_function_kwargs', { });
 
                 this.predict_function = K.function(inputs, this.outputs,
-                    updates: this.state_updates, name: "predict_function"); //, **kwargs);
+                    updates: this.state_updates(), name: "predict_function"); //, **kwargs);
             }
         }
 
@@ -854,15 +834,15 @@ namespace KerasSharp.Models
             else
                 callback_model = this;
 
-            //callbacks.set_model(callback_model);
-            //callbacks.set_params({
-            //    'batch_size': batch_size,
-            //    'epochs': epochs,
-            //    'samples': num_train_samples,
-            //    'verbose': verbose,
-            //    'do_validation': do_validation,
-            //    'metrics': callback_metrics or [],
-            //});
+            callbacks.set_model(callback_model);
+            callbacks.set_params(new Dictionary<string, object> {
+                {"batch_size", batch_size },
+                {"epochs", epochs },
+                {"samples", num_train_samples },
+                {"verbose", verbose },
+                {"do_validation", do_validation },
+                { "metrics", callback_metrics },
+            });
 
             callbacks.on_train_begin();
             callback_model.stop_training = false;
@@ -887,23 +867,23 @@ namespace KerasSharp.Models
                     var (batch_start, batch_end) = batches[batch_index];
                     int[] batch_ids = index_array.Get(batch_start, batch_end);
 
-                    object ins_batch;
-                    try
-                    {
-                        //if (ins[-1] is float)
-                        //{
-                        //    // Do not slice the training phase flag.
-                        //    ins_batch = _slice_arrays(ins.Get(0, -1), batch_ids) .Concatenate( [ins[-1]];
-                        //}
-                        //else
-                        //{
-                        ins_batch = _slice_arrays(ins, batch_ids);
-                        //}
-                    }
-                    catch
-                    {
-                        throw new Exception($"TypeError while preparing batch. If using HDF5 input data, pass shuffle='batch'.");
-                    }
+                    List<Array> ins_batch;
+                    //try
+                    //{
+                    //if (ins[-1] is float)
+                    //{
+                    //    // Do not slice the training phase flag.
+                    //    ins_batch = _slice_arrays(ins.Get(0, -1), batch_ids) .Concatenate( [ins[-1]];
+                    //}
+                    //else
+                    //{
+                    ins_batch = _slice_arrays(ins, batch_ids);
+                    //}
+                    //}
+                    //catch
+                    //{
+                    //    throw new Exception($"TypeError while preparing batch. If using HDF5 input data, pass shuffle='batch'.");
+                    //}
 
                     var batch_logs = new Dictionary<string, object>();
                     batch_logs["batch"] = batch_index;
@@ -949,19 +929,55 @@ namespace KerasSharp.Models
             return this.history;
         }
 
-        private List<T> _slice_arrays<T>(List<T> ins, params int[] batch_ids)
+        /// <summary>
+        ///   Slice an array or list of arrays.
+        /// </summary>
+        /// 
+        /// <remarks>
+        ///  This takes an array-like, or a list of array-likes, and outputs:
+        /// - arrays[start:stop] if `arrays` is an array-like
+        /// - [x[start: stop] for x in arrays] if `arrays` is a list
+        /// Can also work on list/array of indices: `_slice_arrays(x, indices)`
+        /// </remarks>
+        /// 
+        /// <param name="arrays">Single array or list of arrays.</param>
+        /// <param name="batch_ids">The batch ids.</param>
+        /// <returns>List&lt;Array&gt;.</returns>
+        /// <exception cref="NotImplementedException"></exception>
+        private List<Array> _slice_arrays(List<Array> arrays, int[] start = null, int? stop = null)
         {
-            throw new NotImplementedException();
+            if (arrays == null)
+                return new List<Array>() { null };
+
+            if (start.Length > 1 && stop != null)
+                throw new Exception();
+
+            var r = new List<Array>(arrays.Count);
+            for (int i = 0; i < arrays.Count; i++)
+            {
+                if (stop != null)
+                    throw new NotSupportedException();
+                else
+                    r.Add(MatrixEx.Get(arrays[i], dimension: 0, indices: start));
+            }
+
+            return r;
         }
 
-        private List<Array> _slice_arrays(List<Array> ins, params int[] batch_ids)
+        /// <summary>
+        ///   Returns a list of batch indices (tuples of indices).
+        /// </summary>
+        /// <param name="size">Integer, total size of the data to slice into batches.</param>
+        /// <param name="batch_size">Integer, batch size.</param>
+        /// 
+        /// <returns>A list of tuples of array indices.</returns>
+        /// 
+        private List<(int, int)> _make_batches(int size, int batch_size)
         {
-            throw new NotImplementedException();
-        }
+            // https://github.com/fchollet/keras/blob/8ac788a5614570d222c484ab49cf9e878eeab9ff/keras/engine/training.py#L364
 
-        private List<(int, int)> _make_batches(int num_train_samples, int batch_size)
-        {
-            throw new NotImplementedException();
+            int num_batches = (int)(Math.Ceiling(size / (double)(batch_size)));
+            return Vector.Range(0, num_batches).Select(i => (i * batch_size, Math.Min(size, (i + 1) * batch_size))).ToList();
         }
 
         private int[] _batch_shuffle(int[] index_array, int batch_size)
@@ -1023,7 +1039,7 @@ namespace KerasSharp.Models
                 //}
                 //else
                 //{
-                object ins_batch = _slice_arrays(ins, batch_ids);
+                List<Array> ins_batch = _slice_arrays(ins, batch_ids);
                 //}
 
                 List<Tensor> batch_outs = f.Call(ins_batch);
@@ -1033,15 +1049,16 @@ namespace KerasSharp.Models
                 {
                     foreach (var batch_out in batch_outs)
                     {
-                        var shape = new int?[] { samples }.Concatenate(batch_out.shape.Get(1, 0));
-                        //outs.Add(Tensor.Zeros(shape, dtype: KerasSharp.Utils.ToNetType(batch_out.dtype)));
+                        var shape = new int[] { samples }.Concatenate(batch_out.shape.Apply(x=>x.Value).Get(1, 0));
+                        outs.Add(MatrixEx.Zeros(batch_out.dtype.Value.ToType(), shape));
                     }
                 }
 
                 for (int i = 0; i < batch_outs.Count; i++)
                 {
                     var batch_out = batch_outs[i];
-                    //outs[i].Set(batch_start, batch_end, batch_out);
+                    Array array = (Array)batch_out.eval();
+                    MatrixEx.Set(outs[i], dimension: 0, start: batch_start, end: batch_end, value: array);
                     if (verbose == 1)
                         progbar.update(batch_end);
                 }
@@ -1142,7 +1159,7 @@ namespace KerasSharp.Models
         }
 
         public (List<Array>, List<Array>, List<Array>) _standardize_user_data(Dictionary<string, Array> x, Dictionary<string, Array> y,
-                                   Dictionary<string, Array> sample_weight = null, Dictionary<string, Dictionary<string, double?>> class_weight = null,
+                                   Dictionary<string, Array> sample_weight = null, Dictionary<string, Dictionary<string, double>> class_weight = null,
                                    bool check_batch_axis = true, int? batch_size = null)
         {
             if (this.optimizer == null)
@@ -1164,7 +1181,7 @@ namespace KerasSharp.Models
             var yy = _standardize_input_data(y, this._feed_output_names, output_shapes, check_batch_axis: false, exception_prefix: "target");
 
             List<Array> sample_weights = _standardize_sample_weights(sample_weight, this._feed_output_names).to_list();
-            List<Dictionary<string, double?>> class_weights = _standardize_class_weights(class_weight, this._feed_output_names).to_list();
+            List<Dictionary<string, double>> class_weights = _standardize_class_weights(class_weight, this._feed_output_names).to_list();
 
             sample_weights = Vector.Range(_feed_sample_weight_modes.Count).Select(i =>
                 (Array)_standardize_weights(yy[i], sample_weights[i], class_weights[i], this._feed_sample_weight_modes[i])).ToList();
@@ -1180,13 +1197,13 @@ namespace KerasSharp.Models
             return (xx, yy, sample_weights);
         }
 
-        private Dictionary<string, Dictionary<string, double?>> _standardize_class_weights(Dictionary<string, Dictionary<string, double?>> class_weight, List<string> feed_output_names)
+        private Dictionary<string, Dictionary<string, double>> _standardize_class_weights(Dictionary<string, Dictionary<string, double>> class_weight, List<string> feed_output_names)
         {
             //https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L190
             return _standardize_sample_or_class_weights(class_weight, output_names, "class_weight");
         }
 
-        private double?[] _standardize_weights(Array y, Array sample_weight, Dictionary<string, double?> class_weight, string sample_weight_mode)
+        private double[] _standardize_weights(Array y, Array sample_weight, Dictionary<string, double> class_weight, string sample_weight_mode)
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L499
             if (sample_weight_mode != null)
@@ -1211,7 +1228,7 @@ namespace KerasSharp.Models
 
                 if (!y.GetLength().Get(0, sample_weight.Rank).IsEqual(sample_weight.GetLength()))
                     throw new ArgumentException($"Found a sample_weight array with shape {str(sample_weight.GetLength())} for an input with shape {str(y.GetLength())}. sample_weight cannot be broadcast.");
-                return (double?[])sample_weight;
+                return (double[])sample_weight;
             }
 
             else if (class_weight.is_dict())
@@ -1226,7 +1243,7 @@ namespace KerasSharp.Models
                     y_classes = (int[])y.Squeeze();
                 else
                     y_classes = (y as int[]);
-                double?[] weights = y_classes.Select(cls => class_weight[cls.ToString()]).ToArray();
+                double[] weights = y_classes.Select(cls => class_weight[cls.ToString()]).ToArray();
                 return weights;
             }
             else
@@ -1234,7 +1251,7 @@ namespace KerasSharp.Models
                 if (sample_weight_mode == null)
                 {
                     // TODO: Should use Vector.Ones
-                    return Vector.Create(y.GetLength(0), (double?)1);
+                    return Vector.Create(y.GetLength(0), (double)1);
                 }
                 else
                 {
@@ -1514,7 +1531,7 @@ y_binary = to_categorical(y_int)
                        double validation_split = 0.0,
                        IList<Array> validation_data = null,
                        bool shuffle = true,
-                       Dictionary<int, double?> class_weight = null,
+                       Dictionary<int, double> class_weight = null,
                        Array sample_weight = null,
                        int initial_epoch = 0,
                        object kwargs = null)
@@ -1576,7 +1593,7 @@ y_binary = to_categorical(y_int)
                     double validation_split = 0.0,
                     IList<Dictionary<string, Array>> validation_data = null,
                     Shuffle shuffle = Shuffle.True,
-                    Dictionary<string, Dictionary<string, double?>> class_weight = null,
+                    Dictionary<string, Dictionary<string, double>> class_weight = null,
                     Dictionary<string, Array> sample_weight = null,
                     int initial_epoch = 0,
                     object kwargs = null)
@@ -1643,11 +1660,11 @@ y_binary = to_categorical(y_int)
                     split_at = (int)(xx[0].Length * (1.0 - validation_split));
 
                 List<Array> val_xx, val_yy;
-                (xx, val_xx) = (_slice_arrays(xx, 0, split_at), _slice_arrays(xx, split_at));
-                (yy, val_yy) = (_slice_arrays(yy, 0, split_at), _slice_arrays(yy, split_at));
+                (xx, val_xx) = (_slice_arrays(xx, new[] { 0 }, split_at), _slice_arrays(xx, new[] { split_at }));
+                (yy, val_yy) = (_slice_arrays(yy, new[] { 0 }, split_at), _slice_arrays(yy, new[] { split_at }));
 
-                List<Array> sample_weights = _slice_arrays(sample_weightsx, 0, split_at);
-                List<Array> val_sample_weights = _slice_arrays(sample_weightsx, split_at);
+                List<Array> sample_weights = _slice_arrays(sample_weightsx, new[] { 0 }, split_at);
+                List<Array> val_sample_weights = _slice_arrays(sample_weightsx, new[] { split_at });
 
                 this._make_test_function();
                 val_f = this.test_function;
@@ -1800,6 +1817,25 @@ y_binary = to_categorical(y_int)
         /// 
         /// <returns>Numpy array(s) of predictions.</returns>
         /// 
+        public Array[] predict(Array x, int batch_size = 32, int verbose = 0)
+        {
+            return predict(x.dict_from_single(), batch_size, verbose);
+        }
+
+        /// <summary>
+        ///   Generates output predictions for the input samples.
+        /// </summary>
+        /// 
+        /// <remarks>
+        ///   Computation is done in batches.
+        /// </remarks>
+        /// 
+        /// <param name="x">The input data, as a Numpy array (or list of Numpy arrays if the model has multiple outputs).</param>
+        /// <param name="batch_size">The size of the batch.</param>
+        /// <param name="verbose">The verbosity mode, 0 or 1.</param>
+        /// 
+        /// <returns>Numpy array(s) of predictions.</returns>
+        /// 
         public virtual Array[] predict(Dictionary<string, Array> x, int batch_size = 32, int verbose = 0)
         {
             // Validate user data.
@@ -1836,7 +1872,7 @@ y_binary = to_categorical(y_int)
         /// 
         /// <returns>Scalar training loss (if the model has a single output and no metrics) or list of scalars (if the model has multiple outputs and/or metrics). The attribute `model.metrics_names` will give you the display labels for the scalar outputs.</returns>
         /// 
-        public virtual List<Tensor> train_on_batch(Dictionary<string, Array> x, Dictionary<string, Array> y, Dictionary<string, Array> sample_weight = null, Dictionary<string, Dictionary<string, double?>> class_weight = null)
+        public virtual List<Tensor> train_on_batch(Dictionary<string, Array> x, Dictionary<string, Array> y, Dictionary<string, Array> sample_weight = null, Dictionary<string, Dictionary<string, double>> class_weight = null)
         {
             var (xx, yy, sample_weights) = this._standardize_user_data(x, y, sample_weight: sample_weight, class_weight: class_weight, check_batch_axis: true);
 

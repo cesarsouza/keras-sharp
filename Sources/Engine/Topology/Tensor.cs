@@ -55,12 +55,18 @@ namespace KerasSharp.Engine.Topology
 
         public string name;
 
+        public DataType? dtype
+        {
+            get { return K.dtype(this); }
+        }
+
         public Tensor(IBackend backend)
         {
             this.K = backend;
         }
 
         public static IEnumerable<Tensor> Zero { get; internal set; }
+
         public static Tensor One { get; internal set; }
 
         internal static Tensor Zeros(int?[] shape, object dtype)
@@ -84,7 +90,7 @@ namespace KerasSharp.Engine.Topology
             Array arr = r as Array;
             if (arr != null)
                 return arr.Convert<T>();
-            return r.To<T>();
+            return MatrixEx.To<T>(r);
         }
 
 

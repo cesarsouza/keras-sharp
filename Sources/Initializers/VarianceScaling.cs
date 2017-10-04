@@ -113,7 +113,7 @@ namespace KerasSharp.Initializers
         /// and element data type <paramref name="dtype" /> that has been initialized using this
         /// strategy.</returns>
         /// 
-        public Tensor Call(int?[] shape, DataType dtype = DataType.DEFAULT_DTYPE)
+        public Tensor Call(int?[] shape, DataType? dtype = null)
         {
             var (fan_in, fan_out) = _compute_fans(shape.Select(x => x.Value).ToArray());
 

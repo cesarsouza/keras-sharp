@@ -37,7 +37,7 @@ namespace KerasSharp
     using System.Text;
     using System.Threading.Tasks;
 
-    public static class Python
+    public  static partial class Python
     {
         // Mappings from Python calls to .NET
         static ObjectIDGenerator generator = new ObjectIDGenerator();

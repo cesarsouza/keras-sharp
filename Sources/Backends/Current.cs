@@ -99,7 +99,7 @@ namespace KerasSharp.Backends
                 }
                 catch
                 {
-                    // Yes, using try-catch is a horrible way to do this - will come back here afterwards
+                    // TODO: Remove this try-catch block by a proper check
                 }
             }
 

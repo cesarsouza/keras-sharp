@@ -35,10 +35,8 @@ namespace KerasSharp.Initializers
     using System.Runtime.Serialization;
     using System.Text;
     using System.Threading.Tasks;
-    
 
     using static KerasSharp.Backends.Current;
-
 
     /// <summary>
     ///   Initializer that generates tensors initialized to 1.
@@ -58,7 +56,7 @@ namespace KerasSharp.Initializers
         /// and element data type <paramref name="dtype" /> that has been initialized using this
         /// strategy.</returns>
         /// 
-        public Tensor Call(int?[] shape, DataType dtype = DataType.DEFAULT_DTYPE)
+        public Tensor Call(int?[] shape, DataType? dtype = null)
         {
             return K.constant(1, shape: shape, dtype: dtype);
         }

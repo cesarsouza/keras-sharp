@@ -49,7 +49,7 @@ namespace KerasSharp.Optimizers
     [DataContract]
     public abstract class OptimizerBase 
     {
-        protected List<Tensor> updates;
+        protected List<List<Tensor>> updates;
         protected List<Tensor> weights;
         public double clipnorm;
         public double clipvalue;
@@ -63,7 +63,7 @@ namespace KerasSharp.Optimizers
             //        throw new Exception("Unexpected keyword argument passed to optimizer: " + k);
             // this.__dict__.update(kwargs)
 
-            this.updates = new List<Tensor>();
+            this.updates = new List<List<Tensor>>();
             this.weights = new List<Tensor>();
         }
 

@@ -42,7 +42,6 @@ namespace KerasSharp.Models
 
     using static KerasSharp.Backends.Current;
     using static KerasSharp.Python;
-    using static KerasSharp.Engine.Topology.TensorFlowSharp;
     using KerasSharp.Constraints;
     using KerasSharp.Regularizers;
 
@@ -400,7 +399,7 @@ namespace KerasSharp.Models
         }
 
 
-        public override List<Tensor> updates
+        public override List<List<Tensor>> updates
         {
             get
             {
@@ -410,14 +409,14 @@ namespace KerasSharp.Models
             }
         }
 
-        public override List<Tensor> state_updates()
+        public override List<List<Tensor>> state_updates()
         {
             if (this.model == null)
                 this.build();
             return this.model.state_updates();
         }
 
-        public override List<Tensor> get_updates_for(List<Tensor> inputs)
+        public override List<List<Tensor>> get_updates_for(List<Tensor> inputs)
         {
             if (this.model == null)
                 this.build();
@@ -564,7 +563,7 @@ namespace KerasSharp.Models
 
         public History fit(Array x = null, Array y = null, int batch_size = 32, int epochs = 1, int verbose = 1,
             CallbackList callbacks = null, double validation_split = 0, IList<Array> validation_data = null, Shuffle shuffle = Shuffle.True,
-            Dictionary<int, double?> class_weight = null, Array sample_weight = null, int initial_epoch = 0, object kwargs = null, int? nb_epoch = null)
+            Dictionary<int, double> class_weight = null, Array sample_weight = null, int initial_epoch = 0, object kwargs = null, int? nb_epoch = null)
         {
             // Legacy support
             if (nb_epoch != null)
@@ -591,7 +590,7 @@ namespace KerasSharp.Models
 
         public override History fit(Dictionary<string, Array> x = null, Dictionary<string, Array> y = null, int batch_size = 32, int epochs = 1, int verbose = 1,
             CallbackList callbacks = null, double validation_split = 0, IList<Dictionary<string, Array>> validation_data = null, Shuffle shuffle = Shuffle.True,
-            Dictionary<string, Dictionary<string, double?>> class_weight = null, Dictionary<string, Array> sample_weight = null, int initial_epoch = 0, object kwargs = null)
+            Dictionary<string, Dictionary<string, double>> class_weight = null, Dictionary<string, Array> sample_weight = null, int initial_epoch = 0, object kwargs = null)
         {
             //"""Trains the model for a fixed number of epochs.
             //# Arguments
@@ -713,7 +712,7 @@ namespace KerasSharp.Models
             return this.model.predict_on_batch(x);
         }
 
-        public override List<Tensor> train_on_batch(Dictionary<string, Array> x, Dictionary<string, Array> y, Dictionary<string, Array> sample_weight = null, Dictionary<string, Dictionary<string, double?>> class_weight = null)
+        public override List<Tensor> train_on_batch(Dictionary<string, Array> x, Dictionary<string, Array> y, Dictionary<string, Array> sample_weight = null, Dictionary<string, Dictionary<string, double>> class_weight = null)
         {
             //"""Single gradient update over one batch of samples.
             //# Arguments

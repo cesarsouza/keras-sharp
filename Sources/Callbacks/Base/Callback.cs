@@ -42,12 +42,12 @@ namespace KerasSharp.Models
             this.parameters = new Dictionary<string, object>();
         }
 
-        void set_params(Dictionary<string, object> parameters)
+        public virtual void set_params(Dictionary<string, object> parameters)
         {
             this.parameters = parameters;
         }
 
-        void set_model(object model)
+        public virtual void set_model(object model)
         {
             this.model = model;
         }

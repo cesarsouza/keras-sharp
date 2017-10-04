@@ -72,7 +72,7 @@ namespace KerasSharp.Optimizers
             this.iterations = K.variable(0.0, name: "iterations");
         }
 
-        public List<Tensor> get_updates(List<Tensor> parameters, Dictionary<Tensor, IWeightConstraint> constraints, Tensor loss)
+        public List<List<Tensor>> get_updates(List<Tensor> parameters, Dictionary<Tensor, IWeightConstraint> constraints, Tensor loss)
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/optimizers.py#L221
 
@@ -80,7 +80,7 @@ namespace KerasSharp.Optimizers
             List<int?[]> shapes = parameters.Select(p => K.get_variable_shape(p)).ToList();
             List<Tensor> accumulators = shapes.Select(shape => K.zeros(shape)).ToList();
             this.weights = accumulators;
-            this.updates = new List<Tensor>();
+            this.updates = new List<List<Tensor>>();
 
             Tensor lr = this.lr;
             if (this.initial_decay > 0)

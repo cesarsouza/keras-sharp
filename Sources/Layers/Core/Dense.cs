@@ -155,7 +155,7 @@ namespace KerasSharp
             if (input_shape[0].Length < 2)
                 throw new ArgumentException("input_shape");
 
-            int input_dim = input_shape[0].Get(-1).Value;
+            int input_dim = Matrix.Get(input_shape[0], -1).Value;
 
             this.kernel = add_weight(shape: new int?[] { input_dim, this.units },
                 initializer: this.kernel_initializer,
@@ -201,7 +201,7 @@ namespace KerasSharp
 
             if (input_shape.Length < 2)
                 throw new Exception("Shape should contain at least a batch size and number of dimensions.");
-            if (input_shape.Get(-1) <= 0)
+            if (Matrix.Get(input_shape, -1) <= 0)
                 throw new Exception();
 
             int?[] output_shape = input_shape.Copy();

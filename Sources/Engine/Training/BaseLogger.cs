@@ -32,7 +32,6 @@ namespace KerasSharp.Models
     {
         public int seen;
         private Dictionary<string, double> totals;
-        private Dictionary<string, List<string>> parameters;
 
         public BaseLogger()
         {
@@ -69,7 +68,7 @@ namespace KerasSharp.Models
         {
             if (logs != null)
             {
-                foreach (var k in this.parameters["metrics"])
+                foreach (string k in (IEnumerable<string>)this.parameters["metrics"])
                 {
                     if (this.totals.ContainsKey(k))
                     {

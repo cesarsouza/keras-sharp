@@ -56,9 +56,9 @@ namespace KerasSharp.Engine.Topology
         public List<Array> _initial_weights;
         public Dictionary<Tensor, IWeightConstraint> _constraints;
         public List<Tensor> _losses;
-        public List<Tensor> _updates;
+        public List<List<Tensor>> _updates;
         public Dictionary<string, List<Tensor>> _per_input_losses;
-        public Dictionary<string, List<Tensor>> _per_input_updates;
+        public Dictionary<string, List<List<Tensor>>> _per_input_updates;
         public bool _built;
 
         public bool supports_masking;
@@ -139,9 +139,9 @@ namespace KerasSharp.Engine.Topology
             this._non_trainable_weights = new List<Tensor>();
             this._constraints = new Dictionary<Tensor, IWeightConstraint>();  // dict {tensor: constraint instance}
             this._losses = new List<Tensor>();
-            this._updates = new List<Tensor>();
+            this._updates = new List<List<Tensor>>();
             this._per_input_losses = new Dictionary<string, List<Tensor>>();
-            this._per_input_updates = new Dictionary<string, List<Tensor>>();
+            this._per_input_updates = new Dictionary<string, List<List<Tensor>>>();
             this._built = false;
 
             // These lists will be filled via successive calls
@@ -220,7 +220,7 @@ namespace KerasSharp.Engine.Topology
             get { return this._losses; }
         }
 
-        public virtual List<Tensor> updates
+        public virtual List<List<Tensor>> updates
         {
             get { return this._updates; }
         }
@@ -279,7 +279,7 @@ namespace KerasSharp.Engine.Topology
         /// 
         /// <return>The created weight variable.</return>
         /// 
-        public Tensor add_weight(string name, int?[] shape, DataType dtype = DataType.DEFAULT_DTYPE,
+        public Tensor add_weight(string name, int?[] shape, DataType? dtype = null,
             IWeightInitializer initializer = null, IWeightRegularizer regularizer = null,
                    bool trainable = true, IWeightConstraint constraint = null)
         {
@@ -1040,7 +1040,7 @@ namespace KerasSharp.Engine.Topology
         /// <param name="inputs">Input tensor or list of inputs tensors to mark the updates as 
         ///   conditional on these inputs. If null is passed, the updates are assumed unconditional.</param>
         /// 
-        public void add_update(List<Tensor> updates, List<Tensor> inputs = null)
+        public void add_update(List<List<Tensor>> updates, List<Tensor> inputs = null)
         {
             if (updates == null || updates.Count == 0)
                 return;
@@ -1066,7 +1066,7 @@ namespace KerasSharp.Engine.Topology
             }
 
             if (!this._per_input_updates.ContainsKey(inputs_hash))
-                this._per_input_updates[inputs_hash] = new List<Tensor>();
+                this._per_input_updates[inputs_hash] = new List<List<Tensor>>();
             this._per_input_updates[inputs_hash].AddRange(updates);
         }
 
@@ -1076,7 +1076,7 @@ namespace KerasSharp.Engine.Topology
             return String.Join(", ", inputs.Select(x => str(id(x))));
         }
 
-        public virtual List<Tensor> get_updates_for(List<Tensor> inputs)
+        public virtual List<List<Tensor>> get_updates_for(List<Tensor> inputs)
         {
             string inputs_hash;
             if (inputs != null)
@@ -1086,7 +1086,7 @@ namespace KerasSharp.Engine.Topology
 
             if (this._per_input_updates.ContainsKey(inputs_hash))
                 return this._per_input_updates[inputs_hash];
-            return new List<Tensor>();
+            return new List<List<Tensor>>();
         }
 
 

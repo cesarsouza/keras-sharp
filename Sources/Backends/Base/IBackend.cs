@@ -53,9 +53,9 @@ namespace KerasSharp.Backends
 
         Tensor clip(Tensor norms, int v, int maxValue);
 
-        Tensor zeros(int[] shape, DataType dtype = DataType.DEFAULT_DTYPE, string name = null);
+        Tensor zeros(int[] shape, DataType? dtype = null, string name = null);
 
-        Tensor zeros(int?[] shape, DataType dtype = DataType.DEFAULT_DTYPE, string name = null);
+        Tensor zeros(int?[] shape, DataType? dtype = null, string name = null);
 
         float epsilon();
 
@@ -148,7 +148,7 @@ namespace KerasSharp.Backends
 
 
 
-        Tensor random_uniform(int?[] shape, double minval = 0.0, double maxval = 1.0, DataType dtype = DataType.DEFAULT_DTYPE, int? seed = null, string name = null);
+        Tensor random_uniform(int?[] shape, double minval = 0.0, double maxval = 1.0, DataType? dtype = null, int? seed = null, string name = null);
 
         Tensor l2_normalize(Tensor expected, int axis);
 
@@ -175,7 +175,7 @@ namespace KerasSharp.Backends
 
         Tensor variable<T>(T value, string name = null) where T : struct;
 
-        Tensor variable(Tensor tensor, DataType dtype = DataType.DEFAULT_DTYPE, string name = null);
+        Tensor variable(Tensor tensor, DataType? dtype, string name = null);
 
         Tensor in_train_phase(Func<Tensor> x, Func<Tensor> alt, bool? training);
 
@@ -200,7 +200,7 @@ namespace KerasSharp.Backends
 
         void batch_set_value(List<Tuple<Tensor, Array>> weight_value_tuples);
 
-        Tensor placeholder(int?[] shape = null, int? ndim = null, DataType? dtype = DataType.DEFAULT_DTYPE, bool sparse = false, string name = null);
+        Tensor placeholder(int?[] shape = null, int? ndim = null, DataType? dtype=null, bool sparse = false, string name = null);
 
         // Tensor placeholder(int ndim, TFDataType? dtype = Utils.DEFAULT_DTYPE, bool sparse = false, string name = null);
 
@@ -208,7 +208,7 @@ namespace KerasSharp.Backends
 
         void batch_set_value(List<(Tensor, Array)> tuples);
 
-        Tensor update_add(Tensor iterations, int v);
+        List<Tensor> update_add(Tensor iterations, int v);
 
 
         int?[] get_variable_shape(Tensor x);
@@ -220,20 +220,13 @@ namespace KerasSharp.Backends
 
         object learning_phase();
 
-        Function function(object inputs, List<Tensor> list, Func<List<Tensor>> updates, string name);
+        Function function(List<Tensor> inputs, List<Tensor> list, List<List<Tensor>> updates, string name);
 
-        Function function(object inputs, List<Tensor> list, List<Tensor> updates, string name);
+        List<Tensor> update(Tensor x, Tensor new_x);
 
+        Tensor truncated_normal(int[] shape, double v, double stddev, DataType? dtype, int? seed);
 
-        Function function<TSource>(List<Tensor> inputs, List<object> list, List<TSource> updates, string name);
-
-        Function function(List<Tensor> inputs, List<object> list, Func<List<object>> updates, string name);
-
-        Tensor update(Tensor x, Tensor new_x);
-
-        Tensor truncated_normal(int[] shape, double v, double stddev, DataType dtype, int? seed);
-
-        Tensor truncated_normal(int?[] shape, double v, double stddev, DataType dtype, int? seed);
+        Tensor truncated_normal(int?[] shape, double v, double stddev, DataType? dtype, int? seed);
 
         Tensor not_equal(Tensor weights, double v);
 

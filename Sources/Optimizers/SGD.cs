@@ -58,9 +58,6 @@ namespace KerasSharp.Optimizers
         private double initial_decay;
         private bool nesterov;
 
-        List<Tensor> updates;
-        List<Tensor> weights;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SGD" /> class.
         /// </summary>
@@ -81,10 +78,10 @@ namespace KerasSharp.Optimizers
             this.nesterov = nesterov;
         }
 
-        public List<Tensor> get_updates(List<Tensor> param, Dictionary<Tensor, IWeightConstraint> constraints, Tensor loss)
+        public List<List<Tensor>> get_updates(List<Tensor> param, Dictionary<Tensor, IWeightConstraint> constraints, Tensor loss)
         {
             var grads = this.get_gradients(loss, param);
-            this.updates = new List<Tensor>();
+            this.updates = new List<List<Tensor>>();
 
             var lr = this.lr;
             if (this.initial_decay > 0)

@@ -496,12 +496,12 @@ namespace KerasSharp.Engine.Topology
         /// <remarks>Will only include updates that are either inconditional, or conditional on inputs to this model
         /// (e.g.will not include updates that depend on tensors that aren't inputs to this model).</remarks>
         /// 
-        public override List<Tensor> updates
+        public override List<List<Tensor>> updates
         {
             get
             {
                 // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/topology.py#L1874
-                var updates = new List<Tensor>();
+                var updates = new List<List<Tensor>>();
                 foreach (Layer layer in this.layers)
                 {
                     if (layer.updates != null)
@@ -617,9 +617,9 @@ namespace KerasSharp.Engine.Topology
         /// 
         /// <returns>A list of update ops.</returns>
         /// 
-        public virtual List<Tensor> state_updates()
+        public virtual List<List<Tensor>> state_updates()
         {
-            var state_updates = new List<Tensor>(); ;
+            var state_updates = new List<List<Tensor>>();
             foreach (Layer layer in this.layers)
             {
                 if (layer.stateful == false)
