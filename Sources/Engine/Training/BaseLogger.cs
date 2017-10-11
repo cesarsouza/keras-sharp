@@ -24,6 +24,9 @@
 //    SOFTWARE.
 //
 
+using Accord.Math;
+using KerasSharp.Engine.Topology;
+using System;
 using System.Collections.Generic;
 
 namespace KerasSharp.Models
@@ -48,7 +51,7 @@ namespace KerasSharp.Models
             foreach (var item in logs)
             {
                 var k = item.Key;
-                var v = (int)item.Value;
+                double v = MatrixEx.To<double>(item.Value);
 
                 if (this.totals.ContainsKey(k))
                     this.totals[k] = totals[k] = v * batch_size;

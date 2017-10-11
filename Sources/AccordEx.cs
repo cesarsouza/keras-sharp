@@ -29,6 +29,8 @@ namespace Accord.Math
         public static Array Squeeze(this Array array)
         {
             int[] dimensions = array.GetLength().Where(x => x != 1).ToArray();
+            if (dimensions.Length == 0)
+                dimensions = new[] { 1 };
             Array res = Array.CreateInstance(array.GetInnerMostType(), dimensions);
             Buffer.BlockCopy(array, 0, res, 0, res.GetNumberOfBytes());
             return res;
@@ -185,7 +187,9 @@ namespace Accord.Math
             if (value is IConvertible)
                 return System.Convert.ChangeType(value, type);
 
-            MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static);
+            List<MethodInfo> methods = new List<MethodInfo>();
+            methods.AddRange(value.GetType().GetMethods(BindingFlags.Public | BindingFlags.Static));
+            methods.AddRange(type.GetMethods(BindingFlags.Public | BindingFlags.Static));
 
             foreach (MethodInfo m in methods)
             {

@@ -24,6 +24,8 @@
 //    SOFTWARE.
 //
 
+using Accord;
+using Accord.Math;
 using System;
 using System.Collections.Generic;
 
@@ -32,12 +34,31 @@ namespace KerasSharp.Models
     internal class Progbar
     {
         private object p;
-        private bool verbose;
+        private int verbose;
         private int target;
+        private Dictionary<string, List<double>> sum_values;
+        private List<string> unique_values;
+        private DateTime start;
+        private DateTime last_update;
+        private double interval;
+        private int total_width;
+        private int seen_so_far;
+        private int width;
 
-        public Progbar(object target, bool verbose)
+        public Progbar(int? target, int width = 30, int verbose = 1, double interval = 0.05)
         {
-            this.p = target;
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/utils/generic_utils.py#L219
+            this.width = width;
+            if (target == null)
+                target = -1;
+            this.target = target.Value;
+            this.sum_values = new Dictionary<string, List<double>>();
+            this.unique_values = new List<string>();
+            this.start = DateTime.Now;
+            this.last_update = DateTime.MinValue;
+            this.interval = interval;
+            this.total_width = 0;
+            this.seen_so_far = 0;
             this.verbose = verbose;
         }
 
@@ -46,24 +67,105 @@ namespace KerasSharp.Models
             this.target = target;
         }
 
-        internal void update(object batch_end)
+        public void update(int current, List<(string, object)> values = null, bool force = false)
         {
-            throw new NotImplementedException();
-        }
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/utils/generic_utils.py#L241
 
-        internal void update(int seen, List<int> log_values, bool force)
-        {
-            throw new NotImplementedException();
-        }
+            if (values == null)
+                values = new List<(string, object)>();
 
-        internal void update(int seen, List<object> log_values)
-        {
-            throw new NotImplementedException();
-        }
+            foreach (var (k, v) in values)
+            {
+                if (!this.sum_values.ContainsKey(k))
+                {
+                    this.sum_values[k] = new List<double>() { MatrixEx.To<double>(v) * (current - this.seen_so_far), current - this.seen_so_far };
+                    this.unique_values.Add(k);
+                }
+                else
+                {
+                    this.sum_values[k][0] += MatrixEx.To<double>(v) * (current - this.seen_so_far);
+                    this.sum_values[k][1] += (current - this.seen_so_far);
+                }
+            }
+            this.seen_so_far = current;
 
-        internal void update(int seen, List<object> log_values, bool force)
-        {
-            throw new NotImplementedException();
+
+            var now = DateTime.Now;
+            if (this.verbose > 0)
+            {
+                if (!force && (now - this.last_update).TotalSeconds < this.interval)
+                    return;
+            }
+
+            int prev_total_width = this.total_width;
+            Console.Write('\b' * prev_total_width);
+            Console.Write('\r');
+
+            if (this.target != -1)
+            {
+                int numdigits = (int)(Math.Floor(Math.Log10(this.target))) + 1;
+                string barstr = $"{numdigits}/{numdigits} [";
+                string bar = $"{current}/{this.target}";
+                double prog = current / this.target;
+                int prog_width = (int)(this.width * prog);
+                if (prog_width > 0)
+                {
+                    bar += ('=' * (prog_width - 1));
+                    if (current < this.target)
+                        bar += '>';
+                    else
+                        bar += '=';
+                }
+                bar += ('.' * (this.width - prog_width));
+                bar += ']';
+                Console.Write(bar);
+                this.total_width = bar.Length;
+            }
+
+            double time_per_unit;
+            if (current != 0)
+                time_per_unit = (now - this.start).TotalSeconds / (double)current;
+            else
+                time_per_unit = 0;
+            double eta = time_per_unit * (this.target - current);
+            string info = "";
+            if (current < this.target && this.target != -1)
+                info += $" - ETA: {eta}s";
+            else
+                info += $" - {now - this.start}s";
+            foreach (string k in this.unique_values)
+            {
+                info += $" - {k}:";
+
+                double avg = this.sum_values[k][0] / (double)Math.Max(1, this.sum_values[k][1]);
+                info += $" {avg}";
+            }
+
+            this.total_width += info.Length;
+            if (prev_total_width > this.total_width)
+                info += ((prev_total_width - this.total_width) * ' ');
+
+            Console.Write(info);
+            Console.Out.Flush();
+
+            if (current >= this.target)
+                Console.Write("\n");
+
+            if (this.verbose == 2)
+            {
+                if (current >= this.target)
+                {
+                    info = $"{(now - this.start)}s";
+                    foreach (string k in this.unique_values)
+                    {
+                        info += $" - {k}s:";
+                        double avg = this.sum_values[k][0] / (double)Math.Max(1, this.sum_values[k][1]);
+                        Console.Write(info + "\n");
+                    }
+                }
+            }
+
+            this.last_update = now;
         }
     }
 }

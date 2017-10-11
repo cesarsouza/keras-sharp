@@ -46,7 +46,7 @@ namespace KerasSharp.Backends
         private Variable[] metrics_outputs;
         private CNTK.Function metrics_func;
         private CNTK.Function loss;
-        CNTKBackend c;
+        private CNTKBackend c;
 
         public CNTKFunction(CNTKBackend c, List<Variable> inputs, CNTK.Function[] outputs, List<List<Tensor>> updates, string name)
         {
@@ -89,7 +89,8 @@ namespace KerasSharp.Backends
 
                 var update_func = C.Combine(new VariableVector(u_ops.Select(u => u.Output).ToArray()));
 
-                CNTK.Function[] grads = update_func.FindAllWithName("keras_grad_placeholder").ToArray();
+                CNTK.Function[] grads = update_func.Inputs.Where(x => x.Name == "keras_grad_placeholder").Select(x => x.ToFunction()).ToArray();
+                //CNTK.Function[] grads = update_func.FindAllWithName("keras_grad_placeholder").ToArray();
 
                 var u_list = new List<CNTK.Function>();
                 var p_list = new List<CNTK.Parameter>();
@@ -218,6 +219,8 @@ namespace KerasSharp.Backends
                 }
 
                 var output_values = new Dictionary<Variable, Value>();
+                foreach (Variable variable in this.unrelated_updates.Inputs)
+                    output_values[variable] = null;
                 this.unrelated_updates.Evaluate(input_dict, output_values, DeviceDescriptor.CPUDevice);
             }
 

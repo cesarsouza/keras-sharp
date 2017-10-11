@@ -41,7 +41,7 @@ namespace KerasSharp.Engine.Topology
 
     [DataContract]
     [DebuggerDisplay("{ToString()}")]
-    public abstract class Tensor
+    public abstract class Tensor : IConvertible
     {
         public IBackend K;
         public int?[] _keras_shape;
@@ -89,8 +89,97 @@ namespace KerasSharp.Engine.Topology
             object r = eval();
             Array arr = r as Array;
             if (arr != null)
-                return arr.Convert<T>();
+            {
+                Array c = arr.Convert<T>();
+                if (typeof(T).IsValueType)
+                    return (T)c.Squeeze().GetValue(0);
+            }
             return MatrixEx.To<T>(r);
+        }
+
+        public TypeCode GetTypeCode()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool ToBoolean(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public char ToChar(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public sbyte ToSByte(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public byte ToByte(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public short ToInt16(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public ushort ToUInt16(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int ToInt32(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public uint ToUInt32(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public long ToInt64(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public ulong ToUInt64(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public float ToSingle(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double ToDouble(IFormatProvider provider)
+        {
+            return (double)eval<double>();
+        }
+
+        public decimal ToDecimal(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public DateTime ToDateTime(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string ToString(IFormatProvider provider)
+        {
+            throw new NotImplementedException();
+        }
+
+        public object ToType(Type conversionType, IFormatProvider provider)
+        {
+            throw new NotImplementedException();
         }
 
 

@@ -275,7 +275,7 @@ namespace KerasSharp.Backends
             }
 
             TFOutput o;
-            if (shape != null && !(value is Array))
+            if (shape != null && shape.Length != 0 && !(value is Array))
             {
                 o = _constant(MatrixEx.Create(value.GetType(), _shape, value), In(dtype.Value), name);
             }

@@ -42,10 +42,30 @@ namespace KerasSharp.Backends
     using Accord;
     using CNTKDataType = CNTK.DataType;
     using DataType = KerasSharp.DataType;
+    using System.Runtime.CompilerServices;
+    using System.Diagnostics;
+
+    public class BackendCall
+    {
+        public string Member { get; set; }
+        public string Source { get; set; }
+        public int Line { get; set; }
+        public List<string> Parameters { get; set; }
+        public List<object> Values { get; set; }
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.Append($"K.{Member}(");
+            sb.Append(String.Join("    ", Enumerable.Zip(Parameters, Values, (a, b) => (a, b)).Select((p, v) => $"{p}: {v}")));
+            sb.Append(")");
+            return sb.ToString();
+        }
+    }
 
     public partial class CNTKBackend : BackendBase, IBackend
     {
-
+        public List<BackendCall> events;
         Stack<string> NAME_SCOPE_STACK;
         Dictionary<string, int> _UID_PREFIXES;
 
@@ -57,31 +77,88 @@ namespace KerasSharp.Backends
 
         public CNTKBackend()
         {
+            events = new List<BackendCall>();
             this.NAME_SCOPE_STACK = new Stack<string>();
             this._UID_PREFIXES = new Dictionary<string, int>();
             this.grad_parameter_dict = new Dictionary<CNTK.Function, Parameter>();
         }
 
+        private T log<T>(T item,
+            [CallerMemberName] string memberName = "",
+            [CallerFilePath] string sourceFilePath = "",
+            [CallerLineNumber] int sourceLineNumber = 0)
+           where T : class
+        {
+            var properties = typeof(T).GetProperties();
 
+            if (typeof(T).FullName.StartsWith("CNTK"))
+            {
+                if (item is CNTK.Function)
+                {
+                    OnFunction(item as CNTK.Function);
+                }
 
+                if (item is Variable)
+                {
+                    OnVariable(item as Variable);
+                }
+            }
+
+            events.Add(new BackendCall
+            {
+                Member = memberName,
+                Line = sourceLineNumber,
+                Parameters = properties.Select(x => x.Name).ToList(),
+                Values = properties.Select(x => x.GetValue(item)).ToList(),
+            });
+
+            return item;
+        }
+
+        private static void OnFunction(CNTK.Function v)
+        {
+            foreach (var vv in v.Outputs)
+            {
+                //if (vv.Uid.Contains("Reshape6"))
+                //    throw new Exception();
+                //if (vv.Uid.Contains("142"))
+                //    throw new Exception();
+                //if (vv.Uid.Contains("143"))
+                //    throw new Exception();
+            }
+        }
+
+        private static void OnVariable(Variable v)
+        {
+            if (v.Name.Contains("Reshape"))
+                throw new Exception();
+
+            if (v.Uid.Contains("Reshape"))
+                throw new Exception();
+
+        }
 
         public Tensor sqrt(Tensor x)
         {
+            log(new { x });
             return Out(C.Sqrt(In(x)));
         }
 
         public Tensor square(Tensor w)
         {
+            log(new { w });
             return Out(C.Square(In(w)));
         }
 
         public Tensor equal(Tensor x, Tensor y)
         {
+            log(new { x, y });
             return Out(C.Equal(In(x), In(y)));
         }
 
         public Tensor sum(List<Tensor> x, int[] axis = null, bool keepdims = false, string name = null)
         {
+            log(new { x, axis, keepdims, name });
             throw new NotImplementedException();
         }
 
@@ -116,6 +193,8 @@ namespace KerasSharp.Backends
 
         public Tensor argmax(Tensor x, int axis = -1)
         {
+            log(new { x, axis });
+
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/cntk_backend.py#L745
             var _axis = new Axis(axis);
             var _x = In(x);
@@ -127,6 +206,8 @@ namespace KerasSharp.Backends
 
         private CNTK.Function _reshape_dummy_dim(CNTK.Function x, params int[] axis)
         {
+            log(new { x, axis });
+
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/cntk_backend.py#L680
 
             List<int> shape = In(x.Output.Shape).ToList();
@@ -139,8 +220,8 @@ namespace KerasSharp.Backends
                 var result = x;
                 foreach (int index in _axis.Sorted().Reverse())
                 {
-                    result = C.Reshape(result, replacementShape: NDShape.CreateNDShape(new int[] { }),
-                        beginAxis: new Axis(index), endAxis: new Axis(index + 1));
+                    result = log(C.Reshape(result, replacementShape: NDShape.CreateNDShape(new int[] { }),
+                        beginAxis: new Axis(index), endAxis: new Axis(index + 1)));
                 }
                 return result;
             }
@@ -149,12 +230,15 @@ namespace KerasSharp.Backends
                 foreach (int index in _axis.Sorted().Reverse())
                     shape.RemoveAt(index);
 
-                return C.Reshape(x, NDShape.CreateNDShape(shape));
+                if (shape.Count == 1 && shape[0] < 0)
+                    shape[0] = NDShape.InferredDimension;
+                return log(C.Reshape(x, NDShape.CreateNDShape(shape))); 
             }
         }
 
         public Tensor sum(Tensor x, int axis, bool keepdims = false, string name = null)
         {
+            log(new { x, axis, keepdims, name });
             return sum(x, new[] { axis }, keepdims, name);
         }
 
@@ -165,6 +249,8 @@ namespace KerasSharp.Backends
 
         public Tensor zeros(int[] shape, DataType? dtype = null, string name = null)
         {
+            log(new { shape, dtype, name });
+
             if (dtype == null)
                 dtype = floatx();
 
@@ -173,6 +259,7 @@ namespace KerasSharp.Backends
 
         public Tensor zeros(int?[] shape, DataType? dtype, string name = null)
         {
+            log(new { shape, dtype, name });
             return zeros(shape.Select(x => x.Value).ToArray(), dtype, name);
         }
 
@@ -200,11 +287,13 @@ namespace KerasSharp.Backends
 
         public Tensor relu(Tensor x)
         {
+            log(new { x });
             return Out(C.ReLU(In(x).function));
         }
 
         public Tensor softmax(Tensor x)
         {
+            log(new { x });
             return Out(C.Softmax(In(x).function));
         }
 
@@ -275,15 +364,18 @@ namespace KerasSharp.Backends
 
         public Tensor bias_add(Tensor output, Tensor bias)
         {
-            CNTKTensor _x = In(output);
-            CNTKTensor _b = In(bias);
-            var _shape = In(_x.CNTK_Shape).Select(x => x < 0 ? 1 : x).ToArray();
+            using (this.name_scope("bias_add"))
+            {
+                CNTKTensor _x = In(output);
+                CNTKTensor _b = In(bias);
+                var _shape = In(_x.CNTK_Shape).Select(x => x < 0 ? 1 : x).ToArray();
 
-            var shape = NDShape.CreateNDShape(_shape);
+                var shape = NDShape.CreateNDShape(_shape);
 
-            var b = C.Reshape(_b, shape);
+                var b = log(C.Reshape(_b, shape));
 
-            return Out(new Variable(_x.function) + b);
+                return Out(new Variable(_x.function) + b);
+            }
         }
 
         public Tensor add<T>(Tensor a, T b)
@@ -348,6 +440,8 @@ namespace KerasSharp.Backends
 
         public object eval(Tensor tensor)
         {
+            log(new { tensor });
+
             CNTKTensor _tensor = In(tensor);
             Variable variable = _tensor.function;
             var inputs = new Dictionary<Variable, Value>();
@@ -409,10 +503,15 @@ namespace KerasSharp.Backends
 
         private CNTK.Function _remove_dims(CNTK.Function x, int[] axis, bool keepdims = false)
         {
-            if (keepdims == false)
-                return _reshape_dummy_dim(x, axis);
+            log(new { x, axis, keepdims });
 
-            return x;
+            using (this.name_scope("_remove_dims"))
+            {
+                if (keepdims == false)
+                    return _reshape_dummy_dim(x, axis);
+
+                return x;
+            }
         }
 
         public Tensor abs(Tensor input)
@@ -422,28 +521,33 @@ namespace KerasSharp.Backends
 
         public Tensor categorical_crossentropy(Tensor target, Tensor output, bool from_logits = false)
         {
-            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/cntk_backend.py#L1480
+            log(new { target, output, from_logits });
 
-            var _output = In(output);
-            var _target = In(target);
+            using (this.name_scope("categorical_crossentropy"))
+            {
+                // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/cntk_backend.py#L1480
 
-            if (from_logits)
-            {
-                var result = C.CrossEntropyWithSoftmax(_output, _target);
-                // cntk's result shape is (batch, 1), while keras expect (batch, )
-                CNTK.Function r = C.Reshape(result, NDShape.CreateNDShape(new int[] { }));
-                return Out(r);
-            }
-            else
-            {
-                // scale preds so that the class probas of each sample sum to 1
-                var o = C.ElementDivide(_output.function, C.ReduceSum(_output, Axis.EndStaticAxis()));
-                var eps = Constant.Scalar(epsilon(), DeviceDescriptor.CPUDevice);
-                var omeps = Constant.Scalar(1.0 - epsilon(), DeviceDescriptor.CPUDevice);
-                // avoid numerical instability with _EPSILON clipping
-                o = C.Clip(o, eps, omeps);
-                CNTK.Function r = C.Negate(C.ReduceSum(C.ElementTimes(_target, C.Log(_output)), Axis.EndStaticAxis()));
-                return Out(r);
+                var _output = In(output);
+                var _target = In(target);
+
+                if (from_logits)
+                {
+                    var result = C.CrossEntropyWithSoftmax(_output, _target);
+                    // cntk's result shape is (batch, 1), while keras expect (batch, )
+                    CNTK.Function r = log(C.Reshape(result, NDShape.CreateNDShape(new int[] { })));
+                    return Out(r);
+                }
+                else
+                {
+                    // scale preds so that the class probas of each sample sum to 1
+                    var o = C.ElementDivide(_output.function, C.ReduceSum(_output, Axis.EndStaticAxis()));
+                    var eps = Constant.Scalar(epsilon(), DeviceDescriptor.CPUDevice);
+                    var omeps = Constant.Scalar(1.0 - epsilon(), DeviceDescriptor.CPUDevice);
+                    // avoid numerical instability with _EPSILON clipping
+                    o = C.Clip(o, eps, omeps);
+                    CNTK.Function r = C.Negate(C.ReduceSum(C.ElementTimes(_target, C.Log(_output)), Axis.EndStaticAxis()));
+                    return Out(r);
+                }
             }
         }
 
@@ -464,6 +568,8 @@ namespace KerasSharp.Backends
 
         public Tensor binary_crossentropy(Tensor output, Tensor target, bool from_logits = false)
         {
+            log(new { output, target, from_logits });
+
             var _output = new Variable(In(output).function);
             var _target = new Variable(In(target).function);
 
@@ -518,6 +624,8 @@ namespace KerasSharp.Backends
 
         public Tensor variable(Tensor tensor, DataType? dtype = null, string name = null)
         {
+            log(new { tensor, dtype, name });
+
             if (dtype == null)
                 dtype = floatx();
 
@@ -547,6 +655,8 @@ namespace KerasSharp.Backends
 
         public Tensor constant<T>(T value, int?[] shape = null, KerasSharp.DataType? dtype = null, string name = null)
         {
+            log(new { value, shape, dtype, name });
+
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/cntk_backend.py#L305
 
             Constant _const = InGeneric(value, shape, dtype, name);
@@ -561,9 +671,17 @@ namespace KerasSharp.Backends
 
             CNTKDataType _dtype = In(dtype.Value);
 
-            int[] _shape = shape.Select(x => x.Value).ToArray();
+            int[] _shape;
+            if (shape == null && !(value is Array))
+            {
+                _shape = new int[] { };
+            }
+            else
+            {
+                _shape = shape.Select(x => x.Value).ToArray();
+            }
 
-            Constant c = _constant(value, shape, dtype, name);
+            Constant c = _constant(value, _shape, _dtype, name);
 
             if (!Out(c.Shape).IsEqual(_shape))
                 throw new Exception();
@@ -574,34 +692,32 @@ namespace KerasSharp.Backends
             throw new Exception();
         }
 
-        private Constant _constant<T>(T value, int?[] shape, DataType? dtype, string name)
+        private Constant _constant<T>(T value, int[] shape, CNTKDataType dtype, string name)
         {
             if (value is Array)
             {
-                NDArrayView x = In((value as Array).Convert(dtype.ToType()));
+                NDArrayView x = In((value as Array).Convert(Out(dtype).ToType()));
                 if (name != null)
                     return new Constant(x, name);
                 else return new Constant(x);
             }
 
-            if (value is double)
-                return Constant.Scalar<double>(MatrixEx.To<double>(value), device: DeviceDescriptor.CPUDevice);
-            if (value is float)
-                return Constant.Scalar<double>(MatrixEx.To<float>(value), device: DeviceDescriptor.CPUDevice);
+            if (shape == null || shape.Length == 0)
+            {
+                if (dtype == CNTKDataType.Double)
+                    return Constant.Scalar<double>(MatrixEx.To<double>(value), device: DeviceDescriptor.CPUDevice);
+                if (dtype == CNTKDataType.Float)
+                    return Constant.Scalar<float>(MatrixEx.To<float>(value), device: DeviceDescriptor.CPUDevice);
+            }
 
             if (name == null)
             {
-                return new Constant(shape: InShape(shape),
-                           dataType: In(dtype.Value),
-                           initValue: (dynamic)value,
-                           device: DeviceDescriptor.CPUDevice);
+                return new Constant(shape: InShape(shape), dataType: dtype,
+                    initValue: (dynamic)value, device: DeviceDescriptor.CPUDevice);
             }
 
-            return new Constant(shape: InShape(shape),
-                       dataType: In(dtype.Value),
-                       initValue: (dynamic)value,
-                       device: DeviceDescriptor.CPUDevice,
-                       name: name);
+            return new Constant(shape: InShape(shape), dataType: dtype,
+                initValue: (dynamic)value, device: DeviceDescriptor.CPUDevice, name: name);
         }
 
 
@@ -623,6 +739,8 @@ namespace KerasSharp.Backends
 
         public List<Tensor> gradients(Tensor loss, List<Tensor> variables)
         {
+            log(new { loss, variables });
+
             // cntk does not support gradients as symbolic op,
             // to hook up with keras model
             // we will return a constant as place holder, the cntk learner will apply
@@ -642,6 +760,8 @@ namespace KerasSharp.Backends
 
         public int?[] int_shape(Tensor tensor)
         {
+            log(new { tensor });
+
             NDShape shape = In(tensor).function.Output.Shape;
             int?[] r = new int?[shape.Rank];
             for (int i = 0; i < r.Length; i++)
@@ -685,6 +805,8 @@ namespace KerasSharp.Backends
 
         public Tensor placeholder(int?[] shape = null, int? ndim = null, DataType? dtype = null, bool sparse = false, string name = null)
         {
+            log(new { shape, ndim, dtype, sparse, name });
+
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/cntk_backend.py
             if (shape == null)
             {
@@ -748,6 +870,7 @@ namespace KerasSharp.Backends
 
         public bool is_sparse(Tensor tensor)
         {
+            log(new { tensor });
             return In(tensor).function.Output.IsSparse;
         }
 
@@ -780,7 +903,7 @@ namespace KerasSharp.Backends
 
         public List<Tensor> update(Tensor x, Tensor new_x)
         {
-            return new List<Tensor>() { Out(C.Assign(In(x), In(new_x))) };
+            return new List<Tensor>() { Out(log(C.Assign(In(x), In(new_x)))) };
         }
 
         public Tensor truncated_normal(int[] shape, double v, double stddev, DataType? dtype, int? seed)
@@ -800,7 +923,8 @@ namespace KerasSharp.Backends
 
         public Tensor reshape(Tensor x, int[] shape)
         {
-            return Out(C.Reshape(In(x).function, InShape(shape)));
+            log(new { x, shape });
+            return Out(log(C.Reshape(In(x).function, InShape(shape))));
         }
 
 
@@ -809,7 +933,7 @@ namespace KerasSharp.Backends
 
         public DataType floatx()
         {
-            return DataType.Float;
+            return DataType.Double;
         }
 
 

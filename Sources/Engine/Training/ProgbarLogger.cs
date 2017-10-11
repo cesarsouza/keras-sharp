@@ -37,7 +37,7 @@ namespace KerasSharp.Models
         private int target;
         private Progbar progbar;
         private int seen;
-        private List<object> log_values;
+        private List<(string, object)> log_values;
 
         public ProgbarLogger()
         {
@@ -62,7 +62,7 @@ namespace KerasSharp.Models
         public override void on_batch_begin(Dictionary<string, object> logs)
         {
             if (this.seen < this.target)
-                this.log_values = new List<object>();
+                this.log_values = new List<(string, object)>();
         }
 
         public override void on_batch_end(Dictionary<string, object> logs)
@@ -75,7 +75,7 @@ namespace KerasSharp.Models
             else
                 this.seen += batch_size;
 
-            foreach (var k in (string[])this.parameters["metrics"])
+            foreach (string k in (IEnumerable<string>)this.parameters["metrics"])
             {
                 if (logs.ContainsKey(k))
                     this.log_values.Add((k, logs[k]));
@@ -98,7 +98,7 @@ namespace KerasSharp.Models
                 else
                     this.target = (int)this.parameters["samples"];
 
-                this.progbar = new Progbar(target: this.target, verbose: this.verbose > 0);
+                this.progbar = new Progbar(target: this.target, verbose: this.verbose);
             }
 
             this.seen = 0;
@@ -108,10 +108,10 @@ namespace KerasSharp.Models
         {
             if (logs == null)
                 logs = new Dictionary<string, object>();
-            foreach (object k in (List<object>)this.parameters["metrics"])
+            foreach (string k in (IEnumerable<string>)this.parameters["metrics"])
             {
-                if (logs.ContainsKey((string)k))
-                    this.log_values.Add((k, logs[(string)k]));
+                if (logs.ContainsKey(k))
+                    this.log_values.Add((k, logs[k]));
             }
 
             if (this.verbose > 0)

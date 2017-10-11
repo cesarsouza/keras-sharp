@@ -58,6 +58,11 @@ namespace KerasSharp.Optimizers
         private double initial_decay;
         private bool nesterov;
 
+        public SGD()
+            : this(0.01, 0.0, 0.0, false)
+        {
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SGD" /> class.
         /// </summary>

@@ -24,6 +24,22 @@ namespace Tests
     {
 
         [Test]
+        public void crash()
+        {
+            CNTK.Function[] operations =
+            {
+                new Constant(shape: new[] {1, 2 }, dataType: CNTK.DataType.Double,
+                    initValue: 0.0, device: DeviceDescriptor.CPUDevice, name: "toto"),
+                new Constant(shape: new[] {1, 2 }, dataType: CNTK.DataType.Double,
+                    initValue: 0.0, device: DeviceDescriptor.CPUDevice, name: "toto"),
+            };
+
+            var update_func = CNTKLib.Combine(new VariableVector(operations.Select(u => u.Output).ToArray()));
+
+            CNTK.Function[] grads = update_func.FindAllWithName("toto").ToArray();
+        }
+
+        [Test]
         public void cntk_ndim_test()
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L508

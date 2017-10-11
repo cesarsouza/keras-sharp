@@ -420,7 +420,8 @@ namespace KerasSharp.Models
                 else
                 {
                     int?[] shape = this.internal_output_shapes[i];
-                    Tensor target = K.placeholder(ndim: shape.Length, name: name + "_target", sparse: K.is_sparse(this.outputs[i]), dtype: K.dtype(this.outputs[i]));
+                    //Tensor target = K.placeholder(ndim: shape.Length, name: name + "_target", sparse: K.is_sparse(this.outputs[i]), dtype: K.dtype(this.outputs[i]));
+                    Tensor target = K.placeholder(shape: shape, ndim: shape.Length, name: name + "_target", sparse: K.is_sparse(this.outputs[i]), dtype: K.dtype(this.outputs[i]));
                     this.targets.Add(target);
                     this._feed_targets.Add(target);
                 }

@@ -231,6 +231,9 @@ namespace KerasSharp
         public static T Get<T>(object obj)
             where T : class
         {
+            if (obj is T)
+                return (T)obj;
+
             if (obj is String)
                 return Get<T>(obj as string);
 

@@ -58,6 +58,12 @@
     <Reference Include="Accord, Version=3.7.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Accord.3.7.0\lib\net462\Accord.dll</HintPath>
     </Reference>
+    <Reference Include="Accord.DataSets, Version=3.7.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Accord.DataSets.3.7.0\lib\net462\Accord.DataSets.dll</HintPath>
+    </Reference>
+    <Reference Include="Accord.IO, Version=3.7.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Accord.IO.3.7.0\lib\net462\Accord.IO.dll</HintPath>
+    </Reference>
     <Reference Include="Accord.Math, Version=3.7.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Accord.Math.3.7.0\lib\net462\Accord.Math.dll</HintPath>
     </Reference>
@@ -67,8 +73,12 @@
     <Reference Include="Cntk.Core.Managed-2.2, Version=1.0.0.0, Culture=neutral, PublicKeyToken=21fff2ec8197defe, processorArchitecture=AMD64">
       <HintPath>..\..\packages\CNTK.CPUOnly.2.2.0\lib\net45\x64\Cntk.Core.Managed-2.2.dll</HintPath>
     </Reference>
+    <Reference Include="ICSharpCode.SharpZipLib, Version=0.86.0.518, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\SharpZipLib.0.86.0\lib\20\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
