@@ -277,7 +277,7 @@ namespace KerasSharp.Backends
             TFOutput o;
             if (shape != null && shape.Length != 0 && !(value is Array))
             {
-                o = _constant(MatrixEx.Create(value.GetType(), _shape, value), In(dtype.Value), name);
+                o = _constant(Matrix.Create(value.GetType(), _shape, value), In(dtype.Value), name);
             }
             else
             {
@@ -807,6 +807,11 @@ namespace KerasSharp.Backends
             return Out(tf.Sqrt(In(x)));
         }
 
+        public Tensor pow(Tensor x, Tensor p)
+        {
+            return Out(tf.Pow(In(x), In(p)));
+        }
+
         public Tensor square(Tensor w)
         {
             return Out(tf.Square(In(w)));
@@ -852,14 +857,14 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public List<Tensor> update(Tensor x, Tensor new_x)
+        public Tensor update(Tensor x, Tensor new_x)
         {
-            return new List<Tensor>() { Out(tf.Assign(In(x), In(new_x))) };
+            return Out(tf.Assign(In(x), In(new_x)));
         }
 
-        public List<Tensor> update_add(Tensor iterations, int v)
+        public Tensor update_add(Tensor x, int increment)
         {
-            throw new NotImplementedException();
+            return Out(tf.AssignAdd(In(x), _constant(increment)));
         }
 
         /// <summary>

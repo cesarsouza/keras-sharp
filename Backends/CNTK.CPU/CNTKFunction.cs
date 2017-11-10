@@ -90,7 +90,6 @@ namespace KerasSharp.Backends
                 var update_func = C.Combine(new VariableVector(u_ops.Select(u => u.Output).ToArray()));
 
                 CNTK.Function[] grads = update_func.Inputs.Where(x => x.Name == "keras_grad_placeholder").Select(x => x.ToFunction()).ToArray();
-                //CNTK.Function[] grads = update_func.FindAllWithName("keras_grad_placeholder").ToArray();
 
                 var u_list = new List<CNTK.Function>();
                 var p_list = new List<CNTK.Parameter>();
@@ -160,7 +159,7 @@ namespace KerasSharp.Backends
 
                 // cntk only support calculate on float, do auto cast here
                 if (t != typeof(float) && t != typeof(double))
-                    v = MatrixEx.Convert<double>(value);
+                    v = value.Convert<double>();
                 feed_dict[tensor] = v;
             }
 

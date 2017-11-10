@@ -86,7 +86,7 @@ namespace KerasSharp.Optimizers
             if (this.initial_decay > 0)
             {
                 lr = lr * (1.0 / (1.0 + this.decay * this.iterations));
-                this.updates.Add(K.update_add(this.iterations, 1));
+                this.updates.Add(new List<Tensor> { K.update_add(this.iterations, 1) });
             }
 
             for (int i = 0; i < parameters.Count; i++)
@@ -97,7 +97,7 @@ namespace KerasSharp.Optimizers
 
                 // update accumulator
                 Tensor new_a = this.rho * a + (1.0 - this.rho) * K.square(g);
-                this.updates.Add(K.update(a, new_a));
+                this.updates.Add(new List<Tensor> { K.update(a, new_a) });
                 Tensor new_p = p - lr * g / (K.sqrt(new_a) + this.epsilon);
 
                 // apply constraints
@@ -107,7 +107,7 @@ namespace KerasSharp.Optimizers
                     new_p = c.Call(new_p);
                 }
 
-                this.updates.Add(K.update(p, new_p));
+                this.updates.Add(new List<Tensor> { K.update(p, new_p) });
             }
 
             return this.updates;

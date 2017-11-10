@@ -633,9 +633,9 @@ namespace Tests
         public void sequential_guide_convnet()
         {
             // Generate dummy data
-            double[,,,] x_train = (double[,,,])Accord.Math.Matrix.Create(typeof(double), new int[] { 100, 100, 100, 3 }); // TODO: Add a better overload in Accord
+            double[,,,] x_train = (double[,,,])Accord.Math.Matrix.Zeros<double>(new int[] { 100, 100, 100, 3 }); // TODO: Add a better overload in Accord
             int[] y_train = Accord.Math.Vector.Random(100, min: 0, max: 10);
-            double[,,,] x_test = (double[,,,])Accord.Math.Matrix.Create(typeof(double), new int[] { 20, 100, 100, 3 }); // TODO: Add a better overload in Accord
+            double[,,,] x_test = (double[,,,])Accord.Math.Matrix.Zeros<double>(new int[] { 20, 100, 100, 3 }); // TODO: Add a better overload in Accord
             int[] y_test = Accord.Math.Vector.Random(100, min: 0, max: 10);
 
             var model = new Sequential();

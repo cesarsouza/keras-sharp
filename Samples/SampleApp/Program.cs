@@ -3,8 +3,10 @@ using CNTK;
 using KerasSharp;
 using KerasSharp.Activations;
 using KerasSharp.Backends;
+using KerasSharp.Losses;
 using KerasSharp.Metrics;
 using KerasSharp.Models;
+using KerasSharp.Optimizers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -18,26 +20,63 @@ namespace SampleApp
     {
         static void Main(string[] args)
         {
-            var iris = new Accord.DataSets.Iris();
-            double[,] x = iris.Instances.ToMatrix();
-            double[,] y = Matrix.OneHot(iris.ClassLabels);
+            /*
+            # Example from https://machinelearningmastery.com/tutorial-first-neural-network-python-keras/
 
+            from keras.models import Sequential
+            from keras.layers import Dense
+            import numpy
+
+            # fix random seed for reproducibility
+            numpy.random.seed(7)
+
+            # load pima indians dataset
+            dataset = numpy.loadtxt("pima-indians-diabetes.csv", delimiter=",")
+            # split into input (X) and output (Y) variables
+            X = dataset[:,0:8]
+            Y = dataset[:,8]
+
+            # create model
+            model = Sequential()
+            model.add(Dense(12, input_dim=8, activation='relu'))
+            model.add(Dense(8, activation='relu'))
+            model.add(Dense(1, activation='sigmoid'))
+
+            # Compile model
+            model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+            # Fit the model
+            model.fit(X, Y, epochs=150, batch_size=10)
+
+            # evaluate the model
+            scores = model.evaluate(X, Y)
+            print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
+            */
+
+            // Let's use CNTK for this example
             KerasSharp.Backends.Current.Switch("KerasSharp.Backends.CNTKBackend");
 
-            // For a single-input model with 2 classes (binary classification):
+            // Load the Pima Indians Data Set
+            var pima = new Accord.DataSets.PimaIndiansDiabetes();
+            double[,] x = pima.Instances.ToMatrix();
+            double[] y = pima.ClassLabels.ToDouble();
 
+            // Create the model
             var model = new Sequential();
-            model.Add(new Dense(10, input_dim: 4, activation: new ReLU()));
-            model.Add(new Dense(3));
-            model.Compile(optimizer: "sgd",
-                          loss: "mse",
-                          metrics: new [] { new Accuracy() });
+            model.Add(new Dense(12, input_dim: 8, activation: new ReLU()));
+            model.Add(new Dense(8, activation: new ReLU()));
+            model.Add(new Dense(1, activation: new Sigmoid()));
 
-            // Train the model, iterating on the data in batches of 32 samples
-            model.fit(x, y, epochs: 10, batch_size: 10);
+            // Compile the model
+            model.Compile(loss: new BinaryCrossEntropy(), optimizer: new Adam(), metrics: new Accuracy());
 
-            // Use the model to predict the class labels
-            double[,] pred = MatrixEx.To<double[,]>(model.predict(x, batch_size: 10)[0]);
+            // Fit the model
+            model.fit(x, y, epochs: 150, batch_size: 10);
+
+            // Evaluate the model
+            double[,] pred = model.predict(x, batch_size: 10)[0].To<double[,]>();
+
+            Console.ReadLine();
         }
     }
 }

@@ -92,7 +92,7 @@ namespace KerasSharp.Optimizers
             if (this.initial_decay > 0)
             {
                 lr = K.mul(lr, K.div(1.0, K.sum(1.0, K.mul(this.decay, this.iterations))));
-                this.updates.Add(K.update_add(this.iterations, 1));
+                this.updates.Add(new List<Tensor> { K.update_add(this.iterations, 1) });
             }
 
             // momentum
@@ -108,7 +108,7 @@ namespace KerasSharp.Optimizers
                 Tensor m = moments[i];
                 Tensor v = K.subtract(K.mul(this.momentum, m), K.mul(lr, g));  // velocity
 
-                this.updates.Add(K.update(m, v));
+                this.updates.Add(new List<Tensor> { K.update(m, v) });
 
                 Tensor new_p;
                 if (this.nesterov)
@@ -125,7 +125,7 @@ namespace KerasSharp.Optimizers
                 }
 
 
-                updates.Add(K.update(p, new_p));
+                updates.Add(new List<Tensor> { K.update(p, new_p) });
             }
 
             return this.updates;

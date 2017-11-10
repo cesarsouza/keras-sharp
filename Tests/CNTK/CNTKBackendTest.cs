@@ -106,7 +106,7 @@ namespace Tests
             using (var K = new CNTKBackend())
             {
                 Tensor a = K.placeholder(shape: new int?[] { null, 2 });
-                Tensor b = K.variable(array: new float[,] { { 1, 2, 3 },
+                Tensor b = K.variable(array: new double[,] { { 1, 2, 3 },
                                                             { 4, 5, 6 } });
 
                 var ab = K.dot(a, b);
@@ -218,7 +218,7 @@ namespace Tests
                                       //         { 0.,  0.,  0.,  0.}}
                 #endregion
 
-                float[,] actual = (float[,])a;
+                double[,] actual = (double[,])a;
                 Assert.AreEqual(3, actual.Rows());
                 Assert.AreEqual(4, actual.Columns());
 
@@ -340,11 +340,11 @@ namespace Tests
             {
                 var x = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
                 var y = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
-                Assert.AreEqual(new bool[,] { { true, true, true }, { true, true, true } }, K.equal(x, y).eval<bool>());
+                Assert.AreEqual(new bool[,] { { true, true, true }, { true, true, true } }, K.equal(x, y).eval<bool[,]>());
 
                 x = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
                 y = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 0 } });
-                Assert.AreEqual(new bool[,] { { true, true, true }, { true, true, false } }, (bool[,])K.equal(x, y).eval<bool>());
+                Assert.AreEqual(new bool[,] { { true, true, true }, { true, true, false } }, (bool[,])K.equal(x, y).eval<bool[,]>());
             }
         }
 

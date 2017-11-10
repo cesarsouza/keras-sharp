@@ -89,6 +89,8 @@ namespace KerasSharp.Backends
 
         Tensor mul(Tensor a, Tensor b);
 
+        Tensor pow(Tensor x, Tensor p);
+
         Tensor mul<T>(T a, Tensor b);
 
         Tensor mul<T>(Tensor a, T b);
@@ -208,7 +210,7 @@ namespace KerasSharp.Backends
 
         void batch_set_value(List<(Tensor, Array)> tuples);
 
-        List<Tensor> update_add(Tensor iterations, int v);
+        Tensor update_add(Tensor x, int increment);
 
 
         int?[] get_variable_shape(Tensor x);
@@ -222,7 +224,7 @@ namespace KerasSharp.Backends
 
         Function function(List<Tensor> inputs, List<Tensor> list, List<List<Tensor>> updates, string name);
 
-        List<Tensor> update(Tensor x, Tensor new_x);
+        Tensor update(Tensor x, Tensor new_x);
 
         Tensor truncated_normal(int[] shape, double v, double stddev, DataType? dtype, int? seed);
 

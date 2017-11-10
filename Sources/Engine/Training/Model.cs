@@ -116,9 +116,9 @@ namespace KerasSharp.Models
         }
 
 
-        public void Compile(IOptimizer optimizer, ILoss loss, IMetric metrics = null)
+        public void Compile(IOptimizer optimizer, ILoss loss, params IMetric[] metrics)
         {
-            Compile(optimizer, loss.dict_from_single(), new List<IMetric>() { metrics }.dict_from_single());
+            Compile(optimizer, loss.dict_from_single(), new List<IMetric>(metrics).dict_from_single());
         }
 
         /// <summary>
@@ -959,7 +959,7 @@ namespace KerasSharp.Models
                 if (stop != null)
                     throw new NotSupportedException();
                 else
-                    r.Add(MatrixEx.Get(arrays[i], dimension: 0, indices: start));
+                    r.Add(Accord.Math.Matrix.Get(arrays[i], dimension: 0, indices: start));
             }
 
             return r;
@@ -1051,7 +1051,7 @@ namespace KerasSharp.Models
                     foreach (var batch_out in batch_outs)
                     {
                         var shape = new int[] { samples }.Concatenate(batch_out.shape.Apply(x=>x.Value).Get(1, 0));
-                        outs.Add(MatrixEx.Zeros(batch_out.dtype.Value.ToType(), shape));
+                        outs.Add(Matrix.Zeros(batch_out.dtype.Value.ToType(), shape));
                     }
                 }
 
@@ -1059,7 +1059,7 @@ namespace KerasSharp.Models
                 {
                     var batch_out = batch_outs[i];
                     Array array = (Array)batch_out.eval();
-                    MatrixEx.Set(outs[i], dimension: 0, start: batch_start, end: batch_end, value: array);
+                    Accord.Math.Matrix.Set(outs[i], dimension: 0, start: batch_start, end: batch_end, value: array);
                     if (verbose == 1)
                         progbar.update(batch_end);
                 }
@@ -1383,7 +1383,7 @@ namespace KerasSharp.Models
                 Array array = arrays[i];
                 if (array.Rank == 1)
                 {
-                    array = array.ExpandDimensions(axis: 1);
+                    array = array.ExpandDimensions(dimension: 1);
                     arrays[i] = array;
                 }
             }

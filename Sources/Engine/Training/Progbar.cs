@@ -78,12 +78,12 @@ namespace KerasSharp.Models
             {
                 if (!this.sum_values.ContainsKey(k))
                 {
-                    this.sum_values[k] = new List<double>() { MatrixEx.To<double>(v) * (current - this.seen_so_far), current - this.seen_so_far };
+                    this.sum_values[k] = new List<double>() { v.To<double>() * (current - this.seen_so_far), current - this.seen_so_far };
                     this.unique_values.Add(k);
                 }
                 else
                 {
-                    this.sum_values[k][0] += MatrixEx.To<double>(v) * (current - this.seen_so_far);
+                    this.sum_values[k][0] += v.To<double>() * (current - this.seen_so_far);
                     this.sum_values[k][1] += (current - this.seen_so_far);
                 }
             }
@@ -98,25 +98,24 @@ namespace KerasSharp.Models
             }
 
             int prev_total_width = this.total_width;
-            Console.Write('\b' * prev_total_width);
+            Console.Write(new String('\b', prev_total_width));
             Console.Write('\r');
 
             if (this.target != -1)
             {
                 int numdigits = (int)(Math.Floor(Math.Log10(this.target))) + 1;
-                string barstr = $"{numdigits}/{numdigits} [";
-                string bar = $"{current}/{this.target}";
+                string bar = $"{current}/{this.target} [";
                 double prog = current / this.target;
                 int prog_width = (int)(this.width * prog);
                 if (prog_width > 0)
                 {
-                    bar += ('=' * (prog_width - 1));
+                    bar += (new String('=', prog_width - 1));
                     if (current < this.target)
                         bar += '>';
                     else
                         bar += '=';
                 }
-                bar += ('.' * (this.width - prog_width));
+                bar += (new String('.', this.width - prog_width));
                 bar += ']';
                 Console.Write(bar);
                 this.total_width = bar.Length;
@@ -143,7 +142,7 @@ namespace KerasSharp.Models
 
             this.total_width += info.Length;
             if (prev_total_width > this.total_width)
-                info += ((prev_total_width - this.total_width) * ' ');
+                info += new String(' ', prev_total_width - this.total_width);
 
             Console.Write(info);
             Console.Out.Flush();

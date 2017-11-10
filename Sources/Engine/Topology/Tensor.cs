@@ -86,15 +86,7 @@ namespace KerasSharp.Engine.Topology
 
         public object eval<T>()
         {
-            object r = eval();
-            Array arr = r as Array;
-            if (arr != null)
-            {
-                Array c = arr.Convert<T>();
-                if (typeof(T).IsValueType)
-                    return (T)c.Squeeze().GetValue(0);
-            }
-            return MatrixEx.To<T>(r);
+            return eval().To<T>();
         }
 
         public TypeCode GetTypeCode()

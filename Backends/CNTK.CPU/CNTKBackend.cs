@@ -144,6 +144,12 @@ namespace KerasSharp.Backends
             return Out(C.Sqrt(In(x)));
         }
 
+        public Tensor pow(Tensor x, Tensor p)
+        {
+            log(new { x, p });
+            return Out(C.Pow(In(x), In(p)));
+        }
+
         public Tensor square(Tensor w)
         {
             log(new { w });
@@ -232,7 +238,7 @@ namespace KerasSharp.Backends
 
                 if (shape.Count == 1 && shape[0] < 0)
                     shape[0] = NDShape.InferredDimension;
-                return log(C.Reshape(x, NDShape.CreateNDShape(shape))); 
+                return log(C.Reshape(x, NDShape.CreateNDShape(shape)));
             }
         }
 
@@ -453,6 +459,9 @@ namespace KerasSharp.Backends
             Value value = outputs[variable];
             var shape = value.Shape;
 
+            var r = value.GetDenseData<double>(_tensor.function);
+
+
             if (value.DataType == CNTKDataType.Double)
                 return Out<double>(variable, value, shape);
             if (value.DataType == CNTKDataType.Float)
@@ -664,7 +673,7 @@ namespace KerasSharp.Backends
             return Out(_const, shape);
         }
 
-        private Constant InGeneric<T>(T value, int?[] shape = null, KerasSharp.DataType? dtype = null, string name = null)
+        public Constant InGeneric<T>(T value, int?[] shape = null, KerasSharp.DataType? dtype = null, string name = null)
         {
             if (dtype == null)
                 dtype = floatx();
@@ -672,9 +681,16 @@ namespace KerasSharp.Backends
             CNTKDataType _dtype = In(dtype.Value);
 
             int[] _shape;
-            if (shape == null && !(value is Array))
+            if (shape == null)
             {
-                _shape = new int[] { };
+                if (value is Array)
+                {
+                    _shape = (value as Array).GetLength();
+                }
+                else
+                {
+                    _shape = new int[] { };
+                }
             }
             else
             {
@@ -692,7 +708,7 @@ namespace KerasSharp.Backends
             throw new Exception();
         }
 
-        private Constant _constant<T>(T value, int[] shape, CNTKDataType dtype, string name)
+        public Constant _constant<T>(T value, int[] shape, CNTKDataType dtype, string name)
         {
             if (value is Array)
             {
@@ -705,9 +721,9 @@ namespace KerasSharp.Backends
             if (shape == null || shape.Length == 0)
             {
                 if (dtype == CNTKDataType.Double)
-                    return Constant.Scalar<double>(MatrixEx.To<double>(value), device: DeviceDescriptor.CPUDevice);
+                    return Constant.Scalar<double>(value.To<double>(), device: DeviceDescriptor.CPUDevice);
                 if (dtype == CNTKDataType.Float)
-                    return Constant.Scalar<float>(MatrixEx.To<float>(value), device: DeviceDescriptor.CPUDevice);
+                    return Constant.Scalar<float>(value.To<float>(), device: DeviceDescriptor.CPUDevice);
             }
 
             if (name == null)
@@ -853,9 +869,11 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public List<Tensor> update_add(Tensor iterations, int v)
+        public Tensor update_add(Tensor x, int increment)
         {
-            throw new NotImplementedException();
+            CNTKTensor _x = In(x);
+            CNTK.Function result = _x + InGeneric(increment);
+            return Out(C.Assign(_x, result));
         }
 
         public int?[] get_variable_shape(Tensor x)
@@ -901,9 +919,9 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public List<Tensor> update(Tensor x, Tensor new_x)
+        public Tensor update(Tensor x, Tensor new_x)
         {
-            return new List<Tensor>() { Out(log(C.Assign(In(x), In(new_x)))) };
+            return Out(log(C.Assign(In(x), In(new_x))));
         }
 
         public Tensor truncated_normal(int[] shape, double v, double stddev, DataType? dtype, int? seed)
@@ -1001,7 +1019,7 @@ namespace KerasSharp.Backends
             if (shape.Rank == 0)
                 return r[0][0];
 
-            var rr = r.Apply(c => c.ToMatrix(In(shape), order: MatrixOrder.CRowMajor));
+            var rr = r.Apply(c => c.ToArray().Reshape(In(shape)));
 
             if (rr.Length == 1)
                 return rr[0];

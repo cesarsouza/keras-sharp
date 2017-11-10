@@ -56,7 +56,7 @@ namespace Tests
             model.Add(dense);
 
             float[,] input = Vector.Range(25).Reshape(5, 5).ToSingle();
-            float[,] output = MatrixEx.To<float[,]>(model.predict(input)[0]);
+            float[,] output = model.predict(input)[0].To<float[,]>();
 
             Assert.IsTrue(input.IsEqual(output, 1e-8f));
         }
@@ -74,7 +74,7 @@ namespace Tests
             model.Add(dense);
 
             float[,] input = Vector.Range(25).Reshape(5, 5).ToSingle();
-            float[,] output = MatrixEx.To<float[,]>(model.predict(input)[0]);
+            float[,] output = model.predict(input)[0].To<float[,]>();
 
             Assert.IsTrue(input.Add(42).IsEqual(output, 1e-8f));
         }
