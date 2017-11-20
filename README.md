@@ -84,11 +84,13 @@ Keras# currently supports TensorFlow and CNTK backends. If you would like to swi
 ```csharp
 KerasSharp.Backends.Current.Switch("KerasSharp.Backends.TensorFlowBackend");
 ```
-or
+or,
 ```csharp
 KerasSharp.Backends.Current.Switch("KerasSharp.Backends.CNTKBackend");
 ```
-or, if you would like to implement your own backend to your own preferred library, such as [DiffSharp](https://github.com/DiffSharp/DiffSharp), just provide your own implementation of the IBackend interface and specify it using:
+or,
+
+If you would like to implement your own backend to your own preferred library, such as [DiffSharp](https://github.com/DiffSharp/DiffSharp), just provide your own implementation of the IBackend interface and specify it using:
 ```csharp
 KerasSharp.Backends.Current.Switch("YourNamespace.YourOwnBackend");
 ```
