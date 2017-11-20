@@ -46,7 +46,7 @@ namespace KerasSharp.Backends
         Tensor sum(Tensor x, int[] axis = null, bool keepdims = false, string name = null);
         Tensor sum(List<Tensor> x, int[] axis = null, bool keepdims = false, string name = null);
         Tensor round(Tensor x);
-        Tensor argmax(Tensor x, int axis=-1);
+        Tensor argmax(Tensor x, int axis = -1);
         Tensor sum(Tensor x, int axis, bool keepdims = false, string name = null);
 
 
@@ -87,13 +87,13 @@ namespace KerasSharp.Backends
         Tensor hard_sigmoid(Tensor x);
 
 
-        Tensor mul(Tensor a, Tensor b);
+        Tensor mul(Tensor a, Tensor b, string name = null);
 
-        Tensor pow(Tensor x, Tensor p);
+        Tensor pow(Tensor x, Tensor p, string name = null);
 
-        Tensor mul<T>(T a, Tensor b);
+        Tensor mul<T>(T a, Tensor b, string name = null);
 
-        Tensor mul<T>(Tensor a, T b);
+        Tensor mul<T>(Tensor a, T b, string name = null);
 
         Tensor mul(List<Tensor> batch_outs, int length);
 
@@ -117,16 +117,16 @@ namespace KerasSharp.Backends
         Tensor add<T>(T a, Tensor b);
 
 
-        Tensor subtract(Tensor a, Tensor b);
+        Tensor subtract(Tensor a, Tensor b, string name = null);
 
-        Tensor subtract<T>(Tensor a, T b);
-
-
-        Tensor subtract<T>(T a, Tensor b);
+        Tensor subtract<T>(Tensor a, T b, string name = null);
 
 
+        Tensor subtract<T>(T a, Tensor b, string name = null);
 
-        Tensor dot(Tensor a, Tensor b);
+
+
+        Tensor dot(Tensor a, Tensor b, string name = null);
 
 
         Tensor elu(Tensor x, double alpha);
@@ -134,6 +134,8 @@ namespace KerasSharp.Backends
         Tensor sigmoid(Tensor x);
 
         Tensor softplus(Tensor x);
+
+        Tensor print_tensor(Tensor x, string message);
 
         Tensor softsign(Tensor x);
 
@@ -173,17 +175,19 @@ namespace KerasSharp.Backends
 
 
 
-        Tensor variable(Array array, string name = null);
+        Tensor variable(Array array, DataType? dtype = null, string name = null);
 
-        Tensor variable<T>(T value, string name = null) where T : struct;
+        Tensor variable<T>(T value, DataType? dtype = null, string name = null) where T : struct;
 
-        Tensor variable(Tensor tensor, DataType? dtype, string name = null);
+        Tensor variable(Tensor tensor, DataType? dtype = null, string name = null);
 
         Tensor in_train_phase(Func<Tensor> x, Func<Tensor> alt, bool? training);
 
         DataType? dtype(Tensor input_tensor);
 
         Tensor constant<T>(T value, int?[] shape = null, DataType? dtype = null, string name = null);
+
+        Tensor transpose(Tensor tensor);
 
         int get_uid(string prefix);
 
@@ -192,17 +196,17 @@ namespace KerasSharp.Backends
         int?[] int_shape(Tensor tensor);
 
 
-        IDisposable name_scope(string name);
+        NameScope name_scope(string name);
 
         Tensor clip_norm(Tensor g, double clipnorm, Tensor norm);
 
-        Tensor identity(Tensor x);
+        Tensor identity(Tensor x, string name = null);
 
         List<Array> batch_get_value(List<Tensor> weights);
 
         void batch_set_value(List<Tuple<Tensor, Array>> weight_value_tuples);
 
-        Tensor placeholder(int?[] shape = null, int? ndim = null, DataType? dtype=null, bool sparse = false, string name = null);
+        Tensor placeholder(int?[] shape = null, int? ndim = null, DataType? dtype = null, bool sparse = false, string name = null);
 
         // Tensor placeholder(int ndim, TFDataType? dtype = Utils.DEFAULT_DTYPE, bool sparse = false, string name = null);
 
@@ -210,7 +214,7 @@ namespace KerasSharp.Backends
 
         void batch_set_value(List<(Tensor, Array)> tuples);
 
-        Tensor update_add(Tensor x, int increment);
+        Tensor update_add<T>(Tensor x, T increment, string name = null) where T : struct;
 
 
         int?[] get_variable_shape(Tensor x);
@@ -224,14 +228,14 @@ namespace KerasSharp.Backends
 
         Function function(List<Tensor> inputs, List<Tensor> list, List<List<Tensor>> updates, string name);
 
-        Tensor update(Tensor x, Tensor new_x);
+        Tensor update(Tensor x, Tensor new_x, string name = null);
 
         Tensor truncated_normal(int[] shape, double v, double stddev, DataType? dtype, int? seed);
 
         Tensor truncated_normal(int?[] shape, double v, double stddev, DataType? dtype, int? seed);
 
-        Tensor not_equal(Tensor weights, double v);
+        Tensor not_equal<T>(Tensor weights, T v) where T : struct;
 
-        Tensor bias_add(Tensor output, Tensor bias);
+        Tensor bias_add(Tensor output, Tensor bias, string name = null);
     }
 }

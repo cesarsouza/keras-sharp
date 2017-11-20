@@ -27,6 +27,7 @@
 namespace KerasSharp.Losses
 {
     using KerasSharp.Engine.Topology;
+    using System;
     using System.Runtime.Serialization;
     
 
@@ -47,7 +48,11 @@ namespace KerasSharp.Losses
         /// 
         public Tensor Call(Tensor expected, Tensor actual, Tensor sample_weight = null, Tensor mask = null)
         {
-            return K.categorical_crossentropy(expected, actual);
+            if (sample_weight != null || mask != null)
+                throw new NotImplementedException();
+
+            using (K.name_scope("categorical_crossentropy"))
+                return K.categorical_crossentropy(expected, actual);
         }
     }
 }

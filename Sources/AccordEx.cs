@@ -17,6 +17,115 @@ namespace Accord.Math
 
         #region Staging area - remove after those operations have been implemented in Accord.NET
 
+        /// <summary>
+        ///   Returns a subtensor extracted from the current tensor.
+        /// </summary>
+        /// 
+        /// <param name="source">The tensor to return the subvector from.</param>
+        /// <param name="dimension">The dimension from which the indices should be extracted.</param>
+        /// <param name="indices">Array of indices.</param>
+        /// 
+        public static Array GetEx(this Array source, int dimension, int[] indices)
+        {
+            int[] lengths = source.GetLength();
+            lengths[dimension] = indices.Length;
+
+            Type type = source.GetInnerMostType();
+            Array r = Array.CreateInstance(type, lengths);
+
+            for (int i = 0; i < indices.Length; i++)
+                SetEx(r, dimension: dimension, index: i, value: GetEx(source, dimension: dimension, index: indices[i]));
+
+            return r;
+        }
+
+        /// <summary>
+        ///   Returns a subtensor extracted from the current tensor.
+        /// </summary>
+        /// 
+        /// <param name="source">The tensor to return the subvector from.</param>
+        /// <param name="dimension">The dimension from which the indices should be extracted.</param>
+        /// <param name="index">The index.</param>
+        /// 
+        public static Array GetEx(this Array source, int dimension, int index)
+        {
+            return GetEx(source, dimension, index, index + 1);
+        }
+
+        /// <summary>
+        ///   Returns a subtensor extracted from the current tensor.
+        /// </summary>
+        /// 
+        /// <param name="source">The tensor to return the subvector from.</param>
+        /// <param name="dimension">The dimension from which the indices should be extracted.</param>
+        /// <param name="start">The start index.</param>
+        /// <param name="end">The end index.</param>
+        /// 
+        public static Array GetEx(this Array source, int dimension, int start, int end)
+        {
+            if (dimension != 0)
+            {
+                throw new NotImplementedException("Retrieving dimensions higher than zero has not been implemented" +
+                    " yet. Please open a new issue at the issue tracker if you need such functionality.");
+            }
+
+            int[] length = source.GetLength();
+            length = length.RemoveAt(dimension);
+            int rows = end - start;
+            if (length.Length == 0)
+                length = new int[] { rows
+    };
+
+            Type type = source.GetInnerMostType();
+            Array r = Array.CreateInstance(type, length);
+            int rowSize = source.Length / source.GetLength(dimension);
+#pragma warning disable CS0618 // Type or member is obsolete
+            Buffer.BlockCopy(source, start * rowSize * Marshal.SizeOf(type), r, 0, rows * rowSize * Marshal.SizeOf(type));
+#pragma warning restore CS0618 // Type or member is obsolete
+            return r;
+        }
+
+        /// <summary>
+        ///   Sets a region of a matrix to the given values.
+        /// </summary>
+        /// 
+        /// <param name="destination">The matrix where elements will be set.</param>
+        /// <param name="dimension">The dimension where indices refer to.</param>
+        /// <param name="value">The matrix of values to which matrix elements will be set.</param>
+        /// <param name="index">The index.</param>
+        /// 
+        public static void SetEx(this Array destination, int dimension, int index, Array value)
+        {
+            SetEx(destination, dimension, index, index + 1, value);
+        }
+
+        /// <summary>
+        ///   Sets a region of a matrix to the given values.
+        /// </summary>
+        /// 
+        /// <param name="destination">The matrix where elements will be set.</param>
+        /// <param name="dimension">The dimension where indices refer to.</param>
+        /// <param name="value">The matrix of values to which matrix elements will be set.</param>
+        /// <param name="start">The start index.</param>
+        /// <param name="end">The end index.</param>
+        /// 
+        public static void SetEx(this Array destination, int dimension, int start, int end, Array value)
+        {
+            if (dimension != 0)
+            {
+                throw new NotImplementedException("Retrieving dimensions higher than zero has not been implemented" +
+                    " yet. Please open a new issue at the issue tracker if you need such functionality.");
+            }
+
+            Type type = destination.GetInnerMostType();
+            int rowSize = destination.Length / destination.GetLength(0);
+            int length = end - start;
+#pragma warning disable CS0618 // Type or member is obsolete
+            Buffer.BlockCopy(value, 0, destination, start * rowSize * Marshal.SizeOf(type), length * rowSize * Marshal.SizeOf(type));
+#pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+
         //public static Array ExpandDimensions(this Array array, int axis)
         //{
         //    List<int> dimensions = array.GetLength().ToList();

@@ -43,7 +43,7 @@ namespace KerasSharp.Models
     using Accord.Math;
     using System.Collections;
     using KerasSharp.Optimizers;
-
+    using Accord;
 
     public enum Shuffle
     {
@@ -64,7 +64,7 @@ namespace KerasSharp.Models
     public abstract class Function
     {
         public Function()
-        { 
+        {
         }
 
         public abstract List<Tensor> Call(List<Array> ins);
@@ -92,7 +92,7 @@ namespace KerasSharp.Models
         public List<Tensor> targets;
         protected List<Tensor> _feed_targets;
         public Dictionary<string, List<IMetric>> metrics;
-        public List<string> metrics_names;
+        public virtual List<string> metrics_names { get; set; }
         public List<Tensor> metrics_tensors;
         protected List<Tensor> _feed_sample_weights;
         protected List<Tensor> _collected_trainable_weights;
@@ -451,7 +451,12 @@ namespace KerasSharp.Models
 
                     Tensor output_loss;
                     using (K.name_scope(this.output_names[i] + "_loss"))
+                    {
                         output_loss = weighted_loss.Call(y_true, y_pred, sample_weight, mask);
+                        output_loss = K.identity(output_loss, "final");
+                    }
+
+                    total_loss = output_loss;
 
                     if (this.outputs.Count > 1)
                     {
@@ -460,84 +465,91 @@ namespace KerasSharp.Models
                     }
 
                     if (total_loss == null)
-                        total_loss = K.mul(loss_weight, output_loss);
+                        total_loss = loss_weight * output_loss;
                     else
-                        total_loss = K.add(total_loss, K.mul(loss_weight, output_loss));
-
+                        total_loss += loss_weight * output_loss;
                 }
 
                 if (total_loss == null)
                 {
                     if (this.losses.Count == 0)
                         throw new Exception($"The model cannot be compiled because it has no loss to optimize.");
-                    else total_loss = K.constant(0.0);
+                    else
+                        total_loss = K.constant(0);
                 }
+
+                total_loss = K.identity(total_loss, "output_loss");
 
                 // Add regularization penalties
                 // and other layer-specific losses.
                 foreach (Tensor loss_tensor in this.losses)
+                    total_loss += loss_tensor;
+
+                total_loss = K.identity(total_loss, "total_loss");
+            }
+
+            // Collect metrics
+            using (K.name_scope("metrics"))
+            {
+                // List of same size as output_names.
+                // contains tuples (metrics for output, names of metrics).
+                List<List<IMetric>> nested_metrics = _collect_metrics(metrics, this.output_names);
+
+                void append_metric(int layer_num, string metric_name, Tensor metric_tensor)
                 {
-                    total_loss = K.add(total_loss, loss_tensor);
+                    // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L939
+                    if (this.output_names.Count > 1)
+                        metric_name = this.output_layers[layer_num].name + '_' + metric_name;
+
+                    this.metrics_names.Add(metric_name);
+                    this.metrics_tensors.Add(metric_tensor);
                 }
-            }
 
-            // List of same size as output_names.
-            // contains tuples (metrics for output, names of metrics).
-            List<List<IMetric>> nested_metrics = _collect_metrics(metrics, this.output_names);
-
-            void append_metric(int layer_num, string metric_name, Tensor metric_tensor)
-            {
-                // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L939
-                if (this.output_names.Count > 1)
-                    metric_name = this.output_layers[layer_num].name + '_' + metric_name;
-
-                this.metrics_names.Add(metric_name);
-                this.metrics_tensors.Add(metric_tensor);
-            }
-
-            for (int i = 0; i < this.outputs.Count; i++)
-            {
-                if (skip_indices.Contains(i))
-                    continue;
-
-                Tensor y_true = this.targets[i];
-                Tensor y_pred = this.outputs[i];
-                List<IMetric> output_metrics = nested_metrics[i];
-
-                foreach (IMetric metric in output_metrics)
+                for (int i = 0; i < this.outputs.Count; i++)
                 {
-                    if (metric is Accuracy)
+                    if (skip_indices.Contains(i))
+                        continue;
+
+                    Tensor y_true = this.targets[i];
+                    Tensor y_pred = this.outputs[i];
+                    List<IMetric> output_metrics = nested_metrics[i];
+
+                    for (int j = 0; j < output_metrics.Count; j++)
                     {
-                        IMetric acc_fn;
+                        IMetric metric = output_metrics[j];
+                        string metricName = metrics_names[j];
 
-                        // custom handling of accuracy
-                        // (because of class mode duality)
-                        int?[] output_shape = this.internal_output_shapes[i];
+                        if (metric is Accuracy)
+                        {
+                            metricName = "acc";
 
-                        if (output_shape.Get(-1) == 1 || this.loss_functions[i] is BinaryCrossEntropy)
-                        {
-                            // case: binary accuracy
-                            acc_fn = new BinaryAccuracy();
-                        }
-                        else if (this.loss_functions[i] is SparseCategoricalCrossEntropy)
-                        {
-                            // case: categorical accuracy with sparse targets
-                            acc_fn = new SparseCategoricalAccuracy();
-                        }
-                        else
-                        {
-                            acc_fn = new CategoricalAccuracy();
+                            // custom handling of accuracy
+                            // (because of class mode duality)
+                            int?[] output_shape = this.internal_output_shapes[i];
+
+                            if (output_shape.Get(-1) == 1 || this.loss_functions[i] is BinaryCrossEntropy)
+                            {
+                                // case: binary accuracy
+                                metric = new BinaryAccuracy();
+                            }
+                            else if (this.loss_functions[i] is SparseCategoricalCrossEntropy)
+                            {
+                                // case: categorical accuracy with sparse targets
+                                metric = new SparseCategoricalAccuracy();
+                            }
+                            else
+                            {
+                                metric = new CategoricalAccuracy();
+                            }
                         }
 
-                        var masked_fn = _masked_objective(acc_fn);
-                        append_metric(i, "acc", masked_fn.Call(y_true, y_pred, mask: masks[i]));
-                    }
-                    else
-                    {
-                        // Different from the original Keras implementation:
-                        var masked_metric_fn = _masked_objective(metric);
-                        var metric_result = masked_metric_fn.Call(y_true, y_pred, mask: masks[i]);
-                        append_metric(i, metrics_names[i], metric_result);
+                        using (K.name_scope($"{this.output_names[i]}_{metricName}"))
+                        {
+                            // Different from the original Keras implementation:
+                            var masked_metric_fn = _masked_objective(metric);
+                            var metric_value = masked_metric_fn.Call(y_true, y_pred, mask: masks[i]);
+                            append_metric(i, metricName, metric_value);
+                        }
                     }
                 }
             }
@@ -629,6 +641,9 @@ namespace KerasSharp.Models
 
             Tensor masked(Tensor y_true, Tensor y_pred, Tensor mask = null)
             {
+                y_true = K.identity(y_true, "y_true");
+                y_pred = K.identity(y_pred, "y_pred");
+
                 // score_array has ndim >= 2
                 Tensor score_array = metric_fn.Call(y_true, y_pred);
 
@@ -642,7 +657,8 @@ namespace KerasSharp.Models
                     //  to the number of unmasked samples.
                     score_array /= K.mean(mask);
                 }
-                return K.mean(score_array);
+
+                return K.mean(K.cast(score_array, K.floatx()), name: "score_array/mean");
             }
 
             return new CustomMetric(masked);
@@ -667,6 +683,10 @@ namespace KerasSharp.Models
 
             Tensor weighted(Tensor y_true, Tensor y_pred, Tensor weights, Tensor mask = null)
             {
+                y_true = K.identity(y_true, "y_true");
+                y_pred = K.identity(y_pred, "y_pred");
+                weights = K.identity(weights, "weights");
+
                 // score_array has ndim >= 2
                 Tensor score_array = fn.Call(y_true, y_pred);
 
@@ -680,6 +700,7 @@ namespace KerasSharp.Models
                     //  to the number of unmasked samples.
                     score_array = score_array / K.mean(mask);
                 }
+
                 // reduce score_array to same ndim as weight array
                 int? ndim = K.ndim(score_array);
                 int? weight_ndim = K.ndim(weights);
@@ -689,10 +710,13 @@ namespace KerasSharp.Models
                 // apply sample weighting
                 if (weights != null)
                 {
-                    score_array = score_array * weights;
-                    score_array = score_array / K.mean(K.cast(K.not_equal(weights, 0), K.floatx()));
+                    var weightMean = K.mean(K.cast(K.not_equal(weights, 0), K.floatx()), name: "weightMean");
+                    score_array *= weights;
+                    score_array /= weightMean;
+                    score_array = K.identity(score_array, name: "weighted_score_array");
                 }
-                return K.mean(score_array);
+
+                return K.mean(score_array, name: "score_array/mean");
             }
 
             return new CustomLoss(weighted);
@@ -721,9 +745,6 @@ namespace KerasSharp.Models
 
         public void _make_test_function()
         {
-            if (this.test_function == null)
-                throw new Exception("You must compile your model before using it.");
-
             if (this.test_function == null)
             {
                 var inputs = this._feed_inputs.Concat(this._feed_targets).Concat(this._feed_sample_weights).ToList();
@@ -907,7 +928,7 @@ namespace KerasSharp.Models
                     {
                         if (do_validation)
                         {
-                            List<Tensor> val_outs = this._test_loop(val_f, val_ins, batch_size: batch_size, verbose: 0);
+                            double[] val_outs = this._test_loop(val_f, val_ins, batch_size: batch_size, verbose: 0);
 
                             // Same labels assumed.
                             for (int i = 0; i < out_labels.Count; i++)
@@ -959,7 +980,7 @@ namespace KerasSharp.Models
                 if (stop != null)
                     throw new NotSupportedException();
                 else
-                    r.Add(Accord.Math.Matrix.Get(arrays[i], dimension: 0, indices: start));
+                    r.Add(arrays[i].GetEx(dimension: 0, indices: start));
             }
 
             return r;
@@ -1050,7 +1071,7 @@ namespace KerasSharp.Models
                 {
                     foreach (var batch_out in batch_outs)
                     {
-                        var shape = new int[] { samples }.Concatenate(batch_out.shape.Apply(x=>x.Value).Get(1, 0));
+                        var shape = new int[] { samples }.Concatenate(batch_out.shape.Apply(x => x.Value).Get(1, 0));
                         outs.Add(Matrix.Zeros(batch_out.dtype.Value.ToType(), shape));
                     }
                 }
@@ -1059,7 +1080,7 @@ namespace KerasSharp.Models
                 {
                     var batch_out = batch_outs[i];
                     Array array = (Array)batch_out.eval();
-                    Accord.Math.Matrix.Set(outs[i], dimension: 0, start: batch_start, end: batch_end, value: array);
+                    outs[i].SetEx(dimension: 0, start: batch_start, end: batch_end, value: array);
                     if (verbose == 1)
                         progbar.update(batch_end);
                 }
@@ -1083,8 +1104,10 @@ namespace KerasSharp.Models
         ///    the display labels for the scalar outputs.
         /// </returns>
         /// 
-        public List<Tensor> _test_loop(Function f, List<Array> ins, int batch_size = 32, int verbose = 0)
+        public double[] _test_loop(Function f, List<Array> ins, int batch_size = 32, int verbose = 0)
         {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L1253
+
             int samples;
             if (ins != null)
             {
@@ -1124,23 +1147,18 @@ namespace KerasSharp.Models
                 var ins_batch = _slice_arrays(ins, batch_ids);
                 //}
 
-                var batch_outs = f.Call(ins_batch);
+                List<Tensor> batch_outs = f.Call(ins_batch);
+
                 if (batch_index == 0)
                 {
                     foreach (Tensor batch_out in batch_outs)
-                        outs.Add(K.constant(0.0));
-
-                    for (int i = 0; i < batch_outs.Count; i++)
-                    {
-                        Tensor batch_out = batch_outs[i];
-                        outs[i] = K.add(outs[i], K.mul(batch_out, batch_ids.Length));
-                    }
+                        outs.Add(K.constant(0));
                 }
-                else
+
+                for (int i = 0; i < batch_outs.Count; i++)
                 {
-                    if (batch_index == 0)
-                        outs.Add(K.constant(0.0));
-                    outs[0] = K.add(outs[0], K.mul(batch_outs, batch_ids.Length));
+                    Tensor batch_out = batch_outs[i];
+                    outs[i] += batch_out * batch_ids.Length;
                 }
 
                 if (verbose == 1)
@@ -1148,10 +1166,9 @@ namespace KerasSharp.Models
             }
 
             for (int i = 0; i < outs.Count; i++)
-                outs[i] = K.div(outs[i], samples);
+                outs[i] = outs[i] / samples;
 
-            //return outs;
-            return null;
+            return outs.Select(x => x.eval().To<double>()).ToArray();
         }
 
         private object _slice_arrays(List<Tensor> ins, int[] batch_ids)
@@ -1185,7 +1202,7 @@ namespace KerasSharp.Models
             List<Dictionary<string, double>> class_weights = _standardize_class_weights(class_weight, this._feed_output_names).to_list();
 
             sample_weights = Vector.Range(_feed_sample_weight_modes.Count).Select(i =>
-                (Array)_standardize_weights(yy[i], sample_weights[i], class_weights[i], this._feed_sample_weight_modes[i])).ToList();
+                _standardize_weights(yy[i], sample_weights[i], class_weights[i], this._feed_sample_weight_modes[i])).ToList();
 
             _check_array_lengths(xx, yy, sample_weights);
             _check_loss_and_target_compatibility(yy, this._feed_loss_fns, this._feed_output_shapes);
@@ -1204,7 +1221,7 @@ namespace KerasSharp.Models
             return _standardize_sample_or_class_weights(class_weight, output_names, "class_weight");
         }
 
-        private double[] _standardize_weights(Array y, Array sample_weight, Dictionary<string, double> class_weight, string sample_weight_mode)
+        private Array _standardize_weights(Array y, Array sample_weight, Dictionary<string, double> class_weight, string sample_weight_mode)
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L499
             if (sample_weight_mode != null)
@@ -1251,8 +1268,7 @@ namespace KerasSharp.Models
             {
                 if (sample_weight_mode == null)
                 {
-                    // TODO: Should use Vector.Ones
-                    return Vector.Create(y.GetLength(0), (double)1);
+                    return Vector.Ones<float>(y.GetLength(0));
                 }
                 else
                 {
@@ -1449,7 +1465,7 @@ namespace KerasSharp.Models
                     {
                         throw new ArgumentException(
                             $"You are passing a target array of shape {str(y.GetLength())} while using as loss `categorical_crossentropy`. `categorical_crossentropy` expects targets to be binary matrices (1s and 0s) of shape (samples, classes). If your targets are integer classes, you can convert them to the expected format via:" +
-@"
+    @"
 ```
 from keras.utils.np_utils import to_categorical
 y_binary = to_categorical(y_int)
@@ -1644,7 +1660,7 @@ y_binary = to_categorical(y_int)
                 val_ins = new List<Array>();
                 if (this.uses_learning_phase && !(K.learning_phase() is int))
                 {
-                    val_ins = (val_xx.Concat(val_yy).Concat(val_sample_weightsx).Concat(new List<Array>() { new[] { 0.0 } })).ToList();
+                    val_ins = (val_xx.Concat(val_yy).Concat(val_sample_weightsx).Concat(new List<Array>() { new[] { 0 } })).ToList();
                 }
                 else
                 {
@@ -1672,7 +1688,7 @@ y_binary = to_categorical(y_int)
 
                 if (this.uses_learning_phase && !(K.learning_phase() is int))
                 {
-                    val_ins = val_xx.Concat(val_yy).Concat(val_sample_weights).Concat(new List<Array>() { new[] { 0.0 } }).ToList();
+                    val_ins = val_xx.Concat(val_yy).Concat(val_sample_weights).Concat(new List<Array>() { new[] { 0 } }).ToList();
                 }
                 else
                 {
@@ -1691,7 +1707,7 @@ y_binary = to_categorical(y_int)
             // Prepare input arrays and training function.
             if (this.uses_learning_phase && !(K.learning_phase() is int))
             {
-                ins = xx.Concat(yy).Concat(sample_weightsx).Concat(new List<Array>() { new[] { 1.0 } }).ToList();
+                ins = xx.Concat(yy).Concat(sample_weightsx).Concat(new List<Array>() { new[] { 1 } }).ToList();
             }
             else
             {
@@ -1754,9 +1770,9 @@ y_binary = to_categorical(y_int)
         ///   the scalar outputs.
         /// </returns>
         /// 
-        public Array evaluate(Array x, Array y, int batch_size = 32, int verbose = 1, Array sample_weight = null)
+        public double[] evaluate(Array x, Array y, int batch_size = 32, int verbose = 1, Array sample_weight = null)
         {
-            return evaluate(x.dict_from_single(), y.dict_from_single(), batch_size, verbose, sample_weight.dict_from_single())[0];
+            return evaluate(x.dict_from_single(), y.dict_from_single(), batch_size, verbose, sample_weight.dict_from_single());
         }
 
         /// <summary>
@@ -1780,28 +1796,27 @@ y_binary = to_categorical(y_int)
         ///   the scalar outputs.
         /// </returns>
         /// 
-        public virtual Array[] evaluate(Dictionary<string, Array> x, Dictionary<string, Array> y, int batch_size = 32, int verbose = 1, Dictionary<string, Array> sample_weight = null)
+        public virtual double[] evaluate(Dictionary<string, Array> x, Dictionary<string, Array> y, int batch_size = 32, int verbose = 1, Dictionary<string, Array> sample_weight = null)
         {
             // Validate user data.
             var (xx, yy, sample_weightsx) = this._standardize_user_data(x, y, sample_weight: sample_weight, check_batch_axis: false, batch_size: batch_size);
 
-            return (Array[])evaluate(xx, yy, batch_size, verbose, sample_weightsx);
+            return evaluate(xx, yy, batch_size, verbose, sample_weightsx);
         }
 
-        public virtual Array evaluate(List<Array> x, List<Array> y, int batch_size = 32, int verbose = 1, List<Array> sample_weight = null)
+        public virtual double[] evaluate(List<Array> x, List<Array> y, int batch_size = 32, int verbose = 1, List<Array> sample_weight = null)
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/engine/training.py#L1546
             // Prepare inputs, delegate logic to `_test_loop`.
             var ins = new List<Array>();
             if (this.uses_learning_phase && !(K.learning_phase() is int))
-                ins = x.Concat(y).Concat(sample_weight).Concat(new List<double[]> { new[] { 0.0 } }).ToList();
+                ins = x.Concat(y).Concat(sample_weight).Concat(new List<int[]> { new[] { 0 } }).ToList();
             else
                 ins = x.Concat(y).Concat(sample_weight.ToArray()).ToList();
 
             this._make_test_function();
             var f = this.test_function;
-            //return this._test_loop(f, ins, batch_size: batch_size, verbose: verbose);
-            return null;
+            return this._test_loop(f, ins, batch_size: batch_size, verbose: verbose);
         }
 
         /// <summary>
@@ -1853,7 +1868,7 @@ y_binary = to_categorical(y_int)
 
             // Prepare inputs, delegate logic to `_predict_loop`.
             if (this.uses_learning_phase && !(K.learning_phase() is int))
-                ins = xx.Concat(new List<double[]> { new[] { 0.0 } }).ToList();
+                ins = xx.Concat(new List<int[]> { new[] { 0 } }).ToList();
             else
                 ins = xx.ToList();
 
@@ -1884,7 +1899,7 @@ y_binary = to_categorical(y_int)
         {
             var ins = new List<Array>();
             if (this.uses_learning_phase && !(K.learning_phase() is int))
-                ins = x.Concat(y).Concat(sample_weightsx).Concat(new List<Array>() { new[] { 1.0 } }).ToList();
+                ins = x.Concat(y).Concat(sample_weightsx).Concat(new List<Array>() { new[] { 1 } }).ToList();
             else
                 ins = x.Concat(y).Concat(sample_weightsx).ToList();
 
@@ -1922,7 +1937,7 @@ y_binary = to_categorical(y_int)
             var ins = new List<Array>();
             if (this.uses_learning_phase && !(K.learning_phase() is int))
             {
-                ins = xx.Concat(yy).Concat(sample_weight).Concat(new List<Array>() { new[] { 0.0 } }).ToList();
+                ins = xx.Concat(yy).Concat(sample_weight).Concat(new List<Array>() { new[] { 0 } }).ToList();
             }
             else
             {
@@ -1953,7 +1968,7 @@ y_binary = to_categorical(y_int)
 
             if (this.uses_learning_phase && !(K.learning_phase() is int))
             {
-                ins = x.Concat(new List<Array>() { new[] { 0.0 } }).ToList();
+                ins = x.Concat(new List<Array>() { new[] { 0 } }).ToList();
             }
             else
             {
@@ -2091,7 +2106,7 @@ y_binary = to_categorical(y_int)
 
                 if (this.uses_learning_phase && !(K.learning_phase() is int))
                 {
-                    val_data.Add(new[] { 0.0 });
+                    val_data.Add(new[] { 0 });
 
                     bool is_sequence = false;
                     foreach (var cbk in callbacks)

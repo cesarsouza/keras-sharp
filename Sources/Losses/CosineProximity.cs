@@ -27,6 +27,7 @@
 namespace KerasSharp.Losses
 {
     using KerasSharp.Engine.Topology;
+    using System;
     using System.Runtime.Serialization;
 
     using static KerasSharp.Backends.Current;
@@ -40,9 +41,15 @@ namespace KerasSharp.Losses
     {
         public Tensor Call(Tensor expected, Tensor actual, Tensor sample_weight = null, Tensor mask = null)
         {
-            Tensor y_true = K.l2_normalize(expected, axis: -1);
-            Tensor y_pred = K.l2_normalize(actual, axis: -1);
-            return K.minus(K.mean(K.mul(expected, actual), axis: -1));
+            if (sample_weight != null || mask != null)
+                throw new NotImplementedException();
+
+            using (K.name_scope("cosine_proximity"))
+            {
+                Tensor y_true = K.l2_normalize(expected, axis: -1);
+                Tensor y_pred = K.l2_normalize(actual, axis: -1);
+                return K.minus(K.mean(K.mul(expected, actual), axis: -1));
+            }
         }
     }
 }

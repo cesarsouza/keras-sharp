@@ -460,6 +460,16 @@ namespace KerasSharp.Models
             }
         }
 
+        public override List<string> metrics_names
+        {
+            get
+            {
+                if (this.model == null)
+                    this.build();
+                return this.model.metrics_names;
+            }
+        }
+
         public override List<Tensor> weights
         {
             get
@@ -654,7 +664,7 @@ namespace KerasSharp.Models
                 kwargs);
         }
 
-        public override Array[] evaluate(Dictionary<string, Array> x, Dictionary<string, Array> y, int batch_size = 32, int verbose = 1, Dictionary<string, Array> sample_weight = null)
+        public override double[] evaluate(Dictionary<string, Array> x, Dictionary<string, Array> y, int batch_size = 32, int verbose = 1, Dictionary<string, Array> sample_weight = null)
         {
             //"""Computes the loss on some input data, batch by batch.
             //# Arguments

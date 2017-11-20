@@ -27,8 +27,9 @@
 namespace KerasSharp.Losses
 {
     using KerasSharp.Engine.Topology;
+    using System;
     using System.Runtime.Serialization;
-    
+
     using static KerasSharp.Backends.Current;
 
     /// <summary>
@@ -52,7 +53,11 @@ namespace KerasSharp.Losses
         /// 
         public Tensor Call(Tensor expected, Tensor actual, Tensor sample_weight = null, Tensor mask = null)
         {
-            return K.binary_crossentropy(expected, actual);
+            if (sample_weight != null || mask != null)
+                throw new NotImplementedException();
+
+            using (K.name_scope("binary_cross_entropy"))
+                return K.mean(K.binary_crossentropy(output: actual, target: expected), axis: -1);
         }
     }
 }

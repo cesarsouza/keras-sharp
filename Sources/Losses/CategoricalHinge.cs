@@ -27,6 +27,7 @@
 namespace KerasSharp.Losses
 {
     using KerasSharp.Engine.Topology;
+    using System;
     using System.Runtime.Serialization;
     
 
@@ -47,9 +48,15 @@ namespace KerasSharp.Losses
         /// 
         public Tensor Call(Tensor expected, Tensor actual, Tensor sample_weight = null, Tensor mask = null)
         {
-            Tensor pos = K.sum(K.mul(expected, actual), axis: -1);
-            Tensor neg = K.max(K.mul(K.subtract(1.0, expected), actual), axis: -1);
-            return K.maximum(0.0, K.add(K.subtract(neg, pos), 1.0));
+            if (sample_weight != null || mask != null)
+                throw new NotImplementedException();
+
+            using (K.name_scope("categorical_hinge"))
+            {
+                Tensor pos = K.sum(K.mul(expected, actual), axis: -1);
+                Tensor neg = K.max(K.mul(K.subtract(1.0, expected), actual), axis: -1);
+                return K.maximum(0.0, K.add(K.subtract(neg, pos), 1.0));
+            }
         }
     }
 }

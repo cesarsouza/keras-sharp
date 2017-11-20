@@ -36,11 +36,14 @@ namespace KerasSharp.Metrics
     {
         public Tensor Call(Tensor y_true, Tensor y_pred, Tensor mask = null)
         {
-            if (mask != null)
-                throw new NotSupportedException();
+            using (K.name_scope("binary_accuracy"))
+            {
+                if (mask != null)
+                    throw new NotSupportedException();
 
-            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/metrics.py#L20
-            return K.mean(K.equal(y_true, K.round(y_pred)), axis: -1);
+                // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/metrics.py#L20
+                return K.mean(K.equal(y_true, K.round(y_pred)), axis: -1, name: "value");
+            }
         }
     }
 }

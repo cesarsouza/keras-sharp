@@ -115,25 +115,28 @@ namespace KerasSharp.Initializers
         /// 
         public Tensor Call(int?[] shape, DataType? dtype = null)
         {
-            var (fan_in, fan_out) = _compute_fans(shape.Select(x => x.Value).ToArray());
-
-            Double scale = this.scale;
-            if (this.mode == "fan_in")
-                scale /= Math.Max(1.0, fan_in);
-            else if (this.mode == "fan_out")
-                scale /= Math.Max(1.0, fan_out);
-            else
-                scale /= Math.Max(1.0, (fan_in + fan_out) / 2.0);
-
-            if (this.distribution == "normal")
+            using (K.name_scope("variance_scaling"))
             {
-                var stddev = Math.Sqrt(scale);
-                return K.truncated_normal(shape, 0.0, stddev, dtype: dtype, seed: this.seed);
-            }
-            else
-            {
-                var limit = Math.Sqrt(3.0 * scale);
-                return K.random_uniform(shape, -limit, limit, dtype: dtype, seed: this.seed);
+                var (fan_in, fan_out) = _compute_fans(shape.Select(x => x.Value).ToArray());
+
+                Double scale = this.scale;
+                if (this.mode == "fan_in")
+                    scale /= Math.Max(1.0, fan_in);
+                else if (this.mode == "fan_out")
+                    scale /= Math.Max(1.0, fan_out);
+                else
+                    scale /= Math.Max(1.0, (fan_in + fan_out) / 2.0);
+
+                if (this.distribution == "normal")
+                {
+                    var stddev = Math.Sqrt(scale);
+                    return K.truncated_normal(shape, 0.0, stddev, dtype: dtype, seed: this.seed);
+                }
+                else
+                {
+                    var limit = Math.Sqrt(3.0 * scale);
+                    return K.random_uniform(shape, -limit, limit, dtype: dtype, seed: this.seed);
+                }
             }
         }
 

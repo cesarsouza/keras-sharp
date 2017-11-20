@@ -72,45 +72,51 @@ namespace KerasSharp.Optimizers
             this.iterations = K.variable(0.0, name: "iterations");
         }
 
-        public List<List<Tensor>> get_updates(List<Tensor> parameters, Dictionary<Tensor, IWeightConstraint> constraints, Tensor loss)
+        public List<List<Tensor>> get_updates(List<Tensor> param, Dictionary<Tensor, IWeightConstraint> constraints, Tensor loss)
         {
-            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/optimizers.py#L221
-
-            List<Tensor> grads = this.get_gradients(loss, parameters);
-            List<int?[]> shapes = parameters.Select(p => K.get_variable_shape(p)).ToList();
-            List<Tensor> accumulators = shapes.Select(shape => K.zeros(shape)).ToList();
-            this.weights = accumulators;
-            this.updates = new List<List<Tensor>>();
-
-            Tensor lr = this.lr;
-            if (this.initial_decay > 0)
+            using (K.name_scope($"rmsprop"))
             {
-                lr = lr * (1.0 / (1.0 + this.decay * this.iterations));
-                this.updates.Add(new List<Tensor> { K.update_add(this.iterations, 1) });
-            }
+                // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/optimizers.py#L221
 
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                Tensor p = parameters[i];
-                Tensor g = grads[i];
-                Tensor a = accumulators[i];
+                List<Tensor> grads = this.get_gradients(loss, param);
+                List<int?[]> shapes = param.Select(p => K.get_variable_shape(p)).ToList();
+                List<Tensor> accumulators = shapes.Select(shape => K.zeros(shape)).ToList();
+                this.weights = accumulators;
+                this.updates = new List<List<Tensor>>();
 
-                // update accumulator
-                Tensor new_a = this.rho * a + (1.0 - this.rho) * K.square(g);
-                this.updates.Add(new List<Tensor> { K.update(a, new_a) });
-                Tensor new_p = p - lr * g / (K.sqrt(new_a) + this.epsilon);
-
-                // apply constraints
-                if (constraints.ContainsKey(p))
+                Tensor lr = this.lr;
+                if (this.initial_decay > 0)
                 {
-                    IWeightConstraint c = constraints[p];
-                    new_p = c.Call(new_p);
+                    lr = lr * (1.0 / (1.0 + this.decay * this.iterations));
+                    this.updates.Add(new List<Tensor> { K.update_add(this.iterations, 1) });
                 }
 
-                this.updates.Add(new List<Tensor> { K.update(p, new_p) });
-            }
+                for (int i = 0; i < param.Count; i++)
+                {
+                    using (K.name_scope($"{param[i].name}"))
+                    {
+                        Tensor p = param[i];
+                        Tensor g = grads[i];
+                        Tensor a = accumulators[i];
 
-            return this.updates;
+                        // update accumulator
+                        Tensor new_a = this.rho * a + (1.0 - this.rho) * K.square(g);
+                        this.updates.Add(new List<Tensor> { K.update(a, new_a) });
+                        Tensor new_p = p - lr * g / (K.sqrt(new_a) + this.epsilon);
+
+                        // apply constraints
+                        if (constraints.ContainsKey(p))
+                        {
+                            IWeightConstraint c = constraints[p];
+                            new_p = c.Call(new_p);
+                        }
+
+                        this.updates.Add(new List<Tensor> { K.update(p, new_p) });
+                    }
+                }
+
+                return this.updates;
+            }
         }
     }
 }

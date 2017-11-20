@@ -62,11 +62,6 @@ namespace KerasSharp.Models
             this.verbose = verbose;
         }
 
-        public Progbar(int target)
-        {
-            this.target = target;
-        }
-
         public void update(int current, List<(string, object)> values = null, bool force = false)
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/utils/generic_utils.py#L241
@@ -105,7 +100,7 @@ namespace KerasSharp.Models
             {
                 int numdigits = (int)(Math.Floor(Math.Log10(this.target))) + 1;
                 string bar = $"{current}/{this.target} [";
-                double prog = current / this.target;
+                double prog = current / (double)this.target;
                 int prog_width = (int)(this.width * prog);
                 if (prog_width > 0)
                 {

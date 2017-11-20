@@ -75,7 +75,9 @@ namespace KerasSharp.Optimizers
         public SGD(double lr = 0.01, double momentum = 0.0, double decay = 0.0, bool nesterov = false)
             : base()
         {
-            this.iterations = K.variable(0.0, name: "iterations");
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/optimizers.py#L144
+
+            this.iterations = K.variable(0, name: "iterations");
             this.lr = K.variable(lr, name: "lr");
             this.momentum = K.variable(momentum, name: "momentum");
             this.decay = K.variable(decay, name: "decay");
@@ -85,50 +87,55 @@ namespace KerasSharp.Optimizers
 
         public List<List<Tensor>> get_updates(List<Tensor> param, Dictionary<Tensor, IWeightConstraint> constraints, Tensor loss)
         {
-            var grads = this.get_gradients(loss, param);
-            this.updates = new List<List<Tensor>>();
-
-            var lr = this.lr;
-            if (this.initial_decay > 0)
+            using (K.name_scope($"SGD"))
             {
-                lr = K.mul(lr, K.div(1.0, K.sum(1.0, K.mul(this.decay, this.iterations))));
-                this.updates.Add(new List<Tensor> { K.update_add(this.iterations, 1) });
-            }
+                var grads = this.get_gradients(loss, param);
+                this.updates = new List<List<Tensor>>();
 
-            // momentum
-            List<int?[]> shapes = param.Select(p => K.get_variable_shape(p)).ToList();
-            List<Tensor> moments = shapes.Select(s => K.zeros(s)).ToList();
+                if (this.initial_decay > 0)
+                    this.lr *= (1 / (1 + this.decay * this.iterations));
 
-            this.weights = new[] { this.iterations }.Concat(moments).ToList();
+                this.updates.Add(new List<Tensor> { K.update_add(this.iterations, 1f, name: "iterations/update") });
 
-            for (int i = 0; i < param.Count; i++)
-            {
-                Tensor p = param[i];
-                Tensor g = grads[i];
-                Tensor m = moments[i];
-                Tensor v = K.subtract(K.mul(this.momentum, m), K.mul(lr, g));  // velocity
+                // momentum
+                List<Tensor> moments;
 
-                this.updates.Add(new List<Tensor> { K.update(m, v) });
-
-                Tensor new_p;
-                if (this.nesterov)
-                    new_p = K.add(p, K.subtract(K.mul(this.momentum, v), K.mul(lr, g)));
-                else
-                    new_p = K.add(p, v);
-
-                // apply constraints
-
-                if (constraints.ContainsKey(p))
+                using (K.name_scope("moments"))
                 {
-                    var c = constraints[p];
-                    new_p = c.Call(new_p);
+                    List<int?[]> shapes = param.Select(p => K.get_variable_shape(p)).ToList();
+                    moments = shapes.Select(s => K.zeros(s)).ToList();
                 }
 
+                this.weights = new[] { this.iterations }.Concat(moments).ToList();
 
-                updates.Add(new List<Tensor> { K.update(p, new_p) });
+                for (int i = 0; i < param.Count; i++)
+                {
+                    using (K.name_scope($"{param[i].name}"))
+                    {
+                        Tensor p = param[i];
+                        Tensor g = grads[i];
+                        Tensor m = moments[i];
+
+                        Tensor v = this.momentum * m - lr * g;  // velocity
+
+                        this.updates.Add(new List<Tensor> { K.update(m, v, "momentum/update") });
+
+                        Tensor new_p;
+                        if (this.nesterov)
+                            new_p = p + this.momentum * v - lr * g;
+                        else
+                            new_p = p + v;
+
+                        // apply constraints
+                        if (constraints.ContainsKey(p))
+                            new_p = constraints[p].Call(new_p);
+
+                        updates.Add(new List<Tensor> { K.update(p, new_p, "parameter/update") });
+                    }
+                }
+
+                return this.updates;
             }
-
-            return this.updates;
         }
 
     }

@@ -31,7 +31,7 @@ namespace KerasSharp
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
-    
+
     using System.Runtime.Serialization;
     using KerasSharp.Constraints;
     using KerasSharp.Regularizers;
@@ -141,10 +141,10 @@ namespace KerasSharp
             IWeightConstraint kernel_constraint = null, IWeightConstraint bias_constraint = null,
             int? input_dim = null, int?[] input_shape = null, int?[] batch_input_shape = null)
             : this(units: units, activation: Activation.Create(activation), use_bias: use_bias,
-            kernel_initializer: kernel_initializer, bias_initializer: bias_initializer,
-            kernel_regularizer: kernel_regularizer, bias_regularizer: bias_regularizer, activity_regularizer: activity_regularizer,
-            kernel_constraint: kernel_constraint, bias_constraint: bias_constraint,
-             input_dim: input_dim, input_shape: input_shape, batch_input_shape: batch_input_shape)
+                   kernel_initializer: kernel_initializer, bias_initializer: bias_initializer,
+                   kernel_regularizer: kernel_regularizer, bias_regularizer: bias_regularizer, activity_regularizer: activity_regularizer,
+                   kernel_constraint: kernel_constraint, bias_constraint: bias_constraint,
+                   input_dim: input_dim, input_shape: input_shape, batch_input_shape: batch_input_shape)
         {
         }
 
@@ -184,10 +184,10 @@ namespace KerasSharp
         protected override Tensor InnerCall(Tensor inputs, Tensor mask = null, bool? training = null)
         {
             // https://github.com/fchollet/keras/blob/2382f788b4f14646fa8b6b2d8d65f1fc138b35c4/keras/layers/core.py#L840
-            Tensor output = K.dot(inputs, this.kernel);
+            Tensor output = K.dot(inputs, this.kernel, name: "dot");
 
             if (this.use_bias)
-                output = K.bias_add(output, this.bias);
+                output = K.bias_add(output, this.bias, name: "bias_add");
             if (this.activation != null)
                 output = this.activation.Call(output, mask);
             return output;

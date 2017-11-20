@@ -1,8 +1,11 @@
-﻿using Accord.Math;
+﻿using Accord;
+using Accord.Math;
+using Accord.Statistics.Analysis;
 using CNTK;
 using KerasSharp;
 using KerasSharp.Activations;
 using KerasSharp.Backends;
+using KerasSharp.Initializers;
 using KerasSharp.Losses;
 using KerasSharp.Metrics;
 using KerasSharp.Models;
@@ -13,6 +16,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+using static KerasSharp.Backends.Current;
 
 namespace SampleApp
 {
@@ -53,13 +58,13 @@ namespace SampleApp
             print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
             */
 
-            // Let's use CNTK for this example
-            KerasSharp.Backends.Current.Switch("KerasSharp.Backends.CNTKBackend");
+            KerasSharp.Backends.Current.Switch("KerasSharp.Backends.TensorFlowBackend");
+            //KerasSharp.Backends.Current.Switch("KerasSharp.Backends.CNTKBackend");
 
             // Load the Pima Indians Data Set
             var pima = new Accord.DataSets.PimaIndiansDiabetes();
-            double[,] x = pima.Instances.ToMatrix();
-            double[] y = pima.ClassLabels.ToDouble();
+            float[,] x = pima.Instances.ToMatrix().ToSingle();
+            float[] y = pima.ClassLabels.ToSingle();
 
             // Create the model
             var model = new Sequential();
@@ -67,14 +72,21 @@ namespace SampleApp
             model.Add(new Dense(8, activation: new ReLU()));
             model.Add(new Dense(1, activation: new Sigmoid()));
 
-            // Compile the model
-            model.Compile(loss: new BinaryCrossEntropy(), optimizer: new Adam(), metrics: new Accuracy());
+            // Compile the model (for the moment, only the mean square 
+            // error loss is supported, but this should be solved soon)
+            model.Compile(loss: new MeanSquareError(), 
+                optimizer: new Adam(), 
+                metrics: new[] { new Accuracy() });
 
-            // Fit the model
+            // Fit the model for 150 epochs
             model.fit(x, y, epochs: 150, batch_size: 10);
 
+            // Use the model to make predictions
+            float[] pred = model.predict(x)[0].To<float[]>();
+
             // Evaluate the model
-            double[,] pred = model.predict(x, batch_size: 10)[0].To<double[,]>();
+            double[] scores = model.evaluate(x, y);
+            Console.WriteLine($"{model.metrics_names[1]}: {scores[1] * 100}");
 
             Console.ReadLine();
         }

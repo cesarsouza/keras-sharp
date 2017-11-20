@@ -53,6 +53,9 @@ namespace KerasSharp.Activations
         /// <returns>The output tensor with the activation function applied.</returns>
         public override Tensor Call(Tensor x, Tensor mask = null)
         {
+            if (mask != null)
+                throw new NotSupportedException();
+
             return K.relu(x);
         }
     }

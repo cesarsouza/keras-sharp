@@ -53,7 +53,7 @@ namespace KerasSharp.Engine.Topology
             set;
         }
 
-        public string name;
+        public abstract string name { get; }
 
         public DataType? dtype
         {
@@ -86,7 +86,11 @@ namespace KerasSharp.Engine.Topology
 
         public object eval<T>()
         {
-            return eval().To<T>();
+            object r = eval();
+            Array ar = r as Array;
+            if (ar != null)
+                return ar.To<T>();
+            return r.To<T>();
         }
 
         public TypeCode GetTypeCode()
@@ -174,10 +178,24 @@ namespace KerasSharp.Engine.Topology
             throw new NotImplementedException();
         }
 
+        public Tensor Transpose()
+        {
+            return K.transpose(this);
+        }
 
         // TODO: Generate these operators using T4 templates
 
         public static Tensor operator *(double a, Tensor b)
+        {
+            return b.K.mul(a, b);
+        }
+
+        public static Tensor operator *(Tensor a, int b)
+        {
+            return a.K.mul(a, b);
+        }
+
+        public static Tensor operator *(int a, Tensor b)
         {
             return b.K.mul(a, b);
         }
@@ -192,12 +210,27 @@ namespace KerasSharp.Engine.Topology
             return b.K.div(a, b);
         }
 
+        public static Tensor operator /(Tensor a, int b)
+        {
+            return a.K.div(a, b);
+        }
+
+        public static Tensor operator /(int a, Tensor b)
+        {
+            return b.K.div(a, b);
+        }
+
         public static Tensor operator /(Tensor a, Tensor b)
         {
             return b.K.div(a, b);
         }
 
         public static Tensor operator +(double a, Tensor b)
+        {
+            return b.K.add(a, b);
+        }
+
+        public static Tensor operator +(int a, Tensor b)
         {
             return b.K.add(a, b);
         }
