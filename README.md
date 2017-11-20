@@ -3,7 +3,7 @@
 [![Join the chat at https://gitter.im/keras-sharp/Lobby](https://badges.gitter.im/keras-sharp/Lobby.svg)](https://gitter.im/keras-sharp/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 An ongoing effort to port most of the Keras deep learning library to C#
 
-Welcome to the Keras# project. We aim to bring a experience-compatible Keras-like API to C#, meaning that, if you already know Keras, you should not have to learn any new concepts to get up and running with Keras#. This is a direct port, line-by-line port of the Keras project, meaning that applying updates and fixes commited to the main Keras project should be simple and straightforward. As in the original project, we aim to support both TensorFlow and CNTK (but not Theano, as it [has been recently discontinued](https://groups.google.com/d/msg/theano-users/7Poq8BZutbY/rNCIfvAEAwAJ)).
+Welcome to the Keras# project! We aim to bring a experience-compatible Keras-like API to C#, meaning that, if you already know Keras, you should not have to learn any new concepts to get up and running with Keras#. This is a direct port, line-by-line port of the Keras project, meaning that applying updates and fixes commited to the main Keras project should be simple and straightforward. As in the original project, we aim to support both TensorFlow and CNTK (but not Theano, as it [has been recently discontinued](https://groups.google.com/d/msg/theano-users/7Poq8BZutbY/rNCIfvAEAwAJ)).
 
 ## Example
 
