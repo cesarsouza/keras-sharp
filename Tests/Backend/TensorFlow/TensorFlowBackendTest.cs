@@ -45,7 +45,7 @@ namespace Tests
             using (var K = new TensorFlowBackend())
             {
                 double[,] input_array = new double[,] { { 1, 2 }, { 3, 4 } };
-                Tensor variable = K.variable(array: input_array);
+                Tensor variable = K.variable(array: input_array, dtype: DataType.Double);
                 Tensor variable_new_shape = K.reshape(variable, new int[] { 1, 4 });
                 double[,] output = (double[,])variable_new_shape.eval();
 
@@ -116,7 +116,7 @@ namespace Tests
             using (var K = new TensorFlowBackend())
             {
                 double[,] a = new double[,] { { -4, 2 }, { 0.02, 0.3 } };
-                var ta = K.variable(array: (Array)a, name: "example_var");
+                var ta = K.variable(array: (Array)a, name: "example_var", dtype: DataType.Double);
 
                 var tr = K.softmax(ta);
                 double[,] r = (double[,])tr.eval();
@@ -137,7 +137,7 @@ namespace Tests
             {
                 #region doc_variable
                 double[,] val = new double[,] { { 1, 2 }, { 3, 4 } };
-                var kvar = K.variable(array: (Array)val, name: "example_var");
+                var kvar = K.variable(array: (Array)val, dtype: DataType.Double, name: "example_var");
                 var a = K.dtype(kvar); // 'float64'
                 var b = kvar.eval(); // { { 1, 2 }, { 3, 4 } }
                 #endregion
@@ -259,13 +259,30 @@ namespace Tests
             {
                 var input = K.placeholder(shape: new int?[] { 2, 4, 5 });
                 double[,] val = new double[,] { { 1, 2 }, { 3, 4 } };
-                var kvar = K.variable(array: (Array)val);
+                var kvar = K.variable(array: (Array)val, dtype: DataType.Double);
 
                 string a = input.ToString();
                 string b = kvar.ToString();
 
                 Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'Placeholder0_0' shape=[2, 4, 5] dtype=Float", a);
-                Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'Const0_0' shape=[2, 2] dtype=Double", b);
+                Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'VariableV20_0' shape=[2, 2] dtype=Double", b);
+            }
+        }
+
+        [Test]
+        public void tf_toString_with_names()
+        {
+            using (var K = new TensorFlowBackend())
+            {
+                var input = K.placeholder(shape: new int?[] { 2, 4, 5 }, name:"a");
+                double[,] val = new double[,] { { 1, 2 }, { 3, 4 } };
+                var kvar = K.variable(array: (Array)val, dtype: DataType.Double, name: "b");
+
+                string a = input.ToString();
+                string b = kvar.ToString();
+
+                Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'a_0' shape=[2, 4, 5] dtype=Float", a);
+                Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'b_0' shape=[2, 2] dtype=Double", b);
             }
         }
 
@@ -274,7 +291,7 @@ namespace Tests
         {
             using (var K = new TensorFlowBackend())
             {
-                var x = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
+                var x = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 6 } }, dtype: DataType.Double);
                 {
                     double a = (double)K.sum(x, axis: new[] { 0, 1 }).eval();
                     Assert.AreEqual(21, a);
@@ -307,7 +324,7 @@ namespace Tests
         {
             using (var K = new TensorFlowBackend())
             {
-                var x = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 6 } });
+                var x = K.variable(array: new double[,] { { 1, 2, 3 }, { 4, 5, 6 } }, dtype: DataType.Double);
                 {
                     double a = (double)K.mean(x, axis: new[] { 0, 1 }).eval();
                     Assert.AreEqual(3.5, a);

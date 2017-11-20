@@ -254,15 +254,15 @@ namespace Tests
         {
             using (var K = new CNTKBackend())
             {
-                var input = K.placeholder(shape: new int?[] { 2, 4, 5 });
+                var input = K.placeholder(shape: new int?[] { 2, 4, 5 }, dtype: DataType.Float);
                 double[,] val = new double[,] { { 1, 2 }, { 3, 4 } };
-                var kvar = K.variable(array: (Array)val);
+                var kvar = K.variable(array: (Array)val, dtype: DataType.Float);
 
                 string a = input.ToString();
                 string b = kvar.ToString();
 
                 Assert.IsTrue(Regex.Match(a, "KerasSharp\\.Engine.Topology\\.Tensor 'CompositeFunction\\d+' shape=\\[2, 4, 5\\] dtype=Float").Success);
-                Assert.IsTrue(Regex.Match(b, "KerasSharp\\.Engine.Topology\\.Tensor 'CompositeFunction\\d+' shape=\\[2, 2\\] dtype=Double").Success);
+                Assert.IsTrue(Regex.Match(b, "KerasSharp\\.Engine.Topology\\.Tensor 'CompositeFunction\\d+' shape=\\[2, 2\\] dtype=Float").Success);
             }
         }
 

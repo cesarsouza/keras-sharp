@@ -227,19 +227,19 @@ namespace Tests
 
             Assert.AreEqual("sequential_1", model.name);
             Assert.AreEqual(3, model.nodes_by_depth.Count);
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/Add1_0' shape=[null, 32] dtype=Float", model.nodes_by_depth[0][0].input_tensors[0].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/bias_add_0' shape=[null, 32] dtype=Float", model.nodes_by_depth[0][0].input_tensors[0].ToString());
             Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Softmax0_0' shape=[null, 10] dtype=Float", model.nodes_by_depth[0][0].output_tensors[0].ToString());
             Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1_input_0' shape=[null, 500] dtype=Float", model.nodes_by_depth[1][0].input_tensors[0].ToString());
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/Add1_0' shape=[null, 32] dtype=Float", model.nodes_by_depth[1][0].output_tensors[0].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/bias_add_0' shape=[null, 32] dtype=Float", model.nodes_by_depth[1][0].output_tensors[0].ToString());
             Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1_input_0' shape=[null, 500] dtype=Float", model.nodes_by_depth[2][0].input_tensors[0].ToString());
             Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1_input_0' shape=[null, 500] dtype=Float", model.nodes_by_depth[2][0].output_tensors[0].ToString());
 
             Assert.AreEqual(0, model.non_trainable_weights.Count);
             Assert.AreEqual(4, model.trainable_weights.Count);
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/Add0_0' shape=[500, 32] dtype=Float", model.trainable_weights[0].ToString());
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/Const3_0' shape=[] dtype=Float", model.trainable_weights[1].ToString());
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Add0_0' shape=[32, 10] dtype=Float", model.trainable_weights[2].ToString());
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Const3_0' shape=[] dtype=Float", model.trainable_weights[3].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/kernel_0' shape=[500, 32] dtype=Float", model.trainable_weights[0].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/bias_0' shape=[32] dtype=Float", model.trainable_weights[1].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/kernel_0' shape=[32, 10] dtype=Float", model.trainable_weights[2].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/bias_0' shape=[10] dtype=Float", model.trainable_weights[3].ToString());
             Assert.AreEqual(true, model.optimizer is RMSProp);
             Assert.AreEqual(0, model.outbound_nodes.Count);
             Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Softmax0_0' shape=[null, 10] dtype=Float", model.output[0].ToString());
@@ -254,13 +254,13 @@ namespace Tests
             Assert.AreEqual(1, outputLayer.inbound_nodes.Count);
             Assert.AreEqual("{ dense_1 ([[null, 500]] -> [[null, 32]]) } => dense_2 ([[null, 32]] -> [[null, 10]])", outputLayer.inbound_nodes[0].ToString());
             Assert.AreEqual(1, outputLayer.input.Count);
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/Add1_0' shape=[null, 32] dtype=Float", outputLayer.input[0].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/bias_add_0' shape=[null, 32] dtype=Float", outputLayer.input[0].ToString());
             // Assert.AreEqual(0, outputLayer.input_dtype);
             Assert.AreEqual(null, outputLayer.input_mask);
             Assert.AreEqual(1, outputLayer.input_shape.Count);
             Assert.AreEqual(tuple(null, 32), outputLayer.input_shape[0]);
             Assert.AreEqual(1, outputLayer.input_spec.Count);
-            Assert.AreEqual("dtype=Float, shape=null, ndim=, max_ndim=, min_ndim=2, axes=[[-1, 32]]", outputLayer.input_spec[0].ToString());
+            Assert.AreEqual("dtype=, shape=null, ndim=, max_ndim=, min_ndim=2, axes=[[-1, 32]]", outputLayer.input_spec[0].ToString());
             // Assert.AreEqual(0, outputLayer.is_placeholder);
             Assert.AreEqual(0, outputLayer.losses.Count);
             Assert.AreEqual("dense_2", outputLayer.name);
@@ -275,8 +275,8 @@ namespace Tests
             Assert.AreEqual(true, outputLayer.supports_masking);
             Assert.AreEqual(true, outputLayer.trainable);
             Assert.AreEqual(2, outputLayer.trainable_weights.Count);
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Add0_0' shape=[32, 10] dtype=Float", outputLayer.trainable_weights[0].ToString());
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Const3_0' shape=[] dtype=Float", outputLayer.trainable_weights[1].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/kernel_0' shape=[32, 10] dtype=Float", outputLayer.trainable_weights[0].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/bias_0' shape=[10] dtype=Float", outputLayer.trainable_weights[1].ToString());
             Assert.AreEqual(0, outputLayer.updates.Count);
             //Assert.AreEqual(0, outputLayer.uses_learning_phase);
             Assert.AreEqual(2, outputLayer.weights.Count);
@@ -290,8 +290,8 @@ namespace Tests
             Assert.AreEqual(0, outputLayer._per_input_updates.Count);
 
             Assert.AreEqual(true, outputLayer.kernel_initializer is GlorotUniform);
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Add0_0' shape=[32, 10] dtype=Float", outputLayer.kernel.ToString());
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Const3_0' shape=[] dtype=Float", outputLayer.bias.ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/kernel_0' shape=[32, 10] dtype=Float", outputLayer.kernel.ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/bias_0' shape=[10] dtype=Float", outputLayer.bias.ToString());
             Assert.AreEqual(10, outputLayer.units);
             Assert.AreEqual(true, outputLayer.activation is Softmax);
             Assert.AreEqual(true, outputLayer.use_bias);
@@ -314,14 +314,14 @@ namespace Tests
             Assert.AreEqual(null, model.sample_weight_mode);
             Assert.AreEqual(false, model.stateful);
             Assert.AreEqual(false, model.supports_masking);
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2_target_0' shape=[null, null] dtype=Float", model.targets[0].ToString());
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'loss/Mul0_0' shape=[] dtype=Float", model.total_loss.ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2_target_0' shape=[null, 10] dtype=Float", model.targets[0].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'loss/total_loss_0' shape=[] dtype=Float", model.total_loss.ToString());
             Assert.AreEqual(true, model.trainable);
             Assert.AreEqual(4, model.trainable_weights.Count);
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/Add0_0' shape=[500, 32] dtype=Float", model.trainable_weights[0].ToString());
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/Const3_0' shape=[] dtype=Float", model.trainable_weights[1].ToString());
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Add0_0' shape=[32, 10] dtype=Float", model.trainable_weights[2].ToString());
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/Const3_0' shape=[] dtype=Float", model.trainable_weights[3].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/kernel_0' shape=[500, 32] dtype=Float", model.trainable_weights[0].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_1/bias_0' shape=[32] dtype=Float", model.trainable_weights[1].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/kernel_0' shape=[32, 10] dtype=Float", model.trainable_weights[2].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'dense_2/bias_0' shape=[10] dtype=Float", model.trainable_weights[3].ToString());
             Assert.AreEqual(0, model.updates.Count);
             Assert.AreEqual(false, model.uses_learning_phase);
             Assert.AreEqual(model.trainable_weights, model.weights);
@@ -351,7 +351,7 @@ namespace Tests
             // --- verified until here ---
 
             Assert.AreEqual(1, model.metrics_tensors.Count);
-            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'Mean0_0' shape=[] dtype=Float", model.metrics_tensors[0].ToString());
+            Assert.AreEqual("KerasSharp.Engine.Topology.Tensor 'metrics/dense_2_acc/score_array/mean_0' shape=[] dtype=Float", model.metrics_tensors[0].ToString());
 
             Assert.AreEqual(2, model.metrics_names.Count);
             Assert.AreEqual("loss", model.metrics_names[0]);
@@ -525,6 +525,7 @@ namespace Tests
             }
         }
 
+        [Test]
         [TestCase(Setup.TENSORFLOW)]
         [TestCase(Setup.CNTK)]
         public void sequential_guide_training_1(string backend)
