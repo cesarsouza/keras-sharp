@@ -103,6 +103,6 @@ However, please note that this is still work-in-progress. Not only Keras#, but a
 
 ## License & Copyright
 
-The Keras-Sharp project is brought to you under the as-permissable-as-possible MIT license. This is the same license provided by the original Keras project. This project also keeps track of all code contrributions through the project's issue tracker, and pledges to update all licensing information once user contributions are accepted. Contributors are asked to grant explicit copyright licensens upon their contributions, which guarantees this project can be used in production without any licensing-related worries.
+The Keras-Sharp project is brought to you under the as-permissable-as-possible MIT license. This is the same license provided by the original Keras project. This project also keeps track of all code contributions through the project's issue tracker, and pledges to update all licensing information once user contributions are accepted. Contributors are asked to grant explicit copyright licensens upon their contributions, which guarantees this project can be used in production without any licensing-related worries.
 
 This project is brought to you by the same creators of the [Accord.NET Framework](https://github.com/accord-net/framework).
