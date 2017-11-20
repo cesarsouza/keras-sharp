@@ -24,73 +24,34 @@
 //    SOFTWARE.
 //
 
-namespace KerasSharp.Engine.Topology
+namespace KerasSharp.Backends
 {
-    using KerasSharp.Backends;
-    using KerasSharp.Layers;
+    using KerasSharp.Engine.Topology;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using System.Runtime.Serialization;
-    using System.Text;
-    using System.Threading.Tasks;
-    using static KerasSharp.Python;
-    using System.Diagnostics;
-    using CNTK;
 
-    [DataContract]
-    public class CNTKTensor : Tensor
+    public class CNTKNameScope : NameScope, IDisposable
     {
-        public Function function;
-        public Parameter parameter;
+        string name;
+        Stack<string> s;
 
-        public new CNTKBackend K
+        public CNTKNameScope(Stack<string> s, string name)
         {
-            get { return base.K as CNTKBackend; }
+            s.Push(name);
+            this.s = s;
+            this.name = String.Join("/", s);
         }
 
-        public CNTKTensor(IBackend backend)
-            : base(backend)
+        public override string Name
         {
+            get { return name; }
         }
 
-        public new DataType dtype
+        public override void Dispose()
         {
-            get { return function.Output.DataType; }
-        }
-
-
-        public NDShape CNTK_Shape
-        {
-            get { return function.Output.Shape; }
-        }
-
-        public override string name
-        {
-            get
-            {
-                return function.Name;
-            }
-        }
-
-        public static implicit operator CNTK.Variable(CNTKTensor t)
-        {
-            return t.function;
-        }
-
-        public static implicit operator CNTK.Function(CNTKTensor t)
-        {
-            return t.function;
-        }
-
-
-
-        public override string ToString()
-        {
-            string uid = function.Uid;
-            string s = str(shape);
-            string r = $"KerasSharp.Engine.Topology.Tensor '{uid}' shape={s} dtype={function.Output.DataType}";
-            return r;
+            if (s != null)
+                s.Pop();
+            s = null;
         }
     }
 }

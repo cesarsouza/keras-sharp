@@ -72,7 +72,7 @@ namespace KerasSharp.Backends
         // cntk doesn't support gradient as symbolic op, to hook up with keras model,
         // we will create gradient as a constant placeholder, here use this global
         // map to keep the mapping from grad placeholder to parameter
-        internal Dictionary<CNTK.Function, Parameter> grad_parameter_dict;
+        internal Dictionary<string, Parameter> grad_parameter_dict;
 
 
         public CNTKBackend()
@@ -80,39 +80,43 @@ namespace KerasSharp.Backends
             events = new List<BackendCall>();
             this.NAME_SCOPE_STACK = new Stack<string>();
             this._UID_PREFIXES = new Dictionary<string, int>();
-            this.grad_parameter_dict = new Dictionary<CNTK.Function, Parameter>();
+            this.grad_parameter_dict = new Dictionary<string, Parameter>();
+
+            //C.SetTraceLevel(CNTK.TraceLevel.Info);
+            //C.SetMathLibTraceLevel(1);
         }
 
-        private T log<T>(T item,
+        [Conditional("Disabled")]
+        private void log<T>(T item,
             [CallerMemberName] string memberName = "",
             [CallerFilePath] string sourceFilePath = "",
             [CallerLineNumber] int sourceLineNumber = 0)
            where T : class
         {
-            var properties = typeof(T).GetProperties();
+            //var properties = typeof(T).GetProperties();
 
-            if (typeof(T).FullName.StartsWith("CNTK"))
-            {
-                if (item is CNTK.Function)
-                {
-                    OnFunction(item as CNTK.Function);
-                }
+            //if (typeof(T).FullName.StartsWith("CNTK"))
+            //{
+            //    if (item is CNTK.Function)
+            //    {
+            //        OnFunction(item as CNTK.Function);
+            //    }
 
-                if (item is Variable)
-                {
-                    OnVariable(item as Variable);
-                }
-            }
+            //    if (item is Variable)
+            //    {
+            //        OnVariable(item as Variable);
+            //    }
+            //}
 
-            events.Add(new BackendCall
-            {
-                Member = memberName,
-                Line = sourceLineNumber,
-                Parameters = properties.Select(x => x.Name).ToList(),
-                Values = properties.Select(x => x.GetValue(item)).ToList(),
-            });
+            //events.Add(new BackendCall
+            //{
+            //    Member = memberName,
+            //    Line = sourceLineNumber,
+            //    Parameters = properties.Select(x => x.Name).ToList(),
+            //    Values = properties.Select(x => x.GetValue(item)).ToList(),
+            //});
 
-            return item;
+            //return item;
         }
 
         private static void OnFunction(CNTK.Function v)
@@ -144,10 +148,12 @@ namespace KerasSharp.Backends
             return Out(C.Sqrt(In(x)));
         }
 
-        public Tensor pow(Tensor x, Tensor p)
+        public Tensor pow(Tensor x, Tensor p, string name = null)
         {
             log(new { x, p });
-            return Out(C.Pow(In(x), In(p)));
+            if (name == null)
+                return Out(C.Pow(In(x), In(p)));
+            return Out(C.Pow(In(x), In(p), name: name));
         }
 
         public Tensor square(Tensor w)
@@ -226,8 +232,8 @@ namespace KerasSharp.Backends
                 var result = x;
                 foreach (int index in _axis.Sorted().Reverse())
                 {
-                    result = log(C.Reshape(result, replacementShape: NDShape.CreateNDShape(new int[] { }),
-                        beginAxis: new Axis(index), endAxis: new Axis(index + 1)));
+                    result = C.Reshape(result, replacementShape: NDShape.CreateNDShape(new int[] { }),
+                        beginAxis: new Axis(index), endAxis: new Axis(index + 1));
                 }
                 return result;
             }
@@ -238,7 +244,7 @@ namespace KerasSharp.Backends
 
                 if (shape.Count == 1 && shape[0] < 0)
                     shape[0] = NDShape.InferredDimension;
-                return log(C.Reshape(x, NDShape.CreateNDShape(shape)));
+                return C.Reshape(x, NDShape.CreateNDShape(shape));
             }
         }
 
@@ -251,6 +257,13 @@ namespace KerasSharp.Backends
         public Tensor clip(Tensor norms, int v, int maxValue)
         {
             throw new NotImplementedException();
+        }
+
+        public Tensor print_tensor(Tensor x, string message)
+        {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/cntk_backend.py#L1778
+            Console.WriteLine("Not implemented yet.");
+            return x;
         }
 
         public Tensor zeros(int[] shape, DataType? dtype = null, string name = null)
@@ -328,19 +341,25 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor mul(Tensor a, Tensor b)
+        public Tensor mul(Tensor a, Tensor b, string name = null)
         {
-            return Out(C.ElementTimes(In(a), In(b)));
+            if (name == null)
+                return Out(C.ElementTimes(In(a), In(b)));
+            return Out(C.ElementTimes(In(a), In(b), name: name));
         }
 
-        public Tensor mul<T>(T a, Tensor b)
+        public Tensor mul<T>(T a, Tensor b, string name = null)
         {
-            return Out(C.ElementTimes(InGeneric(a), In(b)));
+            if (name == null)
+                return Out(C.ElementTimes(InGeneric(a), In(b)));
+            return Out(C.ElementTimes(InGeneric(a), In(b), name: name));
         }
 
-        public Tensor mul<T>(Tensor a, T b)
+        public Tensor mul<T>(Tensor a, T b, string name = null)
         {
-            return Out(C.ElementTimes(In(a), InGeneric(b)));
+            if (name == null)
+                return Out(C.ElementTimes(In(a), InGeneric(b)));
+            return Out(C.ElementTimes(In(a), InGeneric(b), name: name));
         }
 
         public Tensor mul(List<Tensor> batch_outs, int length)
@@ -368,7 +387,7 @@ namespace KerasSharp.Backends
             return Out(new Variable(In(a).function) + new Variable(In(b).function));
         }
 
-        public Tensor bias_add(Tensor output, Tensor bias)
+        public Tensor bias_add(Tensor output, Tensor bias, string name = null)
         {
             using (this.name_scope("bias_add"))
             {
@@ -378,7 +397,7 @@ namespace KerasSharp.Backends
 
                 var shape = NDShape.CreateNDShape(_shape);
 
-                var b = log(C.Reshape(_b, shape));
+                var b = C.Reshape(_b, shape);
 
                 return Out(new Variable(_x.function) + b);
             }
@@ -394,24 +413,30 @@ namespace KerasSharp.Backends
             return Out(InGeneric(a) + In(b));
         }
 
-        public Tensor subtract(Tensor a, Tensor b)
+        public Tensor subtract(Tensor a, Tensor b, string name = null)
         {
-            return Out(In(a) + new Variable(C.Negate(In(b))));
+            if (name == null)
+                return Out(C.Minus(In(a), In(b)));
+            return Out(C.Minus(In(a), In(b), name: name));
         }
 
-        public Tensor subtract<T>(Tensor a, T b)
+        public Tensor subtract<T>(Tensor a, T b, string name = null)
         {
-            return Out(new Variable(In(a)) + C.Negate(InGeneric(b)));
+            return Out(C.Minus(In(a), InGeneric(b), name: name));
         }
 
-        public Tensor subtract<T>(T a, Tensor b)
+        public Tensor subtract<T>(T a, Tensor b, string name = null)
         {
-            return Out(InGeneric(a) + C.Negate(In(b)));
+            if (name == null)
+                return Out(C.Minus(InGeneric(a), In(b)));
+            return Out(C.Minus(InGeneric(a), In(b), name: name));
         }
 
-        public Tensor dot(Tensor a, Tensor b)
+        public Tensor dot(Tensor a, Tensor b, string name = null)
         {
-            return Out(C.Times(In(a), In(b)));
+            if (name == null)
+                return Out(C.Times(In(a), In(b)));
+            return Out(C.Times(In(a), In(b), name: name));
         }
 
         public Tensor elu(Tensor x, double alpha)
@@ -442,6 +467,11 @@ namespace KerasSharp.Backends
         public Tensor exp(Tensor x)
         {
             return Out(C.Exp(In(x)));
+        }
+
+        public Tensor transpose(Tensor tensor)
+        {
+            return Out(C.Transpose(In(tensor)));
         }
 
         public object eval(Tensor tensor)
@@ -543,7 +573,7 @@ namespace KerasSharp.Backends
                 {
                     var result = C.CrossEntropyWithSoftmax(_output, _target);
                     // cntk's result shape is (batch, 1), while keras expect (batch, )
-                    CNTK.Function r = log(C.Reshape(result, NDShape.CreateNDShape(new int[] { })));
+                    CNTK.Function r = C.Reshape(result, NDShape.CreateNDShape(new int[] { }));
                     return Out(r);
                 }
                 else
@@ -591,25 +621,35 @@ namespace KerasSharp.Backends
             // avoid numerical instability with _EPSILON clipping
             _output = C.Clip(_output, eps, omeps);
             var a = new Variable(C.Negate(C.ElementTimes(_target, C.Log(_output))));
-            var b = new Variable(C.Negate(C.ElementTimes(InConstant(1.0) + C.Negate(_target), C.Log(InConstant(1.0) + C.Negate(_output)))));
+            var b = new Variable(C.Negate(
+                C.Minus(C.ElementTimes(InConstant(1.0), _target),
+                C.Minus(C.Log(InConstant(1.0)), _output))));
             _output = a + b;
             return Out(_output);
         }
 
-        public Tensor variable(Array array, string name = null)
+        private string _prepare_name(string name, string _default = "")
+        {
+            string prefix = String.Join("_", NAME_SCOPE_STACK);
+            if (String.IsNullOrEmpty(name))
+            {
+                if (String.IsNullOrEmpty(prefix))
+                    return _default;
+                return prefix + '/' + _default;
+            }
+            else
+            {
+                if (String.IsNullOrEmpty(prefix))
+                    return name;
+                return prefix + '/' + name;
+            }
+        }
+
+        public Tensor variable(Array array, DataType? dtype = null, string name = null)
         {
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/cntk_backend.py#L133
 
-            //if isinstance(value, C.variables.Constant) 
-            //    or isinstance(value, C.variables.Parameter):
-            //    value = value.value
-
-            // we don't support init parameter with symbolic op, so eval it first as
-            // workaround
-            //if isinstance(value, C.cntk_py.Function):
-            //    value = eval(value)
-
-            NDArrayView v = In(array);
+            NDArrayView v = In(array, dtype);
 
             var p = new Parameter(v, name: _prepare_name(name, "variable"));
 
@@ -617,18 +657,10 @@ namespace KerasSharp.Backends
             return t;
         }
 
-        private string _prepare_name(string name, string _default)
-        {
-            string prefix = String.Join("_", NAME_SCOPE_STACK);
-            if (String.IsNullOrEmpty(name))
-                return prefix + '/' + _default;
-            return prefix + '/' + name;
-        }
-
-        public Tensor variable<T>(T value, string name = null)
+        public Tensor variable<T>(T value, DataType? dtype, string name = null)
             where T : struct
         {
-            return variable((Array)new T[] { value }, name: name);
+            return variable((Array)new T[] { value }, dtype, name: name);
         }
 
         public Tensor variable(Tensor tensor, DataType? dtype = null, string name = null)
@@ -642,13 +674,13 @@ namespace KerasSharp.Backends
 
             if (v is Array)
             {
-                return variable((Array)v, name);
+                return variable((Array)v, dtype, name);
             }
             else
             {
                 Array r = Array.CreateInstance(v.GetType(), 1);
                 r.SetValue(v, 0);
-                return variable(r, name);
+                return variable(r, dtype, name);
             }
         }
 
@@ -712,7 +744,7 @@ namespace KerasSharp.Backends
         {
             if (value is Array)
             {
-                NDArrayView x = In((value as Array).Convert(Out(dtype).ToType()));
+                NDArrayView x = In(value as Array, Out(dtype));
                 if (name != null)
                     return new Constant(x, name);
                 else return new Constant(x);
@@ -762,13 +794,13 @@ namespace KerasSharp.Backends
             // we will return a constant as place holder, the cntk learner will apply
             // the gradient during training.
 
-            var grads = new List<Variable>();
+            var grads = new List<Constant>();
             foreach (Tensor t in variables)
             {
                 Parameter v = In(t).parameter;
                 Constant g = new Constant(shape: v.Shape, dataType: CNTKDataType.Double, initValue: 0.0, device: DeviceDescriptor.CPUDevice, name: "keras_grad_placeholder");
                 grads.Add(g);
-                grad_parameter_dict[g] = v;
+                grad_parameter_dict[g.Uid] = v;
             };
 
             return grads.Select(g => Out(g)).ToList();
@@ -794,9 +826,9 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public IDisposable name_scope(string name)
+        public NameScope name_scope(string name)
         {
-            return new NameScope(NAME_SCOPE_STACK, name);
+            return new CNTKNameScope(NAME_SCOPE_STACK, name);
         }
 
         public Tensor clip_norm(Tensor g, double clipnorm, Tensor norm)
@@ -804,9 +836,9 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor identity(Tensor x)
+        public Tensor identity(Tensor x, string name = null)
         {
-            throw new NotImplementedException();
+            return Out(C.Alias(In(x), _prepare_name(name)));
         }
 
         public List<Array> batch_get_value(List<Tensor> weights)
@@ -869,11 +901,11 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor update_add(Tensor x, int increment)
+        public Tensor update_add<T>(Tensor x, T increment, string name) where T : struct
         {
             CNTKTensor _x = In(x);
             CNTK.Function result = _x + InGeneric(increment);
-            return Out(C.Assign(_x, result));
+            return Out(C.Assign(_x, result, name: name));
         }
 
         public int?[] get_variable_shape(Tensor x)
@@ -899,9 +931,10 @@ namespace KerasSharp.Backends
 
         public Models.Function function(List<Tensor> inputs, List<Tensor> list, List<List<Tensor>> updates, string name)
         {
-            List<Variable> _inputs = inputs.Select(x => (Variable)In(x).function).ToList();
-            CNTK.Function[] _list = list.Select(x => In(x).function).ToArray();
-            return new CNTKFunction(this, _inputs, _list, updates, name);
+            Variable[] _inputs = inputs.Select(x => (Variable)In(x).function).ToArray();
+            Variable[] _outputs = list.Select(x => (Variable)In(x).function).ToArray();
+            //CNTK.Function[] _list = list.Select(x => In(x).function).ToArray();
+            return new CNTKFunction(this, _inputs, _outputs, updates, name);
         }
 
         public Models.Function function(object inputs, List<Tensor> list, List<Tensor> updates, string name)
@@ -919,9 +952,9 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor update(Tensor x, Tensor new_x)
+        public Tensor update(Tensor x, Tensor new_x, string name = null)
         {
-            return Out(log(C.Assign(In(x), In(new_x))));
+            return Out(C.Assign(In(x), In(new_x), name: name));
         }
 
         public Tensor truncated_normal(int[] shape, double v, double stddev, DataType? dtype, int? seed)
@@ -934,15 +967,15 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor not_equal(Tensor weights, double v)
+        public Tensor not_equal<T>(Tensor weights, T v) where T : struct
         {
-            return Out(C.NotEqual(In(weights), InConstant(v)));
+            return Out(C.NotEqual(In(weights), InConstant((dynamic)v)));
         }
 
         public Tensor reshape(Tensor x, int[] shape)
         {
             log(new { x, shape });
-            return Out(log(C.Reshape(In(x).function, InShape(shape))));
+            return Out(C.Reshape(In(x).function, InShape(shape)));
         }
 
 
@@ -978,11 +1011,14 @@ namespace KerasSharp.Backends
             return Constant.Scalar<double>(value, DeviceDescriptor.CPUDevice);
         }
 
-        public static NDArrayView In(Array array)
+        public NDArrayView In(Array array, DataType? dtype = null)
         {
+            if (dtype == null)
+                dtype = this.floatx();
+
             Type t = array.GetInnerMostType();
-            if (t != typeof(double) && t != typeof(float))
-                return In(array.Convert<double>()); // TODO: Convert to the default type
+            if (t != dtype.Value.ToType())
+                return In(array.Convert(dtype.Value.ToType()), dtype);
 
             int[] shape = array.GetLength();
             NDShape cntk_shape = NDShape.CreateNDShape(shape);

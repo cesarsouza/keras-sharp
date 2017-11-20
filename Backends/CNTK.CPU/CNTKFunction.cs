@@ -39,7 +39,7 @@ namespace KerasSharp.Backends
     internal class CNTKFunction : Models.Function
     {
         private List<List<Tensor>> updates;
-        private List<Variable> placeholders;
+        private Variable[] placeholders;
         private Trainer trainer;
         private UnorderedMapVariableValuePtr trainer_output;
         private CNTK.Function unrelated_updates;
@@ -48,8 +48,9 @@ namespace KerasSharp.Backends
         private CNTK.Function loss;
         private CNTKBackend c;
 
-        public CNTKFunction(CNTKBackend c, List<Variable> inputs, CNTK.Function[] outputs, List<List<Tensor>> updates, string name)
+        public CNTKFunction(CNTKBackend c, Variable[] inputs, CNTK.Variable[] outputs, List<List<Tensor>> updates, string name)
         {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/cntk_backend.py#L1501
             this.c = c;
             this.placeholders = inputs;
             this.trainer = null;
@@ -81,7 +82,7 @@ namespace KerasSharp.Backends
                         throw new NotImplementedException();
                     }
 
-                    if (u.Inputs.Count == 0)
+                    if (u.Arguments.Count == 0)
                         u_ops.Add(u);
                     else
                         unrelated_updates.Add(u);
@@ -89,15 +90,15 @@ namespace KerasSharp.Backends
 
                 var update_func = C.Combine(new VariableVector(u_ops.Select(u => u.Output).ToArray()));
 
-                CNTK.Function[] grads = update_func.Inputs.Where(x => x.Name == "keras_grad_placeholder").Select(x => x.ToFunction()).ToArray();
+                CNTK.Constant[] grads = update_func.Inputs.Where(x => x.Name == "keras_grad_placeholder").Select(x =>  new Constant(x)).ToArray();
 
-                var u_list = new List<CNTK.Function>();
+                var u_list = new List<CNTK.Constant>();
                 var p_list = new List<CNTK.Parameter>();
-                foreach (CNTK.Function g in grads)
+                foreach (CNTK.Constant g in grads)
                 {
-                    if (c.grad_parameter_dict.ContainsKey(g))
+                    if (c.grad_parameter_dict.ContainsKey(g.Uid))
                     {
-                        p_list.Add(c.grad_parameter_dict[g]);
+                        p_list.Add(c.grad_parameter_dict[g.Uid]);
                         u_list.Add(g);
                     }
                     else
@@ -108,13 +109,12 @@ namespace KerasSharp.Backends
 
                 if (len(u_list) > 0)
                 {
-                    Learner learner = Learner.SGDLearner(p_list, new TrainingParameterScheduleDouble(0));
+                    Learner learner = Learner.SGDLearner(p_list, new TrainingParameterScheduleDouble(1));
 
-                    var criterion = (len(outputs) > 1) ?
-                        C.Combine(new VariableVector(new[] { outputs[0], outputs[1] })) :
-                        outputs[0];
-
-                    this.trainer = Trainer.CreateTrainer(model: outputs[0], lossFunction: criterion, evaluationFunction: null, parameterLearners: new[] { learner });
+                    this.trainer = Trainer.CreateTrainer(model: outputs[0],
+                        lossFunction: outputs[0],
+                        evaluationFunction: outputs[1], 
+                        parameterLearners: new[] { learner });
 
                     this.trainer_output = new UnorderedMapVariableValuePtr();
                     foreach (CNTK.Function f in outputs)
@@ -131,7 +131,7 @@ namespace KerasSharp.Backends
 
             if (this.trainer == null)
             {
-                this.metrics_outputs = outputs.Select(f => f.Output).ToArray();
+                this.metrics_outputs = outputs;
 
                 this.metrics_func = C.Combine(new VariableVector(this.metrics_outputs));
                 // cntk only could handle loss and 1 metric in trainer, for metrics more
@@ -139,7 +139,7 @@ namespace KerasSharp.Backends
             }
             else if (len(outputs) > 2)
             {
-                this.metrics_outputs = Matrix.Get(outputs, 2, 0).Select(f => f.Output).ToArray();
+                this.metrics_outputs = Matrix.Get(outputs, 2, 0);
 
                 this.metrics_func = C.Combine(new VariableVector(this.metrics_outputs));
             }
@@ -151,6 +151,8 @@ namespace KerasSharp.Backends
 
         public override List<Tensor> Call(List<Array> inputs)
         {
+            var x = this.loss.Inputs.ToArray();
+
             var feed_dict = new Dictionary<Variable, Array>();
             foreach (var (tensor, value) in Enumerable.Zip(this.placeholders, inputs, (a, b) => (a, b)))
             {
@@ -170,10 +172,13 @@ namespace KerasSharp.Backends
                 foreach (Variable argument in this.loss.Arguments)
                 {
                     if (feed_dict.ContainsKey(argument))
-                        input_dict[argument] = new Value(CNTKBackend.In(feed_dict[argument]));
+                        input_dict[argument] = new Value(c.In(feed_dict[argument]));
                     else
                         throw new Exception($"CNTK backend: argument {argument.Name} is not found in inputs. Please double check the model and inputs in 'train_function'.");
                 }
+
+                foreach (CNTK.Function f in this.trainer_output.Keys)
+                    this.trainer_output[f] = null;
 
                 var result = this.trainer.TrainMinibatch(input_dict, this.trainer_output);
 
@@ -187,7 +192,7 @@ namespace KerasSharp.Backends
                 foreach (Variable argument in this.metrics_func.Arguments)
                 {
                     if (feed_dict.ContainsKey(argument))
-                        input_dict[argument] = new Value(CNTKBackend.In(feed_dict[argument]));
+                        input_dict[argument] = new Value(c.In(feed_dict[argument]));
                     else
                         throw new Exception($"CNTK backend: metrics argument {argument.Name} is not found in inputs. Please double check the model and inputs.");
                 }
@@ -212,7 +217,7 @@ namespace KerasSharp.Backends
                 foreach (Variable argument in this.unrelated_updates.Arguments)
                 {
                     if (feed_dict.ContainsKey(argument))
-                        input_dict[argument] = new Value(CNTKBackend.In(feed_dict[argument]));
+                        input_dict[argument] = new Value(c.In(feed_dict[argument]));
                     else
                         throw new Exception($"CNTK backend: assign ops argument {argument.Name} is not found in inputs. Please double check the model and inputs.");
                 }

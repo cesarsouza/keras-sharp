@@ -26,24 +26,26 @@
 
 namespace KerasSharp.Backends
 {
+    using KerasSharp.Engine.Topology;
     using System;
-    using System.Collections.Generic;
-
-    class NameScope : IDisposable
+    using TensorFlow;
+    
+    public class TensorFlowNameScope : NameScope, IDisposable
     {
-        Stack<string> s;
+        string name;
+        TFScope scope;
 
-        public NameScope(Stack<string> s, string name)
+        public override string Name { get { return name; } }
+
+        public TensorFlowNameScope(TFScope scope, string name)
         {
-            s.Push(name);
-            this.s = s;
+            this.scope = scope;
+            this.name = name;
         }
 
-        void IDisposable.Dispose()
+        public override void Dispose()
         {
-            if (s != null)
-                s.Pop();
-            s = null;
+            scope.Dispose();
         }
     }
 }

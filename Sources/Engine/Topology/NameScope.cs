@@ -26,6 +26,7 @@
 
 namespace KerasSharp.Engine.Topology
 {
+    using Accord.Math;
     using KerasSharp.Backends;
     using KerasSharp.Layers;
     using System;
@@ -36,61 +37,19 @@ namespace KerasSharp.Engine.Topology
     using System.Threading.Tasks;
     using static KerasSharp.Python;
     using System.Diagnostics;
-    using CNTK;
+    using Accord;
 
     [DataContract]
-    public class CNTKTensor : Tensor
+    [DebuggerDisplay("{ToString()}")]
+    public abstract class NameScope : IDisposable
     {
-        public Function function;
-        public Parameter parameter;
+        public abstract string Name { get; }
 
-        public new CNTKBackend K
-        {
-            get { return base.K as CNTKBackend; }
-        }
-
-        public CNTKTensor(IBackend backend)
-            : base(backend)
-        {
-        }
-
-        public new DataType dtype
-        {
-            get { return function.Output.DataType; }
-        }
-
-
-        public NDShape CNTK_Shape
-        {
-            get { return function.Output.Shape; }
-        }
-
-        public override string name
-        {
-            get
-            {
-                return function.Name;
-            }
-        }
-
-        public static implicit operator CNTK.Variable(CNTKTensor t)
-        {
-            return t.function;
-        }
-
-        public static implicit operator CNTK.Function(CNTKTensor t)
-        {
-            return t.function;
-        }
-
-
+        public abstract void Dispose();
 
         public override string ToString()
         {
-            string uid = function.Uid;
-            string s = str(shape);
-            string r = $"KerasSharp.Engine.Topology.Tensor '{uid}' shape={s} dtype={function.Output.DataType}";
-            return r;
+            return Name;
         }
     }
 }
