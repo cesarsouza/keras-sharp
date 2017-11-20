@@ -38,8 +38,6 @@ namespace KerasSharp.Backends
     using static KerasSharp.Python;
     using Accord.Math;
 
-    // TODO:
-
     public class TensorFlowBackend : BackendBase, IBackend
     {
         internal TFGraph tf;
@@ -184,22 +182,23 @@ namespace KerasSharp.Backends
         /// 
         public Tensor binary_crossentropy(Tensor output, Tensor target, bool from_logits = false)
         {
-            var _output = In(output);
-            var _target = In(target);
+            TFOutput _output = In(output);
+            TFOutput _target = In(target);
+            TFDataType dtype = _output.OutputType;
 
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L2792
+
             // Note: tf.nn.sigmoid_cross_entropy_with_logits
             // expects logits, Keras expects probabilities.
             if (!from_logits)
             {
                 // transform back to logits
-                TFOutput _epsilon = _constant(epsilon(), dtype: _output.dtype);
-                TFOutput o = _output.output;
-                o = tf.ClipByValue(o, _epsilon, tf.Sub(_constant(1f), _epsilon));
-                o = tf.Log(tf.Div(_output, (tf.Sub(tf.Const(1f), _output))));
+                TFOutput _epsilon = _constant(epsilon(), dtype: dtype);
+                _output = tf.ClipByValue(_output, _epsilon, tf.Sub(_constant(1, dtype: dtype), _epsilon));
+                _output = tf.Log(tf.Div(_output, tf.Sub(_constant(1, dtype: dtype), _output)));
             }
 
-            return Out(tf.sigmoid_cross_entropy_with_logits(labels: _target, logits: _output));
+            return Out(tf.SigmoidCrossEntropyWithLogits(labels: _target, logits: _output));
         }
 
         public Tensor cast(Tensor x, DataType dataType)
@@ -290,11 +289,11 @@ namespace KerasSharp.Backends
             return Out(o);
         }
 
-        private TFOutput _constant<T>(T value, TFDataType? dtype = null, string name = null)
+        private TFOutput _constant<T>(T value, TFDataType? dtype = null, string operName = null)
         {
             TFTensor t = new TFTensor((dynamic)value);
 
-            TFOutput o = tf.Const(t, operName: name);
+            TFOutput o = tf.Const(t, operName: operName);
 
             if (dtype == null || o.OutputType == dtype.Value)
                 return o;
@@ -347,17 +346,17 @@ namespace KerasSharp.Backends
             return int_shape(x);
         }
 
-        public List<Tensor> gradients(Tensor loss, object param)
-        {
-            throw new NotImplementedException();
-        }
-
         public List<Tensor> gradients(Tensor loss, List<Tensor> param)
         {
             var y = new TFOutput[] { In(loss).output };
             var x = param.Select(t => In(t).output).ToArray();
-            TFOutput[] grads = tf.AddGradients(x, y);
-            List<Tensor> r = grads.Select(o => Out(o)).ToList();
+
+            TFOutput[] grads = tf.AddGradients(y, x);
+
+            List<Tensor> r = new List<Tensor>();
+            for (int i = 0; i < grads.Length; i++)
+                r.Add(Out(grads[i], name: "grad/" + x[i].Operation.Name));
+
             return r;
         }
 
@@ -371,9 +370,14 @@ namespace KerasSharp.Backends
             return Out(tf.NotEqual(In(x), In(y)));
         }
 
-        public Tensor not_equal(Tensor x, double y)
+        public Tensor not_equal<T>(Tensor x, T y) where T : struct
         {
-            return Out(tf.NotEqual(In(x), tf.Const(y, In(x).dtype)));
+            using (this.name_scope("not_equal"))
+            {
+                TensorFlowTensor _x = In(x);
+                var _y = tf.Cast(tf.Const((dynamic)y), _x.dtype);
+                return Out(tf.NotEqual(_x, _y));
+            }
         }
 
         public Tensor hard_sigmoid(Tensor x)
@@ -381,9 +385,9 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor identity(Tensor x)
+        public Tensor identity(Tensor x, string name = null)
         {
-            throw new NotImplementedException();
+            return Out(tf.Identity(In(x), operName: name));
         }
 
         /// <summary>
@@ -603,25 +607,25 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor dot(Tensor a, Tensor b)
+        public Tensor dot(Tensor a, Tensor b, string name = null)
         {
-            return Out(tf.MatMul(In(a).output, In(b).output));
+            return Out(tf.MatMul(In(a).output, In(b).output, operName: name));
         }
 
 
-        public Tensor mul<T>(T a, Tensor b)
+        public Tensor mul<T>(T a, Tensor b, string name = null)
         {
-            return mul(constant(a, dtype: dtype(b)), b);
+            return mul(constant(a, dtype: dtype(b)), b, name: name);
         }
 
-        public Tensor mul(Tensor a, Tensor b)
+        public Tensor mul(Tensor a, Tensor b, string name = null)
         {
-            return Out(tf.Mul(In(a).output, In(b).output));
+            return Out(tf.Mul(In(a).output, In(b).output, operName: name));
         }
 
-        public Tensor mul<T>(Tensor a, T b)
+        public Tensor mul<T>(Tensor a, T b, string name = null)
         {
-            return mul(a, constant(b, dtype: dtype(a)));
+            return mul(a, constant(b, dtype: dtype(a), name: name));
         }
 
         public Tensor mul(List<Tensor> batch_outs, int length)
@@ -640,7 +644,7 @@ namespace KerasSharp.Backends
 
         public Tensor div(Tensor a, Tensor b)
         {
-            return Out(tf.Mul(In(a).output, In(b).output));
+            return Out(tf.Div(In(a).output, In(b).output));
         }
 
         public Tensor div<T>(Tensor a, T b)
@@ -660,9 +664,9 @@ namespace KerasSharp.Backends
             return Out(tf.Add(In(a).output, In(b).output));
         }
 
-        public Tensor bias_add(Tensor a, Tensor b)
+        public Tensor bias_add(Tensor a, Tensor b, string name = null)
         {
-            return add(a, b);
+            return Out(tf.BiasAdd(In(a), In(b), operName: name));
         }
 
         public Tensor add<T>(T a, Tensor b)
@@ -677,26 +681,32 @@ namespace KerasSharp.Backends
 
 
 
-        public Tensor subtract(Tensor a, Tensor b)
+        public Tensor subtract(Tensor a, Tensor b, string name = null)
         {
-            return Out(tf.Sub(In(a).output, In(b).output));
+            return Out(tf.Sub(In(a).output, In(b).output, operName: name));
         }
 
-        public Tensor subtract<T>(T a, Tensor b)
+        public Tensor subtract<T>(T a, Tensor b, string name = null)
         {
-            return subtract(constant(a), b);
+            return subtract(constant(a), b, name: name);
         }
 
-        public Tensor subtract<T>(Tensor a, T b)
+        public Tensor subtract<T>(Tensor a, T b, string name = null)
         {
-            return subtract(a, constant(b));
+            return subtract(a, constant(b), name: name);
         }
 
 
 
-        public IDisposable name_scope(string name)
+        public NameScope name_scope(string name)
         {
-            return tf.WithScope(name);
+            return new TensorFlowNameScope(tf.WithScope(name), name);
+        }
+
+        public NameScope name_scope(string operName, string userName)
+        {
+            string name = MakeName(operName, userName);
+            return new TensorFlowNameScope(tf.WithScope(name), name);
         }
 
 
@@ -766,13 +776,13 @@ namespace KerasSharp.Backends
             if (seed == null)
                 seed = Accord.Math.Random.Generator.Random.Next(1_000_000);
 
-            using (var scope = name_scope("random_uniform"))
+            using (name_scope("random_uniform", name))
             {
                 var _shape = tf.Const(shape.Select(x => (long)x).ToArray());
-                TFOutput u = tf.RandomUniform(_shape, dtype: _dtype, seed: seed, operName: name);
+                TFOutput u = tf.RandomUniform(_shape, dtype: _dtype, seed: seed, operName: "uniform");
 
                 return Out(tf.Add(tf.Mul(u, _constant(maxval - minval, dtype: _dtype)),
-                                            _constant(minval, dtype: _dtype)));
+                                            _constant(minval, dtype: _dtype)), name: "scaled");
             }
         }
 
@@ -807,9 +817,9 @@ namespace KerasSharp.Backends
             return Out(tf.Sqrt(In(x)));
         }
 
-        public Tensor pow(Tensor x, Tensor p)
+        public Tensor pow(Tensor x, Tensor p, string name = null)
         {
-            return Out(tf.Pow(In(x), In(p)));
+            return Out(tf.Pow(In(x), In(p), operName: name));
         }
 
         public Tensor square(Tensor w)
@@ -844,7 +854,7 @@ namespace KerasSharp.Backends
 
         public Tensor tanh(Tensor x)
         {
-            throw new NotImplementedException();
+            return Out(tf.Tanh(In(x)));
         }
 
         public Tensor truncated_normal(int[] shape, double v, double stddev, DataType? dtype, int? seed)
@@ -857,14 +867,24 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor update(Tensor x, Tensor new_x)
+        public Tensor update(Tensor x, Tensor new_x, string name = null)
         {
-            return Out(tf.Assign(In(x), In(new_x)));
+            TensorFlowTensor _x = In(x);
+            return Out(tf.Assign(_x.output, In(new_x), operName: name));
         }
 
-        public Tensor update_add(Tensor x, int increment)
+        public Tensor update_add<T>(Tensor x, T increment, string name = null)
+            where T : struct
         {
-            return Out(tf.AssignAdd(In(x), _constant(increment)));
+            TensorFlowTensor _x = In(x);
+            return Out(tf.AssignAdd(_x, _constant(increment), operName: name));
+        }
+
+        public Tensor print_tensor(Tensor x, string message)
+        {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L2204
+            TensorFlowTensor _x = In(x);
+            return Out(tf.Print(_x, new[] { _x.output }, message));
         }
 
         /// <summary>
@@ -875,18 +895,26 @@ namespace KerasSharp.Backends
         /// <param name="dtype">Tensor type.</param>
         /// <param name="name">Optional name string for the tensor.</param>
         /// 
-        public Tensor variable<T>(T value, string name = null)
+        public Tensor variable<T>(T value, DataType? dtype = null, string name = null)
             where T : struct
         {
+            if (dtype == null)
+                dtype = floatx();
+
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L308
+            var _dtype = In(dtype.Value);
 
-            var t = new TensorFlowTensor(this);
-
-            // trick for being type safe and still allow all numeric types supported by TFTensor 
-            t.output = tf.Const(new TFTensor((dynamic)value), operName: name);
-            t._keras_shape = new int?[] { };
-            t._uses_learning_phase = false;
-            return t;
+            using (var scope = name_scope("Variable", name))
+            {
+                var t = new TensorFlowTensor(this);
+                t.output = tf.VariableV2(TFShape.Scalar, _dtype, operName: "var");
+                var init = _constant(value, _dtype, operName: "init");
+                init = tf.Print(init, new[] { init }, $"initializing {scope.Name}");
+                tf.AddInitVariable(tf.Assign(t.output, init, operName: "assign").Operation);
+                t._keras_shape = new int?[] { };
+                t._uses_learning_phase = false;
+                return t;
+            }
         }
 
         /// <summary>
@@ -897,13 +925,22 @@ namespace KerasSharp.Backends
         /// <param name="dtype">Tensor type.</param>
         /// <param name="name">Optional name string for the tensor.</param>
         /// 
-        public Tensor variable(Array array, string name = null)
+        public Tensor variable(Array array, DataType? dtype = null, string name = null)
         {
+            if (dtype == null)
+                dtype = floatx();
+
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L308
+            var _dtype = In(dtype.Value);
 
             var t = new TensorFlowTensor(this);
+            t.output = tf.VariableV2(In(array.GetLength()), _dtype, operName: name);
 
-            t.output = tf.Const(new TFTensor(array), operName: name);
+            string varName = t.output.Operation.Name;
+
+            var init = _constant(array, _dtype, operName: $"{varName}/init");
+            init = tf.Print(init, new[] { init }, $"initializing {varName}");
+            tf.AddInitVariable(tf.Assign(t.output, init, operName: $"{varName}/assign").Operation);
             t._keras_shape = array.GetLength().Apply(x => (int?)x);
             t._uses_learning_phase = false;
             return t;
@@ -923,25 +960,58 @@ namespace KerasSharp.Backends
                 dtype = floatx();
 
             var _tensor = In(tensor);
+            var _dtype = In(dtype.Value);
+            TFShape _shape = In(tensor.shape);
 
             // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/tensorflow_backend.py#L308
 
             var t = new TensorFlowTensor(this);
 
+            t.output = tf.VariableV2(_shape, _dtype, operName: name);
+
+            string varName = t.output.Operation.Name;
+
+            TFOutput init;
             if (_tensor.tensor == null)
-                t.output = _tensor.output;
+                init = _tensor.output;
             else
-                t.output = tf.Const(_tensor.tensor);
+                init = tf.Cast(tf.Const(_tensor.tensor), _dtype, operName: $"{varName}/init");
+
+            init = tf.Print(init, new[] { init }, $"initializing {varName}");
+            tf.AddInitVariable(tf.Assign(t.output, init, operName: $"{varName}/assign").Operation);
             t._keras_shape = tensor.shape;
             t._uses_learning_phase = false;
             return t;
         }
 
+        public Tensor transpose(Tensor tensor)
+        {
+            return Out(tf.Transpose(In(tensor).output));
+        }
+
+
         public object eval(Tensor tensor)
         {
             var _tensor = In(tensor);
+            return eval(_tensor.output);
+        }
 
-            TFTensor[] result = _SESSION.Run(new TFOutput[] { }, new TFTensor[] { }, new[] { _tensor.output });
+        public object eval(TFOutput output)
+        {
+            try
+            {
+                // Initialize variables if necessary
+                TFOperation[] ops = tf.GetGlobalVariablesInitializer();
+                if (ops.Length > 0)
+                    _SESSION.Run(new TFOutput[] { }, new TFTensor[] { }, new TFOutput[] { }, ops);
+            }
+            catch
+            {
+                // temporary workaround until changes are sent to TensorFlowSharp
+            }
+
+            // Evaluate tensor
+            TFTensor[] result = _SESSION.Run(new TFOutput[] { }, new TFTensor[] { }, new[] { output });
 
             if (result.Length == 1)
                 return result[0].GetValue();
@@ -1028,7 +1098,18 @@ namespace KerasSharp.Backends
         }
 
 
+        public string MakeName(string operName, string userName)
+        {
+            if (userName == null)
+            {
+                var k = tf.CurrentNameScope == "" ? operName : tf.CurrentNameScope + "/" + operName;
+                return $"{k}_{str(get_uid(k))}";
+            }
 
+            if (tf.CurrentNameScope == "")
+                return userName;
+            return tf.CurrentNameScope + "/" + userName;
+        }
 
 
 
@@ -1039,9 +1120,20 @@ namespace KerasSharp.Backends
             return new TFShape(shape.Select(x => x.HasValue ? (long)x.Value : -1).ToArray());
         }
 
-        public Tensor Out(TFOutput output)
+        public TFShape In(int[] shape)
         {
-            return new TensorFlowTensor(this) { output = output };
+            return new TFShape(shape.Select(x => (long)x).ToArray());
+        }
+
+        public Tensor Out(TFOutput output, string name = null)
+        {
+            if (name != null)
+                output = tf.Identity(output, operName: name);
+
+            return new TensorFlowTensor(this)
+            {
+                output = output
+            };
         }
 
         public Tensor Out(TFTensor output)
@@ -1075,11 +1167,13 @@ namespace KerasSharp.Backends
         {
             if (dataType == null)
                 return null;
-            return (DataType)dataType.Value;
+            return Out(dataType.Value);
         }
 
         public static DataType Out(TFDataType dataType)
         {
+            if ((int)dataType > 100)
+                return (DataType)((dataType - 100));
             return (DataType)dataType;
         }
 

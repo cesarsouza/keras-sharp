@@ -74,12 +74,17 @@ namespace KerasSharp.Engine.Topology
             }
         }
 
+        public override string name
+        {
+            get { return output.Operation.Name; }
+        }
+
         public override string ToString()
         {
             string n = output.Operation.Name;
             long i = output.Index;
             string s = str(shape);
-            string r = $"KerasSharp.Engine.Topology.Tensor '{n}_{i}' shape={s} dtype={output.OutputType}";
+            string r = $"KerasSharp.Engine.Topology.Tensor '{n}_{i}' shape={s} dtype={base.dtype}";
             return r;
         }
 

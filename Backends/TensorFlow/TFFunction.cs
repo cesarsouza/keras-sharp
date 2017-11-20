@@ -31,6 +31,8 @@ using KerasSharp.Models;
 using TensorFlow;
 using System.Linq;
 using Accord.Math;
+using Accord;
+using System.IO;
 
 namespace KerasSharp.Backends
 {
@@ -48,7 +50,7 @@ namespace KerasSharp.Backends
         private List<Tensor> inputs;
         private List<Tensor> outputs;
         private string name;
-        private List<TFOutput> updates_op;
+        private List<TFOperation> updates_op;
 
         public TFFunction(TensorFlowBackend k, List<Tensor> inputs, List<Tensor> outputs, List<List<Tensor>> updates, string name)
         {
@@ -60,19 +62,23 @@ namespace KerasSharp.Backends
             this.inputs = inputs;
             this.outputs = outputs;
             {
-                var updates_ops = new List<TFOutput>();
+                var updates_ops = new List<TFOperation>();
                 foreach (List<Tensor> update in updates)
                 {
                     if (update.Count == 2)
                     {
                         var p = K.In(update[0]);
                         var new_p = K.In(update[1]);
-                        updates_ops.Add(tf.Assign(p, new_p));
+                        updates_ops.Add(tf.Assign(p, new_p).Operation);
+                    }
+                    else if (update.Count == 1)
+                    {
+                        // assumed already an op
+                        updates_ops.Add(K.In(update[0]).output.Operation);
                     }
                     else
                     {
-                        // assumed already an op
-                        updates_ops.Add(K.In(update[0]));
+                        throw new NotSupportedException();
                     }
                 }
 
@@ -100,26 +106,137 @@ namespace KerasSharp.Backends
             }
 
             var session = K._SESSION;
-            var outputs = new List<TFOutput>();
-            foreach (var o in this.outputs)
-                outputs.Add(K.In(o));
-            foreach (TFOutput o in this.updates_op)
-                outputs.Add(o);
 
-            var _inputs = new List<TFOutput>();
-            var _values = new List<TFTensor>();
-            foreach (KeyValuePair<Tensor, Array> pair in feed_dict)
+            var init = tf.GetGlobalVariablesInitializer();
+            if (init.Length > 0)
             {
-                _inputs.Add(K.In(pair.Key));
-                _values.Add(pair.Value);
+                Console.WriteLine("Initializing variables:");
+                foreach (var op in init)
+                {
+                    Console.WriteLine(" - " + op.Name);
+                    session.Run(new TFOutput[0], new TFTensor[0], new TFOutput[0], new[] { op });
+                }
+
+                Console.WriteLine("Operations:");
+                foreach (var op in tf.GetEnumerator())
+                    Console.WriteLine(" - " + op.Name);
+                Console.WriteLine();
             }
 
-            var updated = session.Run(
-                inputs: _inputs.ToArray(), 
-                inputValues: _values.ToArray(),
-                outputs: outputs.ToArray());
+            //Console.WriteLine("Before:");
+            //PrintVariables(feed_dict, session);
+            // Console.ReadKey();
+
+            var runner = session.GetRunner();
+
+            foreach (var o in this.outputs)
+                runner.Fetch(K.In(o).output);
+
+            foreach (var op in this.updates_op)
+                runner.AddTarget(op);
+
+            foreach (KeyValuePair<Tensor, Array> pair in feed_dict)
+            {
+                TensorFlowTensor t = K.In(pair.Key);
+                runner.AddInput(t.output, pair.Value);
+            }
+
+
+
+            var updated = runner.Run();
+
+            //Console.WriteLine();
+
+            //foreach (var v in updated)
+            //{
+            //    object obj = v.GetValue();
+            //    if (obj is float[,])
+            //        Console.WriteLine((obj as float[,]).ToCSharp());
+            //    else if (obj is float[])
+            //        Console.WriteLine((obj as float[]).ToCSharp());
+            //    else
+            //        Console.WriteLine(obj);
+            //}
+
+            //Console.WriteLine();
+            //Console.WriteLine();
+
+            //Console.WriteLine("After:");
+            //PrintVariables(feed_dict, session);
 
             return updated.Get(0, this.outputs.Count).Select(t => K.Out(t)).ToList();
+
+            // Console.ReadKey();
+        }
+
+        private void PrintVariables(Dictionary<Tensor, Array> feed_dict, TFSession session)
+        {
+            string[] ops =
+            {
+                //"SGD/grad/dense_1/dense_1/kernel/var",
+                //"SGD/grad/dense_2/dense_2/kernel/var",
+                //"SGD/grad/dense_2/dense_2/bias/var",
+                //"loss/dense_1_loss/y_true",
+                //"loss/dense_1_loss/y_pred",
+                //"loss/dense_1_loss/weights",
+                //"iterations/var",
+                //"lr/var",
+                //"lr_t",
+                //"p_t",
+                //"metrics/binary_accuracy/Round0",
+                //"metrics/binary_accuracy/Cast0",
+                //"metrics/binary_accuracy/Mean0",
+                //"metrics/binary_accuracy/Equal0",
+                //"metrics/binary_accuracy/value",
+                //"metrics/score_array/mean"
+                //"beta_1/var",
+                //"beta_2/var",
+                //"decay/var",
+                //"adam/grad/dense_1/dense_1/kernel/var",
+                //"dense_1/variance_scaling/1/scaled",
+                //"dense_1/dense_1/kernel/var",
+                //"dense_1/call/dot",
+                //"dense_1/call/Sigmoid0",
+            };
+
+            foreach (var op in ops)
+            {
+                try
+                {
+                    var debugRunner = session.GetRunner();
+                    foreach (KeyValuePair<Tensor, Array> pair in feed_dict)
+                    {
+                        TensorFlowTensor t = K.In(pair.Key);
+                        debugRunner.AddInput(t.output, pair.Value);
+                    }
+
+                    Console.WriteLine(op);
+                    debugRunner.Fetch(op);
+
+                    var v = debugRunner.Run();
+
+                    object obj = v[0].GetValue();
+
+                    if (obj is float[,])
+                        Console.WriteLine((obj as float[,]).ToCSharp());
+                    else if (obj is float[])
+                        Console.WriteLine((obj as float[]).ToCSharp());
+                    else if (obj is bool[,])
+                        Console.WriteLine((obj as bool[,]).ToCSharp());
+                    else if (obj is bool[])
+                        Console.WriteLine((obj as bool[]).ToCSharp());
+                    else if (obj is sbyte[,])
+                        Console.WriteLine((obj as sbyte[,]).ToCSharp());
+                    else if (obj is sbyte[])
+                        Console.WriteLine((obj as sbyte[]).ToCSharp());
+                    else
+                        Console.WriteLine(obj);
+                }
+                catch
+                {
+
+                }
+            }
         }
     }
 }
