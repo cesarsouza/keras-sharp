@@ -75,6 +75,23 @@ Upon execution, you should see the same familiar Keras behavior as shown below:
 
 ![Keras Sharp during training](https://github.com/cesarsouza/keras-sharp/raw/master/Docs/Wiki/learning.png)
 
+This is posssible because Keras# is a direct, line-by-line port of the Keras project into C#. A goal of this project is to make sure that porting existing code from its Python counterpart into C# can be done in no time or with minimum effort, if at all.
+
+## Backends
+
+Keras# currently supports TensorFlow and CNTK backends. If you would like to switch between different backends:
+
+```csharp
+KerasSharp.Backends.Current.Switch("KerasSharp.Backends.TensorFlowBackend");
+```
+or
+```csharp
+KerasSharp.Backends.Current.Switch("KerasSharp.Backends.CNTKBackend");
+```
+or, if you would like to implement your own backend to your own preferred library, such as [DiffSharp](https://github.com/DiffSharp/DiffSharp), just provide your own implementation of the IBackend interface and specify it using:
+```csharp
+KerasSharp.Backends.Current.Switch("YourNamespace.YourOwnBackend");
+```
 
 ## Work-in-progress
 
