@@ -151,8 +151,6 @@ namespace KerasSharp.Backends
 
         public override List<Tensor> Call(List<Array> inputs)
         {
-            var x = this.loss.Inputs.ToArray();
-
             var feed_dict = new Dictionary<Variable, Array>();
             foreach (var (tensor, value) in Enumerable.Zip(this.placeholders, inputs, (a, b) => (a, b)))
             {
