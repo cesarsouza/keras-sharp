@@ -153,7 +153,7 @@ namespace Tests
             using (var K = new TensorFlowBackend())
             {
                 #region doc_random_uniform
-                var kvar = K.random_uniform(new int?[] { 100, 2000 }, minval: -4, maxval: 2, dtype: DataType.Double, seed: 1337, name: "uni");
+                var kvar = K.random_uniform(new int[] { 100, 2000 }, minval: -4, maxval: 2, dtype: DataType.Double, seed: 1337, name: "uni");
                 var a = K.dtype(kvar); // float64 (Double)
                 var b = kvar.eval();
                 #endregion

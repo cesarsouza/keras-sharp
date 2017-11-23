@@ -85,6 +85,11 @@ namespace Accord.Math
             return r;
         }
 
+        public static float[,] Round(float[,] values)
+        {
+            return Matrix.Round(values.ToDouble()).ToSingle();
+        }
+
         /// <summary>
         ///   Sets a region of a matrix to the given values.
         /// </summary>

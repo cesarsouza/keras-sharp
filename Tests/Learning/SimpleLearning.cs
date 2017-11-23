@@ -95,9 +95,11 @@ namespace Tests
 
             model.fit(x, y, epochs: 1000, batch_size: y.Length);
 
-            double[] pred = Matrix.Round(model.predict(x, batch_size: y.Length)[0].To<double[,]>()).GetColumn(0);
+            Array yy = model.predict(x, batch_size: y.Length)[0];
+            float[] pred = MatrixEx.Round(yy.To<float[,]>()).GetColumn(0);
 
-            if ((useBias && y == xor) || (!useBias && (y == xor || y == nor)))
+            if ( (useBias && (y == xor)) || 
+                (!useBias && (y == xor || y == nor || y == and)))
             {
                 Assert.AreNotEqual(y, pred);
             }
