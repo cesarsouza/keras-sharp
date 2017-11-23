@@ -45,6 +45,6 @@ namespace KerasSharp.Initializers
         ///   and element data type <paramref name="dtype"/> that has been initialized using this
         ///   strategy.</returns>
         /// 
-        Tensor Call(int?[] shape, DataType? dtype = null);
+        Tensor Call(int[] shape, DataType? dtype = null);
     }
 }

@@ -113,11 +113,11 @@ namespace KerasSharp.Initializers
         /// and element data type <paramref name="dtype" /> that has been initialized using this
         /// strategy.</returns>
         /// 
-        public Tensor Call(int?[] shape, DataType? dtype = null)
+        public Tensor Call(int[] shape, DataType? dtype = null)
         {
             using (K.name_scope("variance_scaling"))
             {
-                var (fan_in, fan_out) = _compute_fans(shape.Select(x => x.Value).ToArray());
+                var (fan_in, fan_out) = _compute_fans(shape);
 
                 Double scale = this.scale;
                 if (this.mode == "fan_in")
