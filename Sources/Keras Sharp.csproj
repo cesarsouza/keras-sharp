@@ -132,6 +132,9 @@
     <Compile Include="Initializers\Ones.cs" />
     <Compile Include="Initializers\VarianceScaling.cs" />
     <Compile Include="Initializers\Zeros.cs" />
+    <Compile Include="Utils\ConvUtils.cs" />
+    <Compile Include="Layers\Convolutional\DataFormatType.cs" />
+    <Compile Include="Layers\Convolutional\PaddingType.cs" />
     <Compile Include="Layers\Core\Activation.cs" />
     <Compile Include="Layers\Core\Merge.cs" />
     <Compile Include="Layers\Embeddings\Embedding.cs" />

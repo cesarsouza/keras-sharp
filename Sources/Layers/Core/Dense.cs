@@ -157,7 +157,7 @@ namespace KerasSharp
 
             int input_dim = Matrix.Get(input_shape[0], -1).Value;
 
-            this.kernel = add_weight(shape: new int?[] { input_dim, this.units },
+            this.kernel = add_weight(shape: new int[] { input_dim, this.units },
                 initializer: this.kernel_initializer,
                 regularizer: this.kernel_regularizer,
                 constraint: this.kernel_constraint,
@@ -165,7 +165,7 @@ namespace KerasSharp
 
             if (this.use_bias)
             {
-                this.bias = base.add_weight(shape: new int?[] { this.units },
+                this.bias = base.add_weight(shape: new int[] { this.units },
                     name: "bias",
                     initializer: bias_initializer,
                     regularizer: bias_regularizer,

@@ -387,8 +387,11 @@ namespace KerasSharp.Backends
             return Out(new Variable(In(a).function) + new Variable(In(b).function));
         }
 
-        public Tensor bias_add(Tensor output, Tensor bias, string name = null)
+        public Tensor bias_add(Tensor output, Tensor bias, DataFormatType? data_format = null, string name = null)
         {
+            if (data_format != null)
+                throw new NotImplementedException();
+
             using (this.name_scope("bias_add"))
             {
                 CNTKTensor _x = In(output);
@@ -474,6 +477,21 @@ namespace KerasSharp.Backends
             return Out(C.Transpose(In(tensor)));
         }
 
+        /// <summary>
+        ///   Turn a nD tensor into a 2D tensor with same 0th dimension. In other words, it flattens each data samples of a batch.
+        /// </summary>
+        /// 
+        public Tensor batch_flatten(Tensor x)
+        {
+            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/cntk_backend.py#L1460
+            // cntk's batch axis is not in shape,
+            // so just flatten all the dim in x.shape
+            int dim = Matrix.Product(x.shape.Select(s => s.Value).ToArray());
+            x = Out(C.Reshape(In(x), NDShape.CreateNDShape(new[] { -1 })));
+            x._keras_shape = new int?[] { null, dim };
+            return x;
+        }
+
         public object eval(Tensor tensor)
         {
             log(new { tensor });
@@ -504,7 +522,7 @@ namespace KerasSharp.Backends
             throw new NotImplementedException();
         }
 
-        public Tensor random_uniform(int?[] shape, double minval = 0, double maxval = 1, DataType? dtype = null, int? seed = null, string name = null)
+        public Tensor random_uniform(int[] shape, double minval = 0, double maxval = 1, DataType? dtype = null, int? seed = null, string name = null)
         {
             if (dtype == null)
                 dtype = floatx();
@@ -694,7 +712,7 @@ namespace KerasSharp.Backends
             return Out(In(input_tensor).function.Output.DataType);
         }
 
-        public Tensor constant<T>(T value, int?[] shape = null, KerasSharp.DataType? dtype = null, string name = null)
+        public Tensor constant<T>(T value, int[] shape = null, KerasSharp.DataType? dtype = null, string name = null)
         {
             log(new { value, shape, dtype, name });
 
@@ -705,7 +723,7 @@ namespace KerasSharp.Backends
             return Out(_const, shape);
         }
 
-        public Constant InGeneric<T>(T value, int?[] shape = null, KerasSharp.DataType? dtype = null, string name = null)
+        public Constant InGeneric<T>(T value, int[] shape = null, KerasSharp.DataType? dtype = null, string name = null)
         {
             if (dtype == null)
                 dtype = floatx();
@@ -726,7 +744,7 @@ namespace KerasSharp.Backends
             }
             else
             {
-                _shape = shape.Select(x => x.Value).ToArray();
+                _shape = shape;
             }
 
             Constant c = _constant(value, _shape, _dtype, name);
@@ -979,6 +997,20 @@ namespace KerasSharp.Backends
         }
 
 
+        public Tensor conv1d(Tensor inputs, Tensor kernel, int strides, PaddingType padding, DataFormatType? data_format = null, int dilation_rate = 1, string name = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Tensor conv2d(Tensor inputs, Tensor kernel, int[] strides, PaddingType padding, DataFormatType? data_format = null, int[] dilation_rate = null, string name = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Tensor conv3d(Tensor inputs, Tensor kernel, int[] strides, PaddingType padding, DataFormatType? data_format = null, int[] dilation_rate = null, string name = null)
+        {
+            throw new NotImplementedException();
+        }
 
 
 
@@ -1082,6 +1114,11 @@ namespace KerasSharp.Backends
             }
 
             return s;
+        }
+
+        public Tensor Out(CNTK.Function function, int[] keras_shape)
+        {
+            return Out(function, keras_shape.Select(x => (int?)x).ToArray());
         }
 
         public Tensor Out(CNTK.Function function, int?[] keras_shape = null)
@@ -1207,7 +1244,6 @@ namespace KerasSharp.Backends
             // TODO: uncomment the following line if the finalizer is overridden above.
             // GC.SuppressFinalize(this);
         }
-
         #endregion
     }
 }

@@ -48,7 +48,7 @@ namespace KerasSharp.Backends
         Tensor round(Tensor x);
         Tensor argmax(Tensor x, int axis = -1);
         Tensor sum(Tensor x, int axis, bool keepdims = false, string name = null);
-
+        Tensor batch_flatten(Tensor inputs);
 
 
         Tensor clip(Tensor norms, int v, int maxValue);
@@ -65,6 +65,7 @@ namespace KerasSharp.Backends
         void clear_session();
 
         Tensor cast(Tensor x, DataType dataType);
+        
 
         Tensor dropout(object p, double retain_prob, object noise_shape, object seed);
 
@@ -137,6 +138,8 @@ namespace KerasSharp.Backends
 
         Tensor print_tensor(Tensor x, string message);
 
+        DataFormatType image_data_format();
+
         Tensor softsign(Tensor x);
 
         Tensor tanh(Tensor x);
@@ -152,7 +155,7 @@ namespace KerasSharp.Backends
 
 
 
-        Tensor random_uniform(int?[] shape, double minval = 0.0, double maxval = 1.0, DataType? dtype = null, int? seed = null, string name = null);
+        Tensor random_uniform(int[] shape, double minval = 0.0, double maxval = 1.0, DataType? dtype = null, int? seed = null, string name = null);
 
         Tensor l2_normalize(Tensor expected, int axis);
 
@@ -185,7 +188,7 @@ namespace KerasSharp.Backends
 
         DataType? dtype(Tensor input_tensor);
 
-        Tensor constant<T>(T value, int?[] shape = null, DataType? dtype = null, string name = null);
+        Tensor constant<T>(T value, int[] shape = null, DataType? dtype = null, string name = null);
 
         Tensor transpose(Tensor tensor);
 
@@ -236,6 +239,12 @@ namespace KerasSharp.Backends
 
         Tensor not_equal<T>(Tensor weights, T v) where T : struct;
 
-        Tensor bias_add(Tensor output, Tensor bias, string name = null);
+        Tensor bias_add(Tensor output, Tensor bias, DataFormatType? data_format = null, string name = null);
+
+        Tensor conv1d(Tensor inputs, Tensor kernel, int strides, PaddingType padding, DataFormatType? data_format, int dilation_rate, string name = null);
+
+        Tensor conv2d(Tensor inputs, Tensor kernel, int[] strides, PaddingType padding, DataFormatType? data_format, int[] dilation_rate, string name = null);
+
+        Tensor conv3d(Tensor inputs, Tensor kernel, int[] strides, PaddingType padding, DataFormatType? data_format, int[] dilation_rate, string name = null);
     }
 }

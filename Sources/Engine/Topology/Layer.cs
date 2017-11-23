@@ -279,7 +279,7 @@ namespace KerasSharp.Engine.Topology
         /// 
         /// <return>The created weight variable.</return>
         /// 
-        public Tensor add_weight(string name, int?[] shape, DataType? dtype = null,
+        public Tensor add_weight(string name, int[] shape, DataType? dtype = null,
             IWeightInitializer initializer = null, IWeightRegularizer regularizer = null,
                    bool trainable = true, IWeightConstraint constraint = null)
         {
