@@ -24,41 +24,11 @@
 //    SOFTWARE.
 //
 
-namespace KerasSharp.Backends
+namespace KerasSharp
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using KerasSharp.Engine.Topology;
-    using KerasSharp.Losses;
-    using KerasSharp.Models;
-    using Accord.Math;
-    using static KerasSharp.Python;
-
-    public abstract class BackendBase
+    public enum DataFormatType
     {
-        float eps = 10e-8f;
-        DataFormatType format = DataFormatType.ChannelsLast;
-
-        /// <summary>
-        ///   Returns the value of the fuzz factor used in numeric expressions.
-        /// </summary>
-        /// 
-        public float epsilon()
-        {
-            return eps;
-        }
-
-        /// <summary>
-        ///   Returns the default image data format convention ('channels_first' or 'channels_last').
-        /// </summary>
-        /// 
-        public DataFormatType image_data_format()
-        {
-            // https://github.com/fchollet/keras/blob/f65a56fb65062c8d14d215c9f4b1015b97cc5bf3/keras/backend/common.py#L111
-            return format;
-        }
+        ChannelsFirst,
+        ChannelsLast,
     }
 }
