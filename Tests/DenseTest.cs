@@ -45,7 +45,7 @@ namespace Tests
 
         [TestCase(Setup.TENSORFLOW)]
         [TestCase(Setup.CNTK)]
-        public void conv_pass_through(string backend)
+        public void dense_pass_through(string backend)
         {
             KerasSharp.Backends.Current.Switch(backend);
 
@@ -63,7 +63,7 @@ namespace Tests
 
         [TestCase(Setup.TENSORFLOW)]
         [TestCase(Setup.CNTK)]
-        public void conv_bias(string backend)
+        public void dense_bias(string backend)
         {
             KerasSharp.Backends.Current.Switch(backend);
 
