@@ -507,8 +507,8 @@ namespace KerasSharp.Backends
             Value value = outputs[variable];
             var shape = value.Shape;
 
-            var r = value.GetDenseData<double>(_tensor.function);
-
+            IEnumerable<IEnumerable<double>> r = 
+                value.GetDenseData<double>(_tensor.function);
 
             if (value.DataType == CNTKDataType.Double)
                 return Out<double>(variable, value, shape);
@@ -720,7 +720,7 @@ namespace KerasSharp.Backends
 
             Constant _const = InGeneric(value, shape, dtype, name);
 
-            return Out(_const, shape);
+            return Out(_const);
         }
 
         public Constant InGeneric<T>(T value, int[] shape = null, KerasSharp.DataType? dtype = null, string name = null)

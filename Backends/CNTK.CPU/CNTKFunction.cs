@@ -41,7 +41,6 @@ namespace KerasSharp.Backends
         private List<List<Tensor>> updates;
         private Variable[] placeholders;
         private Trainer trainer;
-        private UnorderedMapVariableValuePtr trainer_output;
         private CNTK.Function unrelated_updates;
         private Variable[] metrics_outputs;
         private CNTK.Function metrics_func;
@@ -115,10 +114,6 @@ namespace KerasSharp.Backends
                         lossFunction: outputs[0],
                         evaluationFunction: outputs[1], 
                         parameterLearners: new[] { learner });
-
-                    this.trainer_output = new UnorderedMapVariableValuePtr();
-                    foreach (CNTK.Function f in outputs)
-                        this.trainer_output.Add(f, null);
                 }
                 else if (len(u_ops) > 0)
                 {
@@ -175,13 +170,10 @@ namespace KerasSharp.Backends
                         throw new Exception($"CNTK backend: argument {argument.Name} is not found in inputs. Please double check the model and inputs in 'train_function'.");
                 }
 
-                foreach (CNTK.Function f in this.trainer_output.Keys)
-                    this.trainer_output[f] = null;
+                this.trainer.TrainMinibatch(input_dict, isSweepEndInarguments: false, computeDevice: DeviceDescriptor.CPUDevice);
 
-                var result = this.trainer.TrainMinibatch(input_dict, this.trainer_output);
-
-                foreach (Variable o in this.trainer_output.Keys)
-                    updated.Add(c.Out(this.trainer_output[o]));
+                updated.Add(c.constant(this.trainer.PreviousMinibatchLossAverage()));
+                updated.Add(c.constant(this.trainer.PreviousMinibatchEvaluationAverage()));
             }
 
             if (this.metrics_func != null)

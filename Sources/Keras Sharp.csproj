@@ -81,7 +81,7 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="TensorFlowSharp, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\TensorFlowSharp.1.4.0-pre1\lib\net461\TensorFlowSharp.dll</HintPath>
+      <HintPath>..\packages\TensorFlowSharp.1.4.0\lib\net461\TensorFlowSharp.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -202,7 +202,7 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Accord.3.8.2-alpha\build\Accord.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.3.8.2-alpha\build\Accord.targets'))" />
-    <Error Condition="!Exists('..\packages\TensorFlowSharp.1.4.0-pre1\build\TensorFlowSharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\TensorFlowSharp.1.4.0-pre1\build\TensorFlowSharp.targets'))" />
+    <Error Condition="!Exists('..\packages\TensorFlowSharp.1.4.0\build\TensorFlowSharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\TensorFlowSharp.1.4.0\build\TensorFlowSharp.targets'))" />
   </Target>
-  <Import Project="..\packages\TensorFlowSharp.1.4.0-pre1\build\TensorFlowSharp.targets" Condition="Exists('..\packages\TensorFlowSharp.1.4.0-pre1\build\TensorFlowSharp.targets')" />
+  <Import Project="..\packages\TensorFlowSharp.1.4.0\build\TensorFlowSharp.targets" Condition="Exists('..\packages\TensorFlowSharp.1.4.0\build\TensorFlowSharp.targets')" />
 </Project>
