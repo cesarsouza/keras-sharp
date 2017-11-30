@@ -101,7 +101,7 @@ KerasSharp.Backends.Current.Switch("YourNamespace.YourOwnBackend");
 
 However, please note that this is still work-in-progress. Not only Keras#, but also [TensorFlowSharp](https://github.com/migueldeicaza/TensorFlowSharp) and [CNTK](https://github.com/Microsoft/CNTK). If you would like to contribute to the development of this project, please consider submitting new issues to any of those projects, [including us](https://github.com/cesarsouza/keras-sharp/issues).
 
-## Contributing
+## Contributing in development
 
 If you would like to contribute to the project, please see: [How to contribute to Keras#](https://github.com/cesarsouza/keras-sharp/wiki/How-to-contribute-in-development).
 
