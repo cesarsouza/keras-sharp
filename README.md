@@ -101,6 +101,10 @@ KerasSharp.Backends.Current.Switch("YourNamespace.YourOwnBackend");
 
 However, please note that this is still work-in-progress. Not only Keras#, but also [TensorFlowSharp](https://github.com/migueldeicaza/TensorFlowSharp) and [CNTK](https://github.com/Microsoft/CNTK). If you would like to contribute to the development of this project, please consider submitting new issues to any of those projects, [including us](https://github.com/cesarsouza/keras-sharp/issues).
 
+## Contributing
+
+If you would like to contribute to the project, please see: [How to contribute to Keras#](https://github.com/cesarsouza/keras-sharp/wiki/How-to-contribute-in-development).
+
 ## License & Copyright
 
 The Keras-Sharp project is brought to you under the as-permissable-as-possible MIT license. This is the same license provided by the original Keras project. This project also keeps track of all code contributions through the project's issue tracker, and pledges to update all licensing information once user contributions are accepted. Contributors are asked to grant explicit copyright licensens upon their contributions, which guarantees this project can be used in production without any licensing-related worries.
