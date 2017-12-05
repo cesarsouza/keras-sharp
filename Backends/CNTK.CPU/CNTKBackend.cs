@@ -1055,7 +1055,7 @@ namespace KerasSharp.Backends
             int[] shape = array.GetLength();
             NDShape cntk_shape = NDShape.CreateNDShape(shape);
 
-            Array dataBuffer = array.Flatten(order: MatrixOrder.CRowMajor);
+            Array dataBuffer = array.Flatten();
 
             // cntk will init type based on the value type
             NDArrayView v;

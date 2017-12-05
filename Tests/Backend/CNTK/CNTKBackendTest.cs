@@ -415,5 +415,26 @@ namespace Tests
             }
         }
 
+        /*
+        [Test]
+        public void memory_error()
+        {
+            double[] xx =
+           {
+                4, 2, 1, 5, 2, 4, 0, 9, 10,
+                2, 1, 2, 4, 6, 7, 2, 1, 45
+            };
+
+            // cntk will init type based on the value type
+            NDArrayView input = new NDArrayView(NDShape.CreateNDShape(new[] { 2, 8 }), xx, DeviceDescriptor.CPUDevice);
+
+            Variable inputVariable = Variable.InputVariable(NDShape.CreateNDShape(new[] { NDShape.FreeDimension, 8 }), CNTK.DataType.Double, needsGradient: true);
+
+            var k0 = new CNTK.Constant(shape: NDShape.CreateNDShape(new[] { 8, 1 }),
+                dataType: CNTK.DataType.Double, initValue: 0, device: DeviceDescriptor.CPUDevice);
+
+            var k = CNTKLib.Times(inputVariable, k0);
+        }
+        */
     }
 }

@@ -89,7 +89,7 @@ namespace KerasSharp.Backends
 
                 var update_func = C.Combine(new VariableVector(u_ops.Select(u => u.Output).ToArray()));
 
-                CNTK.Constant[] grads = update_func.Inputs.Where(x => x.Name == "keras_grad_placeholder").Select(x =>  new Constant(x)).ToArray();
+                CNTK.Constant[] grads = update_func.Inputs.Where(x => x.Name == "keras_grad_placeholder").Select(x => new Constant(x)).ToArray();
 
                 var u_list = new List<CNTK.Constant>();
                 var p_list = new List<CNTK.Parameter>();
@@ -109,10 +109,13 @@ namespace KerasSharp.Backends
                 if (len(u_list) > 0)
                 {
                     Learner learner = Learner.SGDLearner(p_list, new TrainingParameterScheduleDouble(1));
+                    CNTK.Function evaluationFunction = null;
+                    if (outputs.Length > 1)
+                        evaluationFunction = outputs[1];
 
                     this.trainer = Trainer.CreateTrainer(model: outputs[0],
-                        lossFunction: outputs[0],
-                        evaluationFunction: outputs[1], 
+                        lossFunction: outputs[0], 
+                        evaluationFunction: evaluationFunction,
                         parameterLearners: new[] { learner });
                 }
                 else if (len(u_ops) > 0)
@@ -175,7 +178,6 @@ namespace KerasSharp.Backends
 #else
                 this.trainer.TrainMinibatch(input_dict, isSweepEndInarguments: false, computeDevice: DeviceDescriptor.CPUDevice);
 #endif
-
                 updated.Add(c.constant(this.trainer.PreviousMinibatchLossAverage()));
                 updated.Add(c.constant(this.trainer.PreviousMinibatchEvaluationAverage()));
             }

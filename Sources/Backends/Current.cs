@@ -43,6 +43,7 @@ namespace KerasSharp.Backends
         {
             "KerasSharp.Backends.TensorFlow",
             "KerasSharp.Backends.CNTK.CPUOnly",
+            "KerasSharp.Backends.CNTK.GPU",
         };
 
         public static string Name = "KerasSharp.Backends.TensorFlowBackend";

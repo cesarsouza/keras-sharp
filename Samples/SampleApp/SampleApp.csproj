@@ -157,13 +157,17 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Backends\CNTK.CPU\CNTK %28CPU%29.csproj">
-      <Project>{99befbbe-88c2-426a-b687-0d0928b54f05}</Project>
-      <Name>CNTK %28CPU%29</Name>
+    <ProjectReference Include="..\..\Backends\CNTK.GPU\CNTK %28GPU%29.csproj">
+      <Project>{6d3df7e9-917b-4396-96b4-60aa58272b4f}</Project>
+      <Name>CNTK %28GPU%29</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Backends\TensorFlow\TensorFlow %28CPU%29.csproj">
       <Project>{31e970fd-4952-4a3a-9cc9-f9b519c3b20d}</Project>
       <Name>TensorFlow %28CPU%29</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Sources\Keras Sharp.csproj">
+      <Project>{efb9a83f-7475-4d9c-8a6e-5022b20ac4ad}</Project>
+      <Name>Keras Sharp</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
