@@ -170,7 +170,11 @@ namespace KerasSharp.Backends
                         throw new Exception($"CNTK backend: argument {argument.Name} is not found in inputs. Please double check the model and inputs in 'train_function'.");
                 }
 
+#if GPU
+                this.trainer.TrainMinibatch(input_dict, computeDevice: DeviceDescriptor.CPUDevice);
+#else
                 this.trainer.TrainMinibatch(input_dict, isSweepEndInarguments: false, computeDevice: DeviceDescriptor.CPUDevice);
+#endif
 
                 updated.Add(c.constant(this.trainer.PreviousMinibatchLossAverage()));
                 updated.Add(c.constant(this.trainer.PreviousMinibatchEvaluationAverage()));

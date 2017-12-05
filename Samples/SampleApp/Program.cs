@@ -58,8 +58,8 @@ namespace SampleApp
             print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
             */
 
-            KerasSharp.Backends.Current.Switch("KerasSharp.Backends.TensorFlowBackend");
-            //KerasSharp.Backends.Current.Switch("KerasSharp.Backends.CNTKBackend");
+            //KerasSharp.Backends.Current.Switch("KerasSharp.Backends.TensorFlowBackend");
+            KerasSharp.Backends.Current.Switch("KerasSharp.Backends.CNTKBackend");
 
             // Load the Pima Indians Data Set
             var pima = new Accord.DataSets.PimaIndiansDiabetes();

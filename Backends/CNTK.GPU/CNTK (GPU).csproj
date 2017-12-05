@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>net462</TargetFramework>
-    <RootNamespace>KerasSharp.Backends.TensorFlow</RootNamespace>
-    <AssemblyName>KerasSharp.Backends.TensorFlow</AssemblyName>
+    <RootNamespace>KerasSharp.Backends.CNTK.GPU</RootNamespace>
+    <AssemblyName>KerasSharp.Backends.CNTK.GPU</AssemblyName>
     <Platforms>x64</Platforms>
-    <PackageId>KerasSharp.Backends.TensorFlow</PackageId>
+    <PackageId>KerasSharp.Backends.CNTK.GPU</PackageId>
     <Authors>cesarsouza</Authors>
     <Company>cesarsouza</Company>
-    <Product>Keras# (TensorFlow backend)</Product>
+    <Product>Keras# (CNTK GPU backend)</Product>
     <Description>A line-by-line port of the Keras library in C# with TensorFlow and CNTK backends.</Description>
     <Copyright>Copyright ©  2017, César de Souza, Keras# authors</Copyright>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -20,13 +20,28 @@
     <AssemblyVersion>0.1.0.0</AssemblyVersion>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DefineConstants>TRACE;RELEASE;NET462;GPU</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DefineConstants>TRACE;DEBUG;NET462;GPU</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="Properties\AssemblyInfo.cs" />
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\CNTK.CPU\CNTKBackend.cs" Link="CNTKBackend.cs" />
+    <Compile Include="..\CNTK.CPU\CNTKFunction.cs" Link="CNTKFunction.cs" />
+    <Compile Include="..\CNTK.CPU\CNTKNameScope.cs" Link="CNTKNameScope.cs" />
+    <Compile Include="..\CNTK.CPU\CNTKTensor.cs" Link="CNTKTensor.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CNTK.GPU" Version="2.2.0" />
     <PackageReference Include="System.ValueTuple" Version="4.4.0" />
-    <PackageReference Include="TensorFlowSharp" Version="1.4.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,6 +53,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Cntk.Core.Managed-2.2">
+      <HintPath>..\..\packages\cntk.gpu\2.2.0\lib\net45\x64\Cntk.Core.Managed-2.2.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 

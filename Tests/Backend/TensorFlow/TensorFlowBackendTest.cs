@@ -54,6 +54,34 @@ namespace Tests
         }
 
         [Test]
+        public void tf_conv_test()
+        {
+            using (var K = new TensorFlowBackend())
+            {
+                Array input = Matrix.Magic(5);
+                input = input.ExpandDimensions(0);
+                input = input.ExpandDimensions(3);
+
+                Array kernel = new double[,]
+                {
+                    { 1, 2 },
+                    { 3, 4 },
+                };
+
+                kernel = kernel.ExpandDimensions(2);
+                kernel = kernel.ExpandDimensions(3);
+
+                Tensor input_var = K.variable(array: input, dtype: DataType.Float);
+                Tensor kernel_var = K.variable(array: kernel, dtype: DataType.Float);
+
+                Tensor conv = K.conv2d(input_var, kernel_var, new[] { 1, 1, 1, 1 }, PaddingType.Valid);
+                float[,,,] output = (float[,,,])conv.eval();
+
+                Assert.AreEqual(new double[,] { { 1, 2, 3, 4 } }, output);
+            }
+        }
+
+        [Test]
         public void tf_partial_shape_test()
         {
             // Note: Keras/TensorFlow represent unknown dimensions 

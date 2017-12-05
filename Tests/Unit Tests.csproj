@@ -15,24 +15,6 @@
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x64\Debug\</OutputPath>
@@ -109,8 +91,8 @@
       <Project>{31e970fd-4952-4a3a-9cc9-f9b519c3b20d}</Project>
       <Name>TensorFlow %28CPU%29</Name>
     </ProjectReference>
-    <ProjectReference Include="..\sources\Keras Sharp.csproj">
-      <Project>{1478e4e5-f4d5-4066-886b-544d1e172374}</Project>
+    <ProjectReference Include="..\Sources\Keras Sharp.csproj">
+      <Project>{efb9a83f-7475-4d9c-8a6e-5022b20ac4ad}</Project>
       <Name>Keras Sharp</Name>
     </ProjectReference>
   </ItemGroup>

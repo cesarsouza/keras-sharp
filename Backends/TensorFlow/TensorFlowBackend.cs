@@ -1079,6 +1079,9 @@ namespace KerasSharp.Backends
             if (data_format == null)
                 data_format = image_data_format();
 
+            if (dilation_rate == null)
+                dilation_rate = new int[] { 1, 1 };
+
             if (!dilation_rate.IsEqual(new[] { 1, 1 }))
                 throw new NotImplementedException();
 

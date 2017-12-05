@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("KerasSharp.TensorFlow")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Keras Sharp (TensorFlow backend)")]
+[assembly: AssemblyDescription("A line-by-line port of the Keras library in C# with TensorFlow and CNTK backends.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("KerasSharp.TensorFlow")]
-[assembly: AssemblyCopyright("Copyright ©  2017")]
+[assembly: AssemblyCompany("cesarsouza")]
+[assembly: AssemblyProduct("Keras#")]
+[assembly: AssemblyCopyright("Copyright ©  2017, César de Souza, Keras# authors")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
