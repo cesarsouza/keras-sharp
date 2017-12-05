@@ -18,6 +18,7 @@
     <RepositoryUrl>https://github.com/cesarsouza/keras-sharp</RepositoryUrl>
     <PackageTags>keras neural-networks deep-learning accord-net aforge.net framework statistics mnist cifar svm tensorflow cntk</PackageTags>
     <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <PackageIconUrl>https://raw.githubusercontent.com/cesarsouza/keras-sharp/master/Docs/Logo/logo-small.png</PackageIconUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
