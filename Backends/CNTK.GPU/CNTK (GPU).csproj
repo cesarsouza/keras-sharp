@@ -41,7 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CNTK.GPU" Version="2.3.0" />
+    <PackageReference Include="CNTK.GPU" Version="2.3.1" />
     <PackageReference Include="System.ValueTuple" Version="4.4.0" />
   </ItemGroup>
 
@@ -54,8 +54,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Cntk.Core.Managed-2.3">
-      <HintPath>..\..\packages\cntk.gpu\2.3.0\lib\net45\x64\Cntk.Core.Managed-2.3.dll</HintPath>
+    <Reference Include="Cntk.Core.Managed-2.3.1">
+      <HintPath>..\..\packages\cntk.gpu\2.3.1\lib\net45\x64\Cntk.Core.Managed-2.3.1.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>

@@ -898,11 +898,11 @@ namespace KerasSharp.Backends
 
             // cntk_shape = cntk_shape[dynamic_axis_num:]
 
-            var x = Out(CNTK.Variable.InputVariable(
-                shape: NDShape.CreateNDShape(cntk_shape),
-                dataType: In(dtype.Value),
-                isSparse: sparse,
-                name: name));
+            NDShape _shape = NDShape.CreateNDShape(cntk_shape);
+            CNTKDataType _dtype = In(dtype.Value);
+            Variable v = Variable.InputVariable(shape: _shape, dataType: _dtype, isSparse: sparse, name: name);
+
+            var x = Out(v);
 
             x._keras_shape = shape;
             x._uses_learning_phase = false;

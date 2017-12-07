@@ -46,8 +46,8 @@
     <Reference Include="Accord.Statistics, Version=3.8.2.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
       <HintPath>..\packages\Accord.Statistics.3.8.2-alpha\lib\net462\Accord.Statistics.dll</HintPath>
     </Reference>
-    <Reference Include="Cntk.Core.Managed-2.3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=21fff2ec8197defe, processorArchitecture=AMD64">
-      <HintPath>..\packages\CNTK.CPUOnly.2.3.0\lib\net45\x64\Cntk.Core.Managed-2.3.dll</HintPath>
+    <Reference Include="Cntk.Core.Managed-2.3.1, Version=1.0.0.0, Culture=neutral, PublicKeyToken=21fff2ec8197defe, processorArchitecture=AMD64">
+      <HintPath>..\packages\CNTK.CPUOnly.2.3.1\lib\net45\x64\Cntk.Core.Managed-2.3.1.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="nunit.framework, Version=3.9.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
@@ -102,12 +102,12 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Accord.3.8.2-alpha\build\Accord.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.3.8.2-alpha\build\Accord.targets'))" />
-    <Error Condition="!Exists('..\packages\CNTK.CPUOnly.2.3.0\build\net45\CNTK.CPUOnly.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\CNTK.CPUOnly.2.3.0\build\net45\CNTK.CPUOnly.targets'))" />
     <Error Condition="!Exists('..\packages\TensorFlowSharp.1.4.0\build\TensorFlowSharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\TensorFlowSharp.1.4.0\build\TensorFlowSharp.targets'))" />
+    <Error Condition="!Exists('..\packages\CNTK.CPUOnly.2.3.1\build\net45\CNTK.CPUOnly.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\CNTK.CPUOnly.2.3.1\build\net45\CNTK.CPUOnly.targets'))" />
   </Target>
   <Import Project="..\packages\Accord.3.8.2-alpha\build\Accord.targets" Condition="Exists('..\packages\Accord.3.8.2-alpha\build\Accord.targets')" />
-  <Import Project="..\packages\CNTK.CPUOnly.2.3.0\build\net45\CNTK.CPUOnly.targets" Condition="Exists('..\packages\CNTK.CPUOnly.2.3.0\build\net45\CNTK.CPUOnly.targets')" />
   <Import Project="..\packages\TensorFlowSharp.1.4.0\build\TensorFlowSharp.targets" Condition="Exists('..\packages\TensorFlowSharp.1.4.0\build\TensorFlowSharp.targets')" />
+  <Import Project="..\packages\CNTK.CPUOnly.2.3.1\build\net45\CNTK.CPUOnly.targets" Condition="Exists('..\packages\CNTK.CPUOnly.2.3.1\build\net45\CNTK.CPUOnly.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
