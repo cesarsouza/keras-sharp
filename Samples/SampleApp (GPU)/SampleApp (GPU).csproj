@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net462</TargetFramework>
     <RootNamespace>SampleApp</RootNamespace>
-    <AssemblyName>SampleApp</AssemblyName>
+    <AssemblyName>SampleApp (GPU)</AssemblyName>
     <Platforms>x64</Platforms>
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="Accord.DataSets" Version="3.8.2-alpha" />
-    <PackageReference Include="CNTK.CPUOnly" Version="2.3.1" />
+    <PackageReference Include="CNTK.GPU" Version="2.3.1" />
     <PackageReference Include="System.ValueTuple" Version="4.4.0" />
   </ItemGroup>
 
@@ -25,14 +25,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Backends\CNTK.CPU\CNTK (CPU).csproj" />
+    <ProjectReference Include="..\..\Backends\CNTK.GPU\CNTK (GPU).csproj" />
     <ProjectReference Include="..\..\Backends\TensorFlow\TensorFlow (CPU).csproj" />
     <ProjectReference Include="..\..\Sources\Keras Sharp.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="Cntk.Core.Managed-2.3.1">
-      <HintPath>..\..\packages\CNTK.CPUOnly.2.3.1\lib\net45\x64\Cntk.Core.Managed-2.3.1.dll</HintPath>
+      <HintPath>..\..\packages\cntk.gpu\2.3.1\lib\net45\x64\Cntk.Core.Managed-2.3.1.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
